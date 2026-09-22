@@ -5,3 +5,4 @@ clicks.log
 submissions.log
 test_output.txt
 .env
+.netlify/
