@@ -28,6 +28,15 @@ def setup():
         CREATE TABLE IF NOT EXISTS submissions (
         id INTEGER PRIMARY KEY AUTOINCREMENT, store TEXT, title TEXT,
         description TEXT, city TEXT, category TEXT, link TEXT, submitted_at TEXT);""")
+    existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
+    for column, definition in {
+        "deal_kind": "TEXT DEFAULT 'deal'", "sale_price": "TEXT", "regular_price": "TEXT",
+        "coupon_code": "TEXT", "offer_terms": "TEXT", "checked_on": "TEXT", "affiliate_url": "TEXT"
+    }.items():
+        if column not in existing_columns:
+            database.execute(f"ALTER TABLE deals ADD COLUMN {column} {definition}")
+    # Never leave an old verified placeholder visible after the catalog schema upgrade.
+    database.execute("DELETE FROM deals WHERE verified=1 AND COALESCE(deal_kind, 'deal')='deal'")
     if database.execute("SELECT COUNT(*) FROM deals").fetchone()[0] == 0:
         today = date.today()
         rows = [
@@ -53,15 +62,17 @@ def setup():
 
     # These entries come from official retailer pages and include the terms/date shown there.
     curated = [
-        ("Walmart", "Blackstone 28-in griddle rollback — $197", "Official Walmart Fall Deals page lists this Blackstone griddle at $197, down from $224; price and stock can change.", "Online", "Home", "https://www.walmart.com/shop/deals/announce", "2026-10-05"),
-        ("Walmart", "Starbucks Fall coffee pods — $16", "Official Walmart Fall Deals page lists the 20-count Starbucks K-Cup pack at $16, down from $19.17; price and stock can change.", "Online", "Groceries", "https://www.walmart.com/shop/deals/announce", "2026-10-05"),
-        ("Home Depot", "DEWALT drill kit — $199", "The official Home Depot circular lists the DEWALT 20V MAX XR drill/driver kit at $199, regularly $249, valid Sep 21–28, 2026.", "Online", "Home", "https://weeklycirculars.homedepot.com/h/m/homedepotusa/proad/grid/1234215", "2026-09-28"),
-        ("Target", "Target Circle Deal Days — Oct 6–7", "Target announced up to 40% off thousands of items for Target Circle members during its Oct 6–7, 2026 event.", "Online", "Everyday", "https://corporate.target.com/press/release/2026/09/target-circle-deal-days-returns-with-major-savings-on-stylish-fall-and-holiday-finds", "2026-10-07"),
-        ("Local business", "Submit a verified local offer", "Business owners can submit a real offer for review. We publish it only after checking the details and source link.", "All", "Local", "/submit", "2026-11-01")]
-    for store, title, description, city, category, link, expires_on in curated:
+        ("Walmart", "Blackstone 28-in griddle rollback — $197", "Official Walmart Fall Deals page lists this Blackstone griddle at $197, down from $224; price and stock can change.", "Online", "Home", "https://www.walmart.com/shop/deals/announce", "2026-10-05", "offer", "$197", "$224", "", "Price and stock can change.", "2026-09-22"),
+        ("Walmart", "Starbucks Fall coffee pods — $16", "Official Walmart Fall Deals page lists the 20-count Starbucks K-Cup pack at $16, down from $19.17; price and stock can change.", "Online", "Groceries", "https://www.walmart.com/shop/deals/announce", "2026-10-05", "offer", "$16", "$19.17", "", "Price and stock can change.", "2026-09-22"),
+        ("Home Depot", "DEWALT drill kit — $199", "The official Home Depot circular lists the DEWALT 20V MAX XR drill/driver kit at $199, regularly $249, valid Sep 21–28, 2026.", "Online", "Home", "https://weeklycirculars.homedepot.com/h/m/homedepotusa/proad/grid/1234215", "2026-09-28", "offer", "$199", "$249", "", "Circular valid Sep 21–28, 2026.", "2026-09-22"),
+        ("Target", "Target Circle Deal Days — Oct 6–7", "Target announced up to 40% off thousands of items for Target Circle members during its Oct 6–7, 2026 event.", "Online", "Everyday", "https://corporate.target.com/press/release/2026/09/target-circle-deal-days-returns-with-major-savings-on-stylish-fall-and-holiday-finds", "2026-10-07", "event", "Up to 40% off", "", "", "Target Circle members; event runs Oct 6–7, 2026.", "2026-09-22"),
+        ("Local business", "Submit a verified local offer", "Business owners can submit a real offer for review. We publish it only after checking the details and source link.", "All", "Local", "/submit", "2026-11-01", "submission", "", "", "", "Requires review before publication.", "2026-09-22")]
+    for store, title, description, city, category, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on in curated:
         exists = database.execute("SELECT 1 FROM deals WHERE store=? AND title=?", (store, title)).fetchone()
         if not exists:
-            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at) VALUES (?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, expires_on, 1 if store != "Local business" else 0, datetime.now().isoformat()))
+            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at,deal_kind,sale_price,regular_price,coupon_code,offer_terms,checked_on) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, expires_on, 1 if store != "Local business" else 0, datetime.now().isoformat(), deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on))
+        else:
+            database.execute("UPDATE deals SET description=?, link=?, expires_on=?, deal_kind=?, sale_price=?, regular_price=?, coupon_code=?, offer_terms=?, checked_on=? WHERE store=? AND title=?", (description, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, store, title))
     database.commit()
 
 @app.route("/")
@@ -79,6 +90,15 @@ def home():
     cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city")]
     categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
     return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, search=search)
+
+@app.route("/coupons")
+def coupons():
+    deals = db().execute("SELECT * FROM deals WHERE verified=1 AND expires_on >= ? ORDER BY expires_on ASC", (date.today().isoformat(),)).fetchall()
+    return render_template("coupons.html", deals=deals)
+
+@app.route("/watchlist")
+def watchlist():
+    return render_template("watchlist.html")
 
 @app.route("/ads.txt")
 def ads_txt():
@@ -106,11 +126,11 @@ def contact():
 
 @app.route("/click/<int:deal_id>")
 def click(deal_id):
-    deal = db().execute("SELECT link FROM deals WHERE id=?", (deal_id,)).fetchone()
+    deal = db().execute("SELECT link, affiliate_url FROM deals WHERE id=?", (deal_id,)).fetchone()
     if not deal: abort(404)
     db().execute("INSERT INTO clicks (deal_id,clicked_at) VALUES (?,?)", (deal_id, datetime.now().isoformat()))
     db().commit()
-    return redirect(deal["link"])
+    return redirect(deal["affiliate_url"] or deal["link"])
 
 @app.route("/submit", methods=["GET", "POST"])
 def submit():
