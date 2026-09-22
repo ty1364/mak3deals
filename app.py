@@ -58,6 +58,10 @@ def home():
     categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
     return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, search=search)
 
+@app.route("/ads.txt")
+def ads_txt():
+    return "google.com, pub-3943554631291586, DIRECT, f08c47fec0942fa0\\n", 200, {"Content-Type": "text/plain"}
+
 @app.route("/click/<int:deal_id>")
 def click(deal_id):
     deal = db().execute("SELECT link FROM deals WHERE id=?", (deal_id,)).fetchone()
