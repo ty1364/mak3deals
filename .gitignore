@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+deals.db
+clicks.log
+submissions.log
+test_output.txt
+.env
