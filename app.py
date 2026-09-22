@@ -41,20 +41,27 @@ def setup():
             ("Local businesses", "Get your deal in front of shoppers", "Submit an offer from your business and reach shoppers looking for savings.", "All", "Local", "/submit", 45, 0)]
         database.executemany("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at) VALUES (?,?,?,?,?,?,?,?,?)", [(a,b,c,d,e,f,(today+timedelta(days=g)).isoformat(),h,datetime.now().isoformat()) for a,b,c,d,e,f,g,h in rows])
         database.commit()
-    # Keep the home page useful after the first database boot as the catalog grows.
+    # Remove earlier placeholder claims before adding only sourced offers.
+    retired_titles = [
+        "Western Washington member savings", "Weekly household essentials deals", "Local electronics deals",
+        "Current Rollbacks and online savings", "Special Buy savings", "Today's Deals", "Member warehouse savings",
+        "Target Circle member savings", "Weekly savings on home projects", "Pet essentials and autoship savings",
+        "Sale shoes and apparel", "Hotel and travel deals", "Seasonal savings and coupons", "Department store sale hub",
+        "Get your deal in front of shoppers",
+        "Get your offer featured"]
+    database.executemany("DELETE FROM deals WHERE title=?", [(title,) for title in retired_titles])
+
+    # These entries come from official retailer pages and include the terms/date shown there.
     curated = [
-        ("Target", "Target Circle member savings", "Browse location-aware weekly deals and automatic Circle offers online or in store.", "Online", "Everyday", "https://www.target.com/circle/dashboard", 14),
-        ("Lowe's", "Weekly savings on home projects", "Find current savings across tools, appliances, outdoor, hardware, and seasonal projects.", "Online", "Home", "https://www.lowes.com/l/savings.html", 14),
-        ("Chewy", "Pet essentials and autoship savings", "Shop current pet food, supplies, pharmacy, and limited-time offers from Chewy.", "Online", "Pets", "https://www.chewy.com/b/deals-325", 14),
-        ("Nike", "Sale shoes and apparel", "Browse current sale styles for running, training, sportswear, and everyday wear.", "Online", "Clothing", "https://www.nike.com/w/sale-3yaep", 14),
-        ("Hotels.com", "Hotel and travel deals", "Compare current hotel offers and member prices for upcoming trips.", "Online", "Travel", "https://www.hotels.com/deals", 14),
-        ("Kohl's", "Seasonal savings and coupons", "Check current department-store offers across clothing, home, beauty, and gifts.", "Online", "Clothing", "https://www.kohls.com/sale-event/sale.jsp", 14),
-        ("Macy's", "Department store sale hub", "Browse current savings on apparel, shoes, beauty, home, and seasonal items.", "Online", "Clothing", "https://www.macys.com/shop/sale", 14),
-        ("Local business", "Get your offer featured", "Own a shop, restaurant, service, or online store? Submit a deal for shoppers in your area.", "All", "Local", "/submit", 45)]
-    for store, title, description, city, category, link, days in curated:
+        ("Walmart", "Blackstone 28-in griddle rollback — $197", "Official Walmart Fall Deals page lists this Blackstone griddle at $197, down from $224; price and stock can change.", "Online", "Home", "https://www.walmart.com/shop/deals/announce", "2026-10-05"),
+        ("Walmart", "Starbucks Fall coffee pods — $16", "Official Walmart Fall Deals page lists the 20-count Starbucks K-Cup pack at $16, down from $19.17; price and stock can change.", "Online", "Groceries", "https://www.walmart.com/shop/deals/announce", "2026-10-05"),
+        ("Home Depot", "DEWALT drill kit — $199", "The official Home Depot circular lists the DEWALT 20V MAX XR drill/driver kit at $199, regularly $249, valid Sep 21–28, 2026.", "Online", "Home", "https://weeklycirculars.homedepot.com/h/m/homedepotusa/proad/grid/1234215", "2026-09-28"),
+        ("Target", "Target Circle Deal Days — Oct 6–7", "Target announced up to 40% off thousands of items for Target Circle members during its Oct 6–7, 2026 event.", "Online", "Everyday", "https://corporate.target.com/press/release/2026/09/target-circle-deal-days-returns-with-major-savings-on-stylish-fall-and-holiday-finds", "2026-10-07"),
+        ("Local business", "Submit a verified local offer", "Business owners can submit a real offer for review. We publish it only after checking the details and source link.", "All", "Local", "/submit", "2026-11-01")]
+    for store, title, description, city, category, link, expires_on in curated:
         exists = database.execute("SELECT 1 FROM deals WHERE store=? AND title=?", (store, title)).fetchone()
         if not exists:
-            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at) VALUES (?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, (date.today()+timedelta(days=days)).isoformat(), 1 if store != "Local business" else 0, datetime.now().isoformat()))
+            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at) VALUES (?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, expires_on, 1 if store != "Local business" else 0, datetime.now().isoformat()))
     database.commit()
 
 @app.route("/")
