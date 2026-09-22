@@ -41,6 +41,21 @@ def setup():
             ("Local businesses", "Get your deal in front of shoppers", "Submit an offer from your business and reach shoppers looking for savings.", "All", "Local", "/submit", 45, 0)]
         database.executemany("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at) VALUES (?,?,?,?,?,?,?,?,?)", [(a,b,c,d,e,f,(today+timedelta(days=g)).isoformat(),h,datetime.now().isoformat()) for a,b,c,d,e,f,g,h in rows])
         database.commit()
+    # Keep the home page useful after the first database boot as the catalog grows.
+    curated = [
+        ("Target", "Target Circle member savings", "Browse location-aware weekly deals and automatic Circle offers online or in store.", "Online", "Everyday", "https://www.target.com/circle/dashboard", 14),
+        ("Lowe's", "Weekly savings on home projects", "Find current savings across tools, appliances, outdoor, hardware, and seasonal projects.", "Online", "Home", "https://www.lowes.com/l/savings.html", 14),
+        ("Chewy", "Pet essentials and autoship savings", "Shop current pet food, supplies, pharmacy, and limited-time offers from Chewy.", "Online", "Pets", "https://www.chewy.com/b/deals-325", 14),
+        ("Nike", "Sale shoes and apparel", "Browse current sale styles for running, training, sportswear, and everyday wear.", "Online", "Clothing", "https://www.nike.com/w/sale-3yaep", 14),
+        ("Hotels.com", "Hotel and travel deals", "Compare current hotel offers and member prices for upcoming trips.", "Online", "Travel", "https://www.hotels.com/deals", 14),
+        ("Kohl's", "Seasonal savings and coupons", "Check current department-store offers across clothing, home, beauty, and gifts.", "Online", "Clothing", "https://www.kohls.com/sale-event/sale.jsp", 14),
+        ("Macy's", "Department store sale hub", "Browse current savings on apparel, shoes, beauty, home, and seasonal items.", "Online", "Clothing", "https://www.macys.com/shop/sale", 14),
+        ("Local business", "Get your offer featured", "Own a shop, restaurant, service, or online store? Submit a deal for shoppers in your area.", "All", "Local", "/submit", 45)]
+    for store, title, description, city, category, link, days in curated:
+        exists = database.execute("SELECT 1 FROM deals WHERE store=? AND title=?", (store, title)).fetchone()
+        if not exists:
+            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at) VALUES (?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, (date.today()+timedelta(days=days)).isoformat(), 1 if store != "Local business" else 0, datetime.now().isoformat()))
+    database.commit()
 
 @app.route("/")
 def home():
