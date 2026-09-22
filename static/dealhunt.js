@@ -1,0 +1,9 @@
+(function(){
+  const offers=(window.dealOffers||[]).map(x=>({...x,sale:parseFloat(String(x.sale_price).replace(/[^0-9.]/g,'')),regular:parseFloat(String(x.regular_price).replace(/[^0-9.]/g,''))})).filter(x=>x.regular>x.sale);
+  const choices=document.getElementById('choices'), message=document.getElementById('game-message'), next=document.getElementById('next-round'), roundLabel=document.getElementById('round-label'), scoreLabel=document.getElementById('score-label');
+  let round=1,score=0,current=[];
+  function money(n){return '$'+n.toFixed(2)}
+  function render(){if(offers.length<2){message.textContent='We need at least two verified price offers to run the game.';return} current=[...offers].sort(()=>Math.random()-.5).slice(0,2); next.hidden=true; message.textContent=''; roundLabel.textContent='Round '+round; scoreLabel.textContent='Score: '+score; choices.innerHTML=current.map((x,i)=>'<button class="choice-card" data-index="'+i+'"><span class="tag">'+x.store+'</span><strong>'+x.title+'</strong><span class="choice-price">'+money(x.sale)+' <del>'+money(x.regular)+'</del></span><small>Save '+money(x.regular-x.sale)+'</small></button>').join('')}
+  choices.addEventListener('click',e=>{const button=e.target.closest('.choice-card');if(!button)return;const pick=current[Number(button.dataset.index)], other=current.find(x=>x!==pick);const correct=pick.regular-pick.sale >= other.regular-other.sale;document.querySelectorAll('.choice-card').forEach(b=>b.disabled=true);button.classList.add(correct?'correct':'wrong');if(correct){score++;message.textContent='Nice pick. '+pick.store+' saves '+money(pick.regular-pick.sale)+' on this source-checked offer.'}else{message.textContent='Close. The bigger verified saving was '+other.store+' at '+money(other.regular-other.sale)+'.'}scoreLabel.textContent='Score: '+score;next.hidden=false});
+  next.addEventListener('click',()=>{round++;render()});render();
+})();
