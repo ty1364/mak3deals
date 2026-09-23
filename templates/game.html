@@ -41,6 +41,14 @@
         <div class="eyebrow">SIGNAL LOST</div>
         <h2>YOU GOT ERASED.</h2>
         <div class="final-score"><small>FINAL SCORE</small><strong id="finalScore">0</strong></div>
+        <div class="score-submit">
+          <label for="playerName">Enter the monthly board</label>
+          <div class="score-row">
+            <input id="playerName" maxlength="20" autocomplete="nickname" placeholder="Your name" />
+            <button id="submitScoreBtn" type="button">SUBMIT SCORE</button>
+          </div>
+          <p id="scoreMessage" role="status"></p>
+        </div>
         <button id="restartBtn">RUN IT BACK</button>
       </div>
 
@@ -48,6 +56,14 @@
     </section>
 
     <p class="controls">MOUSE = AIM · CLICK = FIRE · SHOOT POWER-UPS · RAPID FIRE = AUTOMATIC · SPACE = NOVA</p>
+    <section class="leaderboard" aria-labelledby="leaderboardTitle">
+      <div class="leaderboard-heading">
+        <div><span class="eyebrow">MONTHLY SKILL BOARD</span><h2 id="leaderboardTitle">VOID STRIKE // TOP RUNS</h2></div>
+        <span id="leaderboardMonth">Loading…</span>
+      </div>
+      <p class="leaderboard-note">Free to play. Scores are reviewed before any prize promotion is awarded.</p>
+      <ol id="leaderboardList"><li>Loading scores…</li></ol>
+    </section>
   </main>
 
   <script src="{{ url_for('static', filename='void-strike.js', v='ec22cae') }}"></script>
@@ -55,4 +71,3 @@
   <script src="{{ url_for('static', filename='void-strike-rapid.js', v='ec22cae') }}"></script>
 </body>
 </html>
-

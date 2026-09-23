@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 import sqlite3
-from flask import Flask, abort, g, redirect, render_template, request
+from flask import Flask, abort, g, jsonify, redirect, render_template, request
 
 app = Flask(__name__)
 DATABASE = "deals.db"
@@ -27,7 +27,14 @@ def setup():
         id INTEGER PRIMARY KEY AUTOINCREMENT, deal_id INTEGER, clicked_at TEXT);
         CREATE TABLE IF NOT EXISTS submissions (
         id INTEGER PRIMARY KEY AUTOINCREMENT, store TEXT, title TEXT,
-        description TEXT, city TEXT, category TEXT, link TEXT, submitted_at TEXT);""")
+        description TEXT, city TEXT, category TEXT, link TEXT, submitted_at TEXT);
+        CREATE TABLE IF NOT EXISTS game_scores (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, game TEXT NOT NULL,
+        month TEXT NOT NULL, player_name TEXT NOT NULL, score INTEGER NOT NULL,
+        wave INTEGER NOT NULL, duration_seconds INTEGER NOT NULL,
+        submitted_at TEXT NOT NULL, review_status TEXT DEFAULT 'pending');
+        CREATE INDEX IF NOT EXISTS idx_game_scores_month_score
+        ON game_scores (game, month, score DESC);""")
     existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
     for column, definition in {
         "deal_kind": "TEXT DEFAULT 'deal'", "sale_price": "TEXT", "regular_price": "TEXT",
@@ -103,6 +110,40 @@ def watchlist():
 @app.route("/game")
 def game():
     return render_template("game.html")
+
+@app.route("/api/leaderboard")
+def leaderboard():
+    month = date.today().strftime("%Y-%m")
+    rows = db().execute(
+        "SELECT player_name, score, wave, submitted_at FROM game_scores "
+        "WHERE game=? AND month=? ORDER BY score DESC, wave DESC, id ASC LIMIT 25",
+        ("void-strike", month),
+    ).fetchall()
+    return jsonify({"game": "void-strike", "month": month, "scores": [dict(row) for row in rows]})
+
+@app.route("/api/score", methods=["POST"])
+def submit_score():
+    payload = request.get_json(silent=True) or {}
+    name = " ".join(str(payload.get("name", "")).split())[:20]
+    try:
+        score = int(payload.get("score", 0))
+        wave = int(payload.get("wave", 1))
+        duration = int(payload.get("duration", 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Score data is invalid."}), 400
+    if not 2 <= len(name) <= 20 or not 0 < score <= 10_000_000:
+        return jsonify({"error": "Enter a name and a valid score."}), 400
+    if not 1 <= wave <= 100 or not 10 <= duration <= 7200:
+        return jsonify({"error": "That run could not be verified."}), 400
+    month = date.today().strftime("%Y-%m")
+    db().execute(
+        "INSERT INTO game_scores "
+        "(game, month, player_name, score, wave, duration_seconds, submitted_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("void-strike", month, name, score, wave, duration, datetime.now().isoformat()),
+    )
+    db().commit()
+    return jsonify({"ok": True, "message": "Score submitted for review."})
 
 @app.route("/ads.txt")
 def ads_txt():

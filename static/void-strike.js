@@ -17,6 +17,7 @@ const TAU = Math.PI * 2;
 let W = 1280, H = 720, dpr = 1;
 let running = false, last = 0, elapsed = 0, spawnClock = 0;
 let score = 0, wave = 1, combo = 1, comboTimer = 0, shake = 0;
+let runStartedAt = 0;
 let nova = 1, novaCooldown = 7;
 let mouse = { x: W / 2, y: H / 2, down: false };
 let bullets = [], enemies = [], particles = [], rings = [], texts = [], stars = [], pickups = [];
@@ -50,7 +51,7 @@ function resetGame(){
 }
 
 function startGame(){
-  resetGame(); running=true; last=performance.now();
+  resetGame(); running=true; runStartedAt=Date.now(); last=performance.now();
   startScreen.classList.add('hidden'); gameOver.classList.add('hidden');
   requestAnimationFrame(loop);
 }
@@ -99,8 +100,9 @@ function spawnEnemy(){
   if(side===0){x=rand(-40,W+40);y=-40;} else if(side===1){x=W+40;y=rand(-40,H+40);} else if(side===2){x=rand(-40,W+40);y=H+40;} else {x=-40;y=rand(-40,H+40);}
   const roll=Math.random();
   const type = roll < .12 && wave>2 ? 'tank' : roll < .34 && wave>1 ? 'zig' : 'drone';
-  const spec = type==='tank' ? {r:25,hp:4,speed:42,color:'#ff335f',score:450} : type==='zig' ? {r:14,hp:2,speed:95,color:'#b65cff',score:260} : {r:11,hp:1,speed:72,color:'#2be8ff',score:140};
-  enemies.push({x,y,phase:rand(0,TAU),type,...spec,dead:false});
+  const scale = 1 + Math.min(1.8, (wave - 1) * .055);
+  const spec = type==='tank' ? {r:25,hp:4 + Math.floor(wave / 5),speed:42,color:'#ff335f',score:450} : type==='zig' ? {r:14,hp:2 + Math.floor(wave / 8),speed:95,color:'#b65cff',score:260} : {r:11,hp:1,speed:72,color:'#2be8ff',score:140};
+  enemies.push({x,y,phase:rand(0,TAU),type,...spec,speed:spec.speed*scale,dead:false});
 }
 
 function spawnPickup(type=null,x=null,y=null){
@@ -165,8 +167,13 @@ function update(dt){
   const newWave = 1 + Math.floor(elapsed/22);
   if(newWave!==wave){ wave=newWave; flashText('WAVE '+wave, W/2, H*.28, '#ffffff', 46); if(wave%3===0) showBossWarning(); }
   spawnClock -= dt;
-  const interval=Math.max(.18,.72-wave*.045);
-  if(spawnClock<=0){ spawnEnemy(); if(wave>4 && Math.random()<.22) spawnEnemy(); spawnClock=interval; }
+  const interval=Math.max(.14,.72-wave*.05);
+  if(spawnClock<=0){
+    spawnEnemy();
+    if(wave>=4 && Math.random()<Math.min(.52,.16+wave*.025)) spawnEnemy();
+    if(wave>=9 && Math.random()<.16) spawnEnemy();
+    spawnClock=interval;
+  }
 
   pickupClock -= dt;
   if(pickupClock<=0){ spawnPickup(); pickupClock=rand(8,13); }
@@ -195,7 +202,8 @@ function update(dt){
     if(Math.hypot(e.x-core.x,e.y-core.y)<e.r+core.radius){
       e.dead=true;
       burst(e.x,e.y,'#ff315e',25,2);
-      takeCoreDamage(e.type==='tank'?30:e.type==='zig'?18:12);
+      const damageScale = 1 + Math.min(.85, (wave - 1) * .035);
+      takeCoreDamage(Math.ceil((e.type==='tank'?30:e.type==='zig'?18:12) * damageScale));
     }
   }
 
@@ -336,6 +344,7 @@ function showBossWarning(){
 function endGame(){
   if(!running) return;
   running=false; mouse.down=false; finalScore.textContent=Math.floor(score).toLocaleString(); gameOver.classList.remove('hidden');
+  window.dispatchEvent(new CustomEvent('void-strike-ended', {detail:{score:Math.floor(score),wave,duration:Math.max(10,Math.floor((Date.now()-runStartedAt)/1000))}}));
 }
 function hexAlpha(hex,a){
   const h=hex.replace('#',''); const v=parseInt(h.length===3?h.split('').map(c=>c+c).join(''):h,16);
@@ -348,4 +357,45 @@ function loop(now){
   update(dt); draw(); requestAnimationFrame(loop);
 }
 
+const playerName = document.getElementById('playerName');
+const submitScoreBtn = document.getElementById('submitScoreBtn');
+const scoreMessage = document.getElementById('scoreMessage');
+const leaderboardList = document.getElementById('leaderboardList');
+const leaderboardMonth = document.getElementById('leaderboardMonth');
+let lastRun = null;
+
+window.addEventListener('void-strike-ended', event => { lastRun = event.detail; if(playerName) playerName.focus(); });
+
+async function loadLeaderboard(){
+  try {
+    const response = await fetch('/api/leaderboard', {headers:{Accept:'application/json'}});
+    const data = await response.json();
+    leaderboardMonth.textContent = data.month || 'Current month';
+    leaderboardList.replaceChildren();
+    if(!data.scores.length){ const li=document.createElement('li'); li.textContent='No runs yet — be the first signal on the board.'; leaderboardList.appendChild(li); return; }
+    data.scores.forEach((entry, index) => {
+      const li=document.createElement('li');
+      li.innerHTML=`<span class="rank">${String(index+1).padStart(2,'0')}</span><span class="player">${escapeHtml(entry.player_name)}</span><strong>${Number(entry.score).toLocaleString()}</strong><small>WAVE ${entry.wave}</small>`;
+      leaderboardList.appendChild(li);
+    });
+  } catch { leaderboardMonth.textContent='Offline'; }
+}
+
+function escapeHtml(value){ const div=document.createElement('div'); div.textContent=value; return div.innerHTML; }
+
+submitScoreBtn?.addEventListener('click', async () => {
+  if(!lastRun) return;
+  const name=(playerName.value||'').trim();
+  if(name.length<2){ scoreMessage.textContent='Enter at least 2 characters.'; return; }
+  submitScoreBtn.disabled=true; scoreMessage.textContent='Submitting…';
+  try {
+    const response=await fetch('/api/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,...lastRun})});
+    const data=await response.json();
+    scoreMessage.textContent=data.message||data.error||'Done.';
+    if(response.ok) loadLeaderboard();
+  } catch { scoreMessage.textContent='Could not submit right now.'; }
+  submitScoreBtn.disabled=false;
+});
+
+loadLeaderboard();
 
