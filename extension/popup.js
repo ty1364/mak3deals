@@ -40,7 +40,7 @@ chrome.tabs.query({active: true, currentWindow: true}, tabs => {
     return;
   }
   chrome.scripting.executeScript({target: {tabId: tab.id}, func: () => {
-    const stores = [["amazon.", "Amazon"], ["walmart.", "Walmart"], ["target.", "Target"], ["bestbuy.", "Best Buy"], ["homedepot.", "Home Depot"], ["costco.", "Costco"], ["nike.", "Nike"], ["macys.", "Macy's"], ["kohls.", "Kohl's"], ["chewy.", "Chewy"]];
+    const stores = [["amazon.", "Amazon"], ["walmart.", "Walmart"], ["bestbuy.", "Best Buy"], ["homedepot.", "Home Depot"], ["costco.", "Costco"], ["nike.", "Nike"], ["macys.", "Macy's"], ["kohls.", "Kohl's"], ["chewy.", "Chewy"]];
     const host = location.hostname.toLowerCase();
     const match = stores.find(([fragment]) => host.includes(fragment));
     const fields = [...document.querySelectorAll("input")].filter(input => /coupon|promo|discount|voucher|offer code/i.test(`${input.name} ${input.id} ${input.placeholder} ${input.getAttribute("aria-label") || ""}`));

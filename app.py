@@ -78,11 +78,12 @@ def setup():
             database.execute(f"ALTER TABLE submissions ADD COLUMN {column} {definition}")
     # Never leave an old verified placeholder visible after the catalog schema upgrade.
     database.execute("DELETE FROM deals WHERE verified=1 AND COALESCE(deal_kind, 'deal')='deal'")
+    # Mak3Deals does not promote Target; remove any legacy Target rows from older local catalogs.
+    database.execute("DELETE FROM deals WHERE lower(store)=lower('Target')")
     if database.execute("SELECT COUNT(*) FROM deals").fetchone()[0] == 0:
         today = date.today()
         rows = [
             ("Costco", "Western Washington member savings", "Check this week's rotating warehouse offers and instant savings.", "Tacoma", "Groceries", "https://www.costco.com", 7, 1),
-            ("Target", "Weekly household essentials deals", "Browse current household, kitchen, and personal-care offers.", "Seattle", "Household", "https://www.target.com/c/weekly-ad/-/N-4xw74", 6, 1),
             ("Best Buy", "Local electronics deals", "See current offers with pickup options at nearby stores.", "Bellevue", "Electronics", "https://www.bestbuy.com/site/top-deals", 5, 1),
             ("Walmart", "Current Rollbacks and online savings", "Find current Walmart Rollbacks across groceries, household, electronics, and more.", "Online", "Household", "https://www.walmart.com/shop/deals", 30, 1),
             ("Home Depot", "Special Buy savings", "See current savings on tools, appliances, outdoor, and home-improvement supplies.", "Online", "Home", "https://www.homedepot.com/SpecialBuy", 30, 1),
@@ -106,7 +107,6 @@ def setup():
         ("Walmart", "Blackstone 28-in griddle rollback — $197", "Official Walmart Fall Deals page lists this Blackstone griddle at $197, down from $224; price and stock can change.", "Online", "Home", "https://www.walmart.com/shop/deals/announce", "2026-10-05", "offer", "$197", "$224", "", "Price and stock can change.", "2026-09-22"),
         ("Walmart", "Starbucks Fall coffee pods — $16", "Official Walmart Fall Deals page lists the 20-count Starbucks K-Cup pack at $16, down from $19.17; price and stock can change.", "Online", "Groceries", "https://www.walmart.com/shop/deals/announce", "2026-10-05", "offer", "$16", "$19.17", "", "Price and stock can change.", "2026-09-22"),
         ("Home Depot", "DEWALT drill kit — $199", "The official Home Depot circular lists the DEWALT 20V MAX XR drill/driver kit at $199, regularly $249, valid Sep 21–28, 2026.", "Online", "Home", "https://weeklycirculars.homedepot.com/h/m/homedepotusa/proad/grid/1234215", "2026-09-28", "offer", "$199", "$249", "", "Circular valid Sep 21–28, 2026.", "2026-09-22"),
-        ("Target", "Target Circle Deal Days — Oct 6–7", "Target announced up to 40% off thousands of items for Target Circle members during its Oct 6–7, 2026 event.", "Online", "Everyday", "https://corporate.target.com/press/release/2026/09/target-circle-deal-days-returns-with-major-savings-on-stylish-fall-and-holiday-finds", "2026-10-07", "event", "Up to 40% off", "", "", "Target Circle members; event runs Oct 6–7, 2026.", "2026-09-22"),
         ("Local business", "Submit a verified local offer", "Business owners can submit a real offer for review. We publish it only after checking the details and source link.", "All", "Local", "/submit", "2026-11-01", "submission", "", "", "", "Requires review before publication.", "2026-09-22")]
     for store, title, description, city, category, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on in curated:
         exists = database.execute("SELECT 1 FROM deals WHERE store=? AND title=?", (store, title)).fetchone()
