@@ -5,6 +5,14 @@ from flask import Flask, abort, g, jsonify, redirect, render_template, request
 app = Flask(__name__)
 DATABASE = "deals.db"
 
+SITE_AD_TV = """
+<style>
+.site-ad-tv{position:fixed;right:18px;bottom:18px;z-index:90;width:150px;padding:7px;border:1px solid rgba(255,82,211,.65);border-radius:9px;background:#08091a;color:#f7f7ff;box-shadow:0 0 18px rgba(255,55,207,.3);font:800 8px/1.3 system-ui,sans-serif;letter-spacing:.12em;pointer-events:none}
+.site-ad-tv-top,.site-ad-tv-foot{display:flex;justify-content:space-between;color:#aeb8e4}.site-ad-live{color:#ff5dbe}.site-ad-tv-screen{display:flex;align-items:center;justify-content:space-between;min-height:72px;margin:6px 0;padding:10px;border:1px solid rgba(92,238,255,.55);background:radial-gradient(circle at 50% 40%,#233a86,#0b102c 70%)}.site-ad-tv-screen strong{font-size:16px;line-height:.8;color:#fff;text-shadow:0 0 10px #50eaff}.site-ad-tv-screen em{color:#ff5bd7;font-style:normal}.site-ad-tv-screen small{color:#bdefff;font-size:8px;line-height:1.4;text-align:right;letter-spacing:.06em}@media(max-width:700px){.site-ad-tv{right:8px;bottom:8px;transform:scale(.8);transform-origin:bottom right}}
+</style>
+<aside class="site-ad-tv" aria-label="Sponsored content"><div class="site-ad-tv-top"><span>SPONSORED</span><span class="site-ad-live">● LIVE</span></div><div class="site-ad-tv-screen"><strong>MAK3<br><em>DEALS</em></strong><small>Verified savings<br>loading soon</small></div><div class="site-ad-tv-foot">AD SPACE · SHOP SMART</div></aside>
+"""
+
 def db():
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
@@ -15,6 +23,16 @@ def db():
 def close_db(error):
     connection = g.pop("db", None)
     if connection: connection.close()
+
+@app.after_request
+def add_site_ad_tv(response):
+    # Keep the sponsored panel on every normal HTML page, but avoid duplicating
+    # the custom arcade TV already rendered by /game and never touch API data.
+    if request.path != "/game" and response.content_type.startswith("text/html"):
+        html = response.get_data(as_text=True)
+        if "class=\"site-ad-tv\"" not in html:
+            response.set_data(html.replace("</body>", SITE_AD_TV + "</body>"))
+    return response
 
 @app.before_request
 def setup():
