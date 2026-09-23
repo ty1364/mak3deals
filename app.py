@@ -222,7 +222,7 @@ def submit_score():
 
 @app.route("/ads.txt")
 def ads_txt():
-    return "google.com, pub-3943554631291586, DIRECT, f08c47fec0942fa0\\n", 200, {"Content-Type": "text/plain"}
+    return "google.com, pub-3943554631291586, DIRECT, f08c47fec0942fa0\n", 200, {"Content-Type": "text/plain"}
 
 @app.route("/about")
 def about():
