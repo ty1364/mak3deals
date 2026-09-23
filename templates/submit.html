@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header class="navbar"><a href="/"><img src="{{ url_for('static', filename='logo-transparent.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
+  <header class="navbar"><a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
   <main class="form-wrap"><p class="eyebrow">HELP EVERYONE SAVE</p><h1>Submit a real deal or coupon</h1><p>We review every submission and require an official source before publishing a coupon as verified.</p>
     {% if success %}<div class="notice success">{{ success }}</div>{% endif %}{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
     <form class="deal-form" method="post">
