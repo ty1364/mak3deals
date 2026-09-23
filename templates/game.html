@@ -1,0 +1,38 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Blacklight Billiards · Mak3Deals</title>
+  <meta name="description" content="BLACKLIGHT BILLIARDS — neon arcade pool in your browser." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='blacklight-billiards.css') }}" />
+</head>
+<body>
+  <a class="back-link" href="/">← Back to Mak3Deals</a>
+  <main class="shell">
+    <section class="game-wrap">
+      <canvas id="game" width="1280" height="720" aria-label="Blacklight Billiards game"></canvas>
+      <div class="hud">
+        <div class="brand">BLACKLIGHT <span>BILLIARDS</span></div>
+        <div class="stats"><div><small>SCORE</small><strong id="score">0</strong></div><div><small>STREAK</small><strong id="streak">0</strong></div><div><small>BALLS LEFT</small><strong id="left">7</strong></div></div>
+        <div class="powerup"><small>POWER-UP</small><strong id="powerup">NONE</strong></div>
+      </div>
+      <div id="startScreen" class="overlay">
+        <div class="eyebrow">ARCADE POOL // PROTOTYPE 01</div>
+        <h1>BLACKLIGHT<br><span>BILLIARDS</span></h1>
+        <p>Aim with the mouse. Hold left-click to charge. Release to shoot. Sink glowing balls, chain combos, and hit bonus pockets.</p>
+        <button id="startBtn">BREAK THE RACK</button>
+      </div>
+      <div id="gameOver" class="overlay hidden">
+        <div class="eyebrow">TABLE CLEARED</div>
+        <h2>RUN COMPLETE</h2>
+        <p>Final score: <strong id="finalScore">0</strong></p>
+        <button id="restartBtn">RACK 'EM AGAIN</button>
+      </div>
+    </section>
+    <div class="meter"><span>SHOT POWER</span><div class="track"><div id="powerFill"></div></div><span id="powerText">0%</span></div>
+  </main>
+  <script src="{{ url_for('static', filename='blacklight-billiards.js') }}"></script>
+</body>
+</html>

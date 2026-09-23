@@ -100,10 +100,9 @@ def coupons():
 def watchlist():
     return render_template("watchlist.html")
 
-@app.route("/play")
-def play():
-    offers = [dict(row) for row in db().execute("SELECT id,title,store,sale_price,regular_price FROM deals WHERE verified=1 AND sale_price != '' AND regular_price != '' AND expires_on >= ? ORDER BY id", (date.today().isoformat(),)).fetchall()]
-    return render_template("play.html", offers=offers)
+@app.route("/game")
+def game():
+    return render_template("game.html")
 
 @app.route("/ads.txt")
 def ads_txt():
