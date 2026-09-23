@@ -20,6 +20,17 @@ function render(coupons) {
   }));
 }
 
+function renderOffers(offers) {
+  if (!offers.length) return '<p class="muted">No matching verified Mak3Deals offer yet. We will not recommend an unrelated product.</p>';
+  return '<h3>Mak3Deals matches</h3>' + offers.map(offer => `
+    <article class="offer"><strong>${escapeHtml(offer.title)}</strong>
+      <span class="offer-price">${escapeHtml(offer.sale_price || "See offer")}</span>
+      ${offer.regular_price ? `<span class="muted"> regularly ${escapeHtml(offer.regular_price)}</span>` : ''}
+      <p class="muted">Checked ${escapeHtml(offer.checked_on || "recently")} · Ends ${escapeHtml(offer.expires_on)}</p>
+      <a href="https://mak3deals.com/click/${offer.id}" target="_blank">Get deal →</a>
+    </article>`).join('');
+}
+
 function escapeHtml(value) { return String(value || "").replace(/[&<>\"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char])); }
 
 chrome.tabs.query({active: true, currentWindow: true}, tabs => {
@@ -33,7 +44,8 @@ chrome.tabs.query({active: true, currentWindow: true}, tabs => {
     const host = location.hostname.toLowerCase();
     const match = stores.find(([fragment]) => host.includes(fragment));
     const fields = [...document.querySelectorAll("input")].filter(input => /coupon|promo|discount|voucher|offer code/i.test(`${input.name} ${input.id} ${input.placeholder} ${input.getAttribute("aria-label") || ""}`));
-    return {store: match ? match[1] : "", supported: Boolean(match), checkoutLike: fields.length > 0};
+    const title = document.querySelector("h1")?.innerText?.trim() || document.title || "";
+    return {store: match ? match[1] : "", title: title.slice(0, 180), supported: Boolean(match), checkoutLike: fields.length > 0};
   }})
     .then(results => {
       const details = results[0]?.result || {};
@@ -45,6 +57,9 @@ chrome.tabs.query({active: true, currentWindow: true}, tabs => {
       chrome.runtime.sendMessage({type: "find-coupons", store: details.store}, response => {
         if (chrome.runtime.lastError || !response?.ok) { status.textContent = "Savings service is temporarily unavailable."; return; }
         render(response.coupons);
+        chrome.runtime.sendMessage({type: "find-offers", store: details.store, query: details.title}, offerResponse => {
+          if (offerResponse?.ok) results.insertAdjacentHTML('afterbegin', renderOffers(offerResponse.offers));
+        });
       });
     })
     .catch(() => { status.textContent = "This page does not allow savings detection."; });

@@ -151,6 +151,33 @@ def coupon_api():
     rows = db().execute(query + " ORDER BY checked_on DESC, expires_on ASC LIMIT 50", values).fetchall()
     return jsonify({"coupons": [dict(row) for row in rows]})
 
+@app.route("/api/offers")
+def offer_api():
+    """Return current verified offers that match a product title."""
+    store = request.args.get("store", "").strip()
+    search = " ".join(request.args.get("q", "").lower().split())
+    if not search:
+        return jsonify({"offers": []})
+    query = ("SELECT id, store, title, description, sale_price, regular_price, offer_terms, "
+             "expires_on, checked_on, link, affiliate_url FROM deals "
+             "WHERE verified=1 AND expires_on >= ?")
+    values = [date.today().isoformat()]
+    if store:
+        query += " AND lower(store)=lower(?)"
+        values.append(store[:80])
+    rows = db().execute(query + " ORDER BY checked_on DESC, expires_on ASC LIMIT 100", values).fetchall()
+    tokens = [token for token in search.split() if len(token) > 2]
+    matches = []
+    for row in rows:
+        haystack = f"{row['title']} {row['description']}".lower()
+        score = sum(token in haystack for token in tokens)
+        if score and score >= max(1, len(tokens) // 2):
+            item = dict(row)
+            item["match_score"] = score
+            matches.append(item)
+    matches.sort(key=lambda item: (-item["match_score"], item["expires_on"]))
+    return jsonify({"offers": matches[:10]})
+
 @app.route("/watchlist")
 def watchlist():
     return render_template("watchlist.html")

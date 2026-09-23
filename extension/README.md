@@ -8,6 +8,7 @@ This is the first Chrome/Edge Manifest V3 extension for Mak3Deals.
 - The extension recognizes supported stores and looks for a coupon field.
 - It requests only current, verified codes from `https://mak3deals.com/api/coupons`.
 - It lets the user copy a code; it does not silently change checkout forms.
+- It looks for a matching verified Mak3Deals offer and provides a clearly labeled affiliate “Get deal” link.
 
 ## Load locally
 
@@ -16,4 +17,4 @@ This is the first Chrome/Edge Manifest V3 extension for Mak3Deals.
 3. Choose **Load unpacked**.
 4. Select this `extension` folder.
 
-Automatic code testing and affiliate attribution should be added only after we have merchant-specific adapters, verified affiliate links, and clear user controls.
+Automatic code testing and broader product comparison should be added only after we have merchant-specific adapters, verified affiliate links, and clear user controls.
