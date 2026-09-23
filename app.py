@@ -69,6 +69,13 @@ def setup():
     }.items():
         if column not in existing_columns:
             database.execute(f"ALTER TABLE deals ADD COLUMN {column} {definition}")
+    submission_columns = {row[1] for row in database.execute("PRAGMA table_info(submissions)").fetchall()}
+    for column, definition in {
+        "coupon_code": "TEXT", "offer_terms": "TEXT", "expires_on": "TEXT",
+        "source_type": "TEXT DEFAULT 'user-submitted'"
+    }.items():
+        if column not in submission_columns:
+            database.execute(f"ALTER TABLE submissions ADD COLUMN {column} {definition}")
     # Never leave an old verified placeholder visible after the catalog schema upgrade.
     database.execute("DELETE FROM deals WHERE verified=1 AND COALESCE(deal_kind, 'deal')='deal'")
     if database.execute("SELECT COUNT(*) FROM deals").fetchone()[0] == 0:
@@ -210,7 +217,14 @@ def submit():
         fields = ["store", "title", "description", "city", "category"]
         values = [request.form.get(field, "").strip() for field in fields]
         if not all(values): return render_template("submit.html", error="Please complete all required fields."), 400
-        db().execute("INSERT INTO submissions (store,title,description,city,category,link,submitted_at) VALUES (?,?,?,?,?,?,?)", (*values, request.form.get("link", "").strip(), datetime.now().isoformat()))
+        link = request.form.get("link", "").strip()
+        coupon_code = request.form.get("coupon_code", "").strip().upper()[:80]
+        offer_terms = request.form.get("offer_terms", "").strip()[:500]
+        expires_on = request.form.get("expires_on", "").strip()
+        source_type = request.form.get("source_type", "user-submitted").strip()[:40]
+        if coupon_code and not link:
+            return render_template("submit.html", error="A coupon code must include the official source link where it can be confirmed."), 400
+        db().execute("INSERT INTO submissions (store,title,description,city,category,link,submitted_at,coupon_code,offer_terms,expires_on,source_type) VALUES (?,?,?,?,?,?,?,?,?,?,?)", (*values, link, datetime.now().isoformat(), coupon_code, offer_terms, expires_on, source_type))
         db().commit()
         return render_template("submit.html", success="Thanks! We will review your deal before publishing it.")
     return render_template("submit.html")

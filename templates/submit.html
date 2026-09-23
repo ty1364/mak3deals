@@ -1,1 +1,27 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Submit a Deal</title><meta name="google-adsense-account" content="ca-pub-3943554631291586"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body><header class="navbar"><a href="/"><img src="{{ url_for('static', filename='logo-transparent.png') }}" class="logo" alt="West WA Deals"></a><nav><a href="/">Deals</a><a href="/submit">Submit a Deal</a></nav></header><main class="form-wrap"><p class="eyebrow">HELP YOUR COMMUNITY SAVE</p><h1>Submit a local deal</h1><p>We review submissions before publishing.</p>{% if success %}<div class="notice success">{{ success }}</div>{% endif %}{% if error %}<div class="notice error">{{ error }}</div>{% endif %}<form class="deal-form" method="post"><label>Store or business name<input name="store" required></label><label>Deal title<input name="title" required></label><label>Description<textarea name="description" rows="4" required></textarea></label><label>City<select name="city" required><option value="">Choose a city</option>{% for city in ['Seattle','Tacoma','Bellevue','Everett','Olympia','Bellingham','Kitsap Peninsula','Other Western WA'] %}<option>{{ city }}</option>{% endfor %}</select></label><label>Category<select name="category" required><option value="">Choose a category</option>{% for category in ['Food','Groceries','Household','Electronics','Services','Local','Other'] %}<option>{{ category }}</option>{% endfor %}</select></label><label>Deal link (optional)<input type="url" name="link"></label><button class="deal-btn">Submit for review</button></form></main><footer>West WA Deals · Built for shoppers in the Pacific Northwest</footer></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Submit a Deal · Mak3Deals</title>
+  <meta name="google-adsense-account" content="ca-pub-3943554631291586"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="navbar"><a href="/"><img src="{{ url_for('static', filename='logo-transparent.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
+  <main class="form-wrap"><p class="eyebrow">HELP EVERYONE SAVE</p><h1>Submit a real deal or coupon</h1><p>We review every submission and require an official source before publishing a coupon as verified.</p>
+    {% if success %}<div class="notice success">{{ success }}</div>{% endif %}{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+    <form class="deal-form" method="post">
+      <label>Store or business name<input name="store" required></label>
+      <label>Deal or coupon title<input name="title" placeholder="Example: 20% off home essentials" required></label>
+      <label>Description<textarea name="description" rows="4" required></textarea></label>
+      <label>Coupon code (optional)<input name="coupon_code" maxlength="80" placeholder="Enter the exact code"></label>
+      <label>Official source link<input type="url" name="link" placeholder="https://www.store.com/offer"></label>
+      <label>Offer terms<textarea name="offer_terms" rows="3" placeholder="Minimum purchase, exclusions, member limits, etc."></textarea></label>
+      <label>Expiration date (optional)<input type="date" name="expires_on"></label>
+      <label>City<select name="city" required><option value="">Choose a city</option>{% for city in ['Seattle','Tacoma','Bellevue','Everett','Olympia','Bellingham','Kitsap Peninsula','Other Western WA'] %}<option>{{ city }}</option>{% endfor %}</select></label>
+      <label>Category<select name="category" required><option value="">Choose a category</option>{% for category in ['Food','Groceries','Household','Electronics','Services','Local','Other'] %}<option>{{ category }}</option>{% endfor %}</select></label>
+      <button class="deal-btn">Submit for review</button>
+    </form>
+  </main>
+  <footer>Mak3Deals · Verified savings from real sources</footer>
+</body>
+</html>
