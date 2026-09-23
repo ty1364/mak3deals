@@ -1,41 +1,3 @@
----
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>BLACKLIGHT BILLIARDS</title>
-  <meta name="description" content="BLACKLIGHT BILLIARDS — neon arcade pool in your browser." />
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <main class="shell">
-    <section class="game-wrap">
-      <canvas id="game" width="1280" height="720" aria-label="Blacklight Billiards game"></canvas>
-      <div class="hud">
-        <div class="brand">BLACKLIGHT <span>BILLIARDS</span></div>
-        <div class="stats"><div><small>SCORE</small><strong id="score">0</strong></div><div><small>STREAK</small><strong id="streak">0</strong></div><div><small>BALLS LEFT</small><strong id="left">7</strong></div></div>
-        <div class="powerup"><small>POWER-UP</small><strong id="powerup">NONE</strong></div>
-      </div>
-      <div id="startScreen" class="overlay">
-        <div class="eyebrow">ARCADE POOL // PROTOTYPE 01</div>
-        <h1>BLACKLIGHT<br><span>BILLIARDS</span></h1>
-        <p>Aim with the mouse. Hold left-click to charge. Release to shoot. Sink glowing balls, chain combos, and hit bonus pockets.</p>
-        <button id="startBtn">BREAK THE RACK</button>
-      </div>
-      <div id="gameOver" class="overlay hidden">
-        <div class="eyebrow">TABLE CLEARED</div>
-        <h2>RUN COMPLETE</h2>
-        <p>Final score: <strong id="finalScore">0</strong></p>
-        <button id="restartBtn">RACK 'EM AGAIN</button>
-      </div>
-    </section>
-    <div class="meter"><span>SHOT POWER</span><div class="track"><div id="powerFill"></div></div><span id="powerText">0%</span></div>
-  </main>
-  <script src="game.js"></script>
-</body>
-</html>
----FILE:game.js---
 const canvas=document.getElementById('game');const ctx=canvas.getContext('2d');const scoreEl=document.getElementById('score');const streakEl=document.getElementById('streak');const leftEl=document.getElementById('left');const powerupEl=document.getElementById('powerup');const powerFill=document.getElementById('powerFill');const powerText=document.getElementById('powerText');const startScreen=document.getElementById('startScreen');const gameOver=document.getElementById('gameOver');const finalScore=document.getElementById('finalScore');const startBtn=document.getElementById('startBtn');const restartBtn=document.getElementById('restartBtn');
 let W=1280,H=720,dpr=1,running=false,last=0,charging=false,charge=0,score=0,streak=0,shotActive=false,shotPocketed=0;let mouse={x:W*.25,y:H*.5};let balls=[],particles=[],rings=[];let powerup={type:'none',shots:0};const table={x:120,y:105,w:1040,h:510,rail:30,pocketR:30};const colors=['#52f5ff','#ff4bd8','#ffe55b','#8d6cff','#ff795b','#62ff98','#ff3e69'];
 function resize(){const r=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.floor(r.width*dpr);canvas.height=Math.floor(r.height*dpr);W=r.width;H=r.height;ctx.setTransform(dpr,0,0,dpr,0,0)}addEventListener('resize',resize);resize();
@@ -67,5 +29,4 @@ function impact(x,y,color){if(Math.random()<.45)burst(x,y,color,5,.5)}function b
 function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
 function loop(t){if(!running&&gameOver.classList.contains('hidden'))return;const dt=Math.min(.025,(t-last)/1000||0);last=t;if(running)update(dt);draw();requestAnimationFrame(loop)}
 draw();
----FILE:styles.css---
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#02030a;color:#f7f7ff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{overflow:hidden;background:radial-gradient(circle at 50% 15%,#17104f 0,#070819 38%,#010208 80%)}.shell{height:100vh;display:grid;place-items:center;padding:18px}.game-wrap{position:relative;width:min(96vw,1280px);aspect-ratio:16/9;border:1px solid rgba(114,247,255,.35);border-radius:24px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,60,210,.2),0 0 50px rgba(0,220,255,.18),0 0 120px rgba(163,55,255,.14);background:#04050d}.game-wrap:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px);background-size:100% 4px;mix-blend-mode:overlay;z-index:4}canvas{display:block;width:100%;height:100%;cursor:crosshair;outline:none}.hud{position:absolute;inset:0 0 auto 0;z-index:8;display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px;pointer-events:none}.brand{font-weight:1000;letter-spacing:.12em;font-size:17px;text-shadow:0 0 14px rgba(83,245,255,.8)}.brand span{color:#ff48d7}.stats{display:flex;gap:20px}.stats div,.powerup{display:grid;gap:2px}.hud small{font-size:9px;letter-spacing:.22em;color:#8e9bc7}.hud strong{font-size:22px;line-height:1}.powerup{text-align:right}.powerup strong{color:#ffe45d;text-shadow:0 0 12px rgba(255,228,93,.6)}.overlay{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;background:radial-gradient(circle at center,rgba(28,16,77,.72),rgba(1,2,8,.94) 65%)}.hidden{display:none!important}.eyebrow{font-size:11px;letter-spacing:.34em;color:#73f4ff;margin-bottom:12px}.overlay h1,.overlay h2{margin:0;font-style:italic;font-weight:1000;letter-spacing:-.055em}.overlay h1{font-size:clamp(56px,9vw,118px);line-height:.78;background:linear-gradient(180deg,#fff 0,#bdf7ff 30%,#8c72ff 62%,#ff44cf 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 20px rgba(77,229,255,.3))}.overlay h1 span{font-size:.72em}.overlay h2{font-size:clamp(48px,8vw,92px)}.overlay p{max-width:720px;color:#c6cdeb;font-size:18px;margin:26px 0}.overlay button{border:0;border-radius:999px;padding:15px 28px;font-weight:1000;letter-spacing:.12em;color:#03040a;background:linear-gradient(90deg,#5cf4ff,#a769ff,#ff59cb);box-shadow:0 0 24px rgba(110,224,255,.3),0 0 50px rgba(255,75,203,.18);cursor:pointer}.meter{position:fixed;bottom:8px;width:min(92vw,760px);display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;font-size:10px;letter-spacing:.16em;color:#a8b3da}.track{height:10px;border:1px solid rgba(255,255,255,.22);border-radius:999px;overflow:hidden;background:#080b17}.track div{height:100%;width:0;background:linear-gradient(90deg,#54efff,#7c6cff,#ff4ed5,#ffda4e);box-shadow:0 0 16px #8c65ff}@media(max-width:800px){.shell{padding:6px}.hud{padding:10px}.brand{display:none}.stats{gap:10px}.hud strong{font-size:16px}.overlay p{font-size:14px}.meter{bottom:2px;width:96vw}}
+
