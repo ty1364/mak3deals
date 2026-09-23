@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Mak3Deals Savings Finder",
+  "version": "0.1.0",
+  "description": "Find verified Mak3Deals coupon codes while you shop.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["https://mak3deals.com/*"],
+  "background": {"service_worker": "background.js"},
+  "action": {"default_title": "Find Mak3Deals savings", "default_popup": "popup.html"}
+}

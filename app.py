@@ -137,6 +137,20 @@ def coupons():
     deals = db().execute("SELECT * FROM deals WHERE verified=1 AND expires_on >= ? ORDER BY expires_on ASC", (date.today().isoformat(),)).fetchall()
     return render_template("coupons.html", deals=deals)
 
+@app.route("/api/coupons")
+def coupon_api():
+    """Return only current, verified coupon codes for the browser extension."""
+    store = request.args.get("store", "").strip()
+    query = ("SELECT id, store, title, coupon_code, offer_terms, expires_on, checked_on, "
+             "link, affiliate_url FROM deals WHERE verified=1 AND coupon_code IS NOT NULL "
+             "AND TRIM(coupon_code) <> '' AND expires_on >= ?")
+    values = [date.today().isoformat()]
+    if store:
+        query += " AND lower(store)=lower(?)"
+        values.append(store[:80])
+    rows = db().execute(query + " ORDER BY checked_on DESC, expires_on ASC LIMIT 50", values).fetchall()
+    return jsonify({"coupons": [dict(row) for row in rows]})
+
 @app.route("/watchlist")
 def watchlist():
     return render_template("watchlist.html")
