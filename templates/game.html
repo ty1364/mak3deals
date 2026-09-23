@@ -1,38 +1,58 @@
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Blacklight Billiards · Mak3Deals</title>
-  <meta name="description" content="BLACKLIGHT BILLIARDS — neon arcade pool in your browser." />
-  <link rel="stylesheet" href="{{ url_for('static', filename='blacklight-billiards.css') }}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Void Strike · Mak3Deals</title>
+  <meta name="description" content="VOID STRIKE — a neon browser arcade shooter." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='void-strike.css', v='ec22cae') }}" />
 </head>
 <body>
   <a class="back-link" href="/">← Back to Mak3Deals</a>
   <main class="shell">
-    <section class="game-wrap">
-      <canvas id="game" width="1280" height="720" aria-label="Blacklight Billiards game"></canvas>
-      <div class="hud">
-        <div class="brand">BLACKLIGHT <span>BILLIARDS</span></div>
-        <div class="stats"><div><small>SCORE</small><strong id="score">0</strong></div><div><small>STREAK</small><strong id="streak">0</strong></div><div><small>BALLS LEFT</small><strong id="left">7</strong></div></div>
-        <div class="powerup"><small>POWER-UP</small><strong id="powerup">NONE</strong></div>
+    <section class="game-wrap" aria-label="VOID STRIKE game">
+      <canvas id="game" width="1280" height="720" tabindex="0"></canvas>
+
+      <div class="hud" aria-hidden="true">
+        <div class="hud-left">
+          <div class="brand">VOID <span>STRIKE</span></div>
+          <div class="stat"><small>SCORE</small><strong id="score">0</strong></div>
+          <div class="stat"><small>WAVE</small><strong id="wave">1</strong></div>
+          <div class="stat"><small>LIVES</small><strong id="lives">3</strong></div>
+        </div>
+        <div class="hud-right">
+          <div class="combo" id="combo">1X</div>
+          <div class="nova-wrap">
+            <div class="nova-label">SPACE — NOVA</div>
+            <div class="nova-track"><div class="nova-fill" id="novaFill"></div></div>
+          </div>
+          <div class="stat"><small>RAPID FIRE</small><strong id="rapidStatus">OFF</strong></div>
+        </div>
       </div>
-      <div id="startScreen" class="overlay">
-        <div class="eyebrow">ARCADE POOL // PROTOTYPE 01</div>
-        <h1>BLACKLIGHT<br><span>BILLIARDS</span></h1>
-        <p>Aim with the mouse. Hold left-click to charge. Release to shoot. Sink glowing balls, chain combos, and hit bonus pockets.</p>
-        <button id="startBtn">BREAK THE RACK</button>
+
+      <div class="start-screen" id="startScreen">
+        <div class="eyebrow">NEON SURVIVAL // PROTOTYPE 02</div>
+        <h1>VOID STRIKE</h1>
+        <p>Move the mouse to aim. Click to fire. Shoot power-ups to collect them. Rapid Fire sprays automatically. Hit <kbd>SPACE</kbd> to detonate a Nova Blast.</p>
+        <button id="startBtn">ENTER THE VOID</button>
       </div>
-      <div id="gameOver" class="overlay hidden">
-        <div class="eyebrow">TABLE CLEARED</div>
-        <h2>RUN COMPLETE</h2>
-        <p>Final score: <strong id="finalScore">0</strong></p>
-        <button id="restartBtn">RACK 'EM AGAIN</button>
+
+      <div class="game-over hidden" id="gameOver">
+        <div class="eyebrow">SIGNAL LOST</div>
+        <h2>YOU GOT ERASED.</h2>
+        <div class="final-score"><small>FINAL SCORE</small><strong id="finalScore">0</strong></div>
+        <button id="restartBtn">RUN IT BACK</button>
       </div>
+
+      <div class="boss-warning hidden" id="bossWarning">⚠ BOSS SIGNAL DETECTED ⚠</div>
     </section>
-    <div class="meter"><span>SHOT POWER</span><div class="track"><div id="powerFill"></div></div><span id="powerText">0%</span></div>
+
+    <p class="controls">MOUSE = AIM · CLICK = FIRE · SHOOT POWER-UPS · RAPID FIRE = AUTOMATIC · SPACE = NOVA</p>
   </main>
-  <script src="{{ url_for('static', filename='blacklight-billiards.js', v='f2c82db') }}"></script>
+
+  <script src="{{ url_for('static', filename='void-strike.js', v='ec22cae') }}"></script>
+  <script src="{{ url_for('static', filename='void-strike-aim.js', v='ec22cae') }}"></script>
+  <script src="{{ url_for('static', filename='void-strike-rapid.js', v='ec22cae') }}"></script>
 </body>
 </html>
+
