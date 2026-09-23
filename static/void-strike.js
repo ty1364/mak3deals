@@ -9,6 +9,7 @@ const novaFill = document.getElementById('novaFill');
 const startScreen = document.getElementById('startScreen');
 const gameOver = document.getElementById('gameOver');
 const finalScore = document.getElementById('finalScore');
+const personalBestEl = document.getElementById('personalBest');
 const bossWarning = document.getElementById('bossWarning');
 const startBtn = document.getElementById('startBtn');
 const restartBtn = document.getElementById('restartBtn');
@@ -344,6 +345,14 @@ function showBossWarning(){
 function endGame(){
   if(!running) return;
   running=false; mouse.down=false; finalScore.textContent=Math.floor(score).toLocaleString(); gameOver.classList.remove('hidden');
+  const current = {score:Math.floor(score), wave};
+  let best = current;
+  try {
+    const saved = JSON.parse(localStorage.getItem('voidStrikeBest') || 'null');
+    if(saved && Number(saved.score) > best.score) best = saved;
+    if(current.score >= Number(saved?.score || 0)) localStorage.setItem('voidStrikeBest', JSON.stringify(current));
+  } catch {}
+  if(personalBestEl) personalBestEl.textContent = `PERSONAL BEST ${Number(best.score).toLocaleString()} · WAVE ${best.wave}`;
   window.dispatchEvent(new CustomEvent('void-strike-ended', {detail:{score:Math.floor(score),wave,duration:Math.max(10,Math.floor((Date.now()-runStartedAt)/1000))}}));
 }
 function hexAlpha(hex,a){
@@ -363,6 +372,8 @@ const scoreMessage = document.getElementById('scoreMessage');
 const leaderboardList = document.getElementById('leaderboardList');
 const leaderboardMonth = document.getElementById('leaderboardMonth');
 let lastRun = null;
+
+try { playerName.value = localStorage.getItem('voidStrikeName') || ''; } catch {}
 
 window.addEventListener('void-strike-ended', event => { lastRun = event.detail; if(playerName) playerName.focus(); });
 
@@ -392,10 +403,10 @@ submitScoreBtn?.addEventListener('click', async () => {
     const response=await fetch('/api/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,...lastRun})});
     const data=await response.json();
     scoreMessage.textContent=data.message||data.error||'Done.';
+    if(response.ok) { try { localStorage.setItem('voidStrikeName', name); } catch {} }
     if(response.ok) loadLeaderboard();
   } catch { scoreMessage.textContent='Could not submit right now.'; }
   submitScoreBtn.disabled=false;
 });
 
 loadLeaderboard();
-
