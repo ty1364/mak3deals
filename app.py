@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import re
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request
 
@@ -21,6 +22,13 @@ def db():
         g.db = sqlite3.connect(DATABASE)
         g.db.row_factory = sqlite3.Row
     return g.db
+
+def price_number(value):
+    """Return a sortable price for display-only comparison groups."""
+    if not value:
+        return None
+    match = re.search(r"\d+(?:\.\d{1,2})?", value.replace(",", ""))
+    return float(match.group()) if match else None
 
 @app.teardown_appcontext
 def close_db(error):
@@ -65,7 +73,8 @@ def setup():
     existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
     for column, definition in {
         "deal_kind": "TEXT DEFAULT 'deal'", "sale_price": "TEXT", "regular_price": "TEXT",
-        "coupon_code": "TEXT", "offer_terms": "TEXT", "checked_on": "TEXT", "affiliate_url": "TEXT"
+        "coupon_code": "TEXT", "offer_terms": "TEXT", "checked_on": "TEXT", "affiliate_url": "TEXT",
+        "product_key": "TEXT", "image_url": "TEXT", "image_source": "TEXT"
     }.items():
         if column not in existing_columns:
             database.execute(f"ALTER TABLE deals ADD COLUMN {column} {definition}")
@@ -99,21 +108,21 @@ def setup():
         "Target Circle member savings", "Weekly savings on home projects", "Pet essentials and autoship savings",
         "Sale shoes and apparel", "Hotel and travel deals", "Seasonal savings and coupons", "Department store sale hub",
         "Get your deal in front of shoppers",
-        "Get your offer featured"]
+        "Get your offer featured", "Blackstone 28-in griddle rollback — $197", "Starbucks Fall coffee pods — $16",
+        "DEWALT drill kit — $199"]
     database.executemany("DELETE FROM deals WHERE title=?", [(title,) for title in retired_titles])
 
     # These entries come from official retailer pages and include the terms/date shown there.
     curated = [
-        ("Walmart", "Blackstone 28-in griddle rollback — $197", "Official Walmart Fall Deals page lists this Blackstone griddle at $197, down from $224; price and stock can change.", "Online", "Home", "https://www.walmart.com/shop/deals/announce", "2026-10-05", "offer", "$197", "$224", "", "Price and stock can change.", "2026-09-22"),
-        ("Walmart", "Starbucks Fall coffee pods — $16", "Official Walmart Fall Deals page lists the 20-count Starbucks K-Cup pack at $16, down from $19.17; price and stock can change.", "Online", "Groceries", "https://www.walmart.com/shop/deals/announce", "2026-10-05", "offer", "$16", "$19.17", "", "Price and stock can change.", "2026-09-22"),
-        ("Home Depot", "DEWALT drill kit — $199", "The official Home Depot circular lists the DEWALT 20V MAX XR drill/driver kit at $199, regularly $249, valid Sep 21–28, 2026.", "Online", "Home", "https://weeklycirculars.homedepot.com/h/m/homedepotusa/proad/grid/1234215", "2026-09-28", "offer", "$199", "$249", "", "Circular valid Sep 21–28, 2026.", "2026-09-22"),
-        ("Local business", "Submit a verified local offer", "Business owners can submit a real offer for review. We publish it only after checking the details and source link.", "All", "Local", "/submit", "2026-11-01", "submission", "", "", "", "Requires review before publication.", "2026-09-22")]
-    for store, title, description, city, category, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on in curated:
+        ("Walmart", "Lodge Chef Collection 10-in skillet — $29.90", "Live price check for the pre-seasoned Lodge Chef Collection 10-inch cast-iron skillet. This is a retailer price match, not an invented coupon.", "Online", "Kitchen", "https://www.walmart.com/ip/Lodge-Cast-Iron-Inoxidable-10-Inch/204048002?classType=REGULAR", "2026-09-24", "price-check", "$29.90", "", "", "Observed online Sep 23; product price, seller, stock, and shipping can change.", "2026-09-23", "lodge-chef-collection-10-skillet", "https://i5.walmartimages.com/seo/Lodge-Cast-Iron-Inoxidable-10-Inch_50d4e335-fdac-4c9a-82f8-dc5ca0031494.e737235b951799bcbbf771c805e0d677.jpeg?odnBg=FFFFFF&odnHeight=576&odnWidth=576", "Walmart product listing"),
+        ("Best Buy", "Lodge Chef Collection 10-in skillet — $29.90", "Live price check for the Lodge Chef Collection 10-inch pre-seasoned cast-iron skillet, model LC10SK. This is a retailer price match, not an invented coupon.", "Online", "Kitchen", "https://www.bestbuy.com/product/lodge-chef-collection-10-pre-seasoned-cast-iron-skillet-kitchen-essential-for-frying-searing-black/J79YYFX38C", "2026-09-24", "price-check", "$29.90", "", "", "Observed online Sep 23; product price, seller, stock, and shipping can change.", "2026-09-23", "lodge-chef-collection-10-skillet", "https://i5.walmartimages.com/seo/Lodge-Cast-Iron-Inoxidable-10-Inch_50d4e335-fdac-4c9a-82f8-dc5ca0031494.e737235b951799bcbbf771c805e0d677.jpeg?odnBg=FFFFFF&odnHeight=576&odnWidth=576", "Walmart product listing"),
+        ("Local business", "Submit a verified local offer", "Business owners can submit a real offer for review. We publish it only after checking the details and source link.", "All", "Local", "/submit", "2026-11-01", "submission", "", "", "", "Requires review before publication.", "2026-09-22", "", "", "")]
+    for store, title, description, city, category, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source in curated:
         exists = database.execute("SELECT 1 FROM deals WHERE store=? AND title=?", (store, title)).fetchone()
         if not exists:
-            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at,deal_kind,sale_price,regular_price,coupon_code,offer_terms,checked_on) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, expires_on, 1 if store != "Local business" else 0, datetime.now().isoformat(), deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on))
+            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at,deal_kind,sale_price,regular_price,coupon_code,offer_terms,checked_on,product_key,image_url,image_source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, expires_on, 1 if store != "Local business" else 0, datetime.now().isoformat(), deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source))
         else:
-            database.execute("UPDATE deals SET description=?, link=?, expires_on=?, deal_kind=?, sale_price=?, regular_price=?, coupon_code=?, offer_terms=?, checked_on=? WHERE store=? AND title=?", (description, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, store, title))
+            database.execute("UPDATE deals SET description=?, link=?, expires_on=?, deal_kind=?, sale_price=?, regular_price=?, coupon_code=?, offer_terms=?, checked_on=?, product_key=?, image_url=?, image_source=? WHERE store=? AND title=?", (description, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source, store, title))
     database.commit()
 
 @app.route("/")
@@ -128,9 +137,27 @@ def home():
         query += " AND (store LIKE ? OR title LIKE ? OR description LIKE ? OR city LIKE ?)"
         values.extend([f"%{search}%"] * 4)
     deals = db().execute(query + " ORDER BY verified DESC, expires_on ASC", values).fetchall()
+    comparison_counts = {}
+    for deal in deals:
+        if deal["product_key"]:
+            comparison_counts[deal["product_key"]] = comparison_counts.get(deal["product_key"], 0) + 1
     cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city")]
     categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
-    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, search=search)
+    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, search=search, comparison_counts=comparison_counts)
+
+@app.route("/compare/<product_key>")
+def compare_product(product_key):
+    offers = db().execute(
+        "SELECT * FROM deals WHERE product_key=? AND verified=1 AND expires_on >= ? ORDER BY sale_price ASC, checked_on DESC",
+        (product_key, date.today().isoformat()),
+    ).fetchall()
+    if not offers:
+        abort(404)
+    priced = [(price_number(offer["sale_price"]), offer) for offer in offers]
+    known_prices = [item for item in priced if item[0] is not None]
+    lowest_price = min((item[0] for item in known_prices), default=None)
+    best_ids = {offer["id"] for price, offer in known_prices if price == lowest_price}
+    return render_template("compare.html", product=offers[0], offers=offers, best_ids=best_ids)
 
 @app.route("/coupons")
 def coupons():
@@ -159,7 +186,7 @@ def offer_api():
     if not search:
         return jsonify({"offers": []})
     query = ("SELECT id, store, title, description, sale_price, regular_price, offer_terms, "
-             "expires_on, checked_on, link, affiliate_url FROM deals "
+             "expires_on, checked_on, link, affiliate_url, product_key, image_url FROM deals "
              "WHERE verified=1 AND expires_on >= ?")
     values = [date.today().isoformat()]
     if store:
