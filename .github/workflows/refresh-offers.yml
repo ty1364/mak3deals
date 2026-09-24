@@ -1,0 +1,21 @@
+name: Refresh Mak3Deals offer sources
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake the site and refresh verified source health
+        env:
+          REFRESH_TOKEN: ${{ secrets.MAK3DEALS_REFRESH_TOKEN }}
+        run: >-
+          curl --fail --silent --show-error --retry 3 --retry-delay 10
+          --max-time 120 --request POST
+          --header "X-Mak3Deals-Refresh-Token: ${REFRESH_TOKEN}"
+          https://mak3deals.com/internal/refresh-offers

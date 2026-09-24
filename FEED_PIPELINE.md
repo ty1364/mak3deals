@@ -22,7 +22,13 @@ migrate the app to a shared database such as Render Postgres first. Render also
 charges a minimum of $1/month per cron job, even though the task may only run
 for a few seconds.
 
-Once the token is configured, a Render cron command can call:
+The repository includes a GitHub Actions schedule at `.github/workflows/refresh-offers.yml`.
+After `MAK3DEALS_REFRESH_TOKEN` is added as a repository Actions secret, it
+checks the site every 30 minutes and can also be started manually from the
+Actions tab. This avoids paying for a separate Render Cron Job while the
+project is small.
+
+If we later choose Render Cron instead, its command can call:
 
 ```text
 curl -fsS -X POST https://mak3deals.com/internal/refresh-offers -H "X-Mak3Deals-Refresh-Token: $MAK3DEALS_REFRESH_TOKEN"
