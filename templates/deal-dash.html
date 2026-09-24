@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Deal Dash · Mak3Deals</title>
+  <meta name="description" content="Deal Dash, a free Mak3Deals browser game." />
+  <meta name="google-adsense-account" content="ca-pub-3943554631291586" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='deal-dash.css') }}" />
+</head>
+<body>
+  <a class="dash-back" href="/games">← Game Room</a>
+  <main class="dash-shell">
+    <section class="dash-panel" aria-label="Deal Dash game">
+      <header class="dash-head"><div><p class="eyebrow">MAK3DEALS // FREE SKILL GAME</p><h1>DEAL <span>DASH</span></h1></div><a href="/affiliate-disclosure">Ad disclosure</a></header>
+      <div class="dash-stats"><div><small>SCORE</small><strong id="score">0</strong></div><div><small>STREAK</small><strong id="streak">0</strong></div><div><small>TIME</small><strong id="time">30</strong></div><div><small>LEVEL</small><strong id="level">1</strong></div><div><small>LIVES</small><strong id="lives">3</strong></div></div>
+      <div id="arena" class="arena" tabindex="0"><div id="intro" class="dash-overlay"><p class="eyebrow">THE AISLE IS MOVING</p><h2>Tap the savings.</h2><p>Grab the green deal cards. Avoid red full-price traps. Every level gets faster.</p><button id="startBtn">START DASH</button></div><div id="end" class="dash-overlay hidden"><p class="eyebrow">AISLE CLOSED</p><h2>RUN COMPLETE</h2><strong class="final-score" id="finalScore">0</strong><div class="score-submit"><label for="playerName">Submit this run to the monthly board</label><div><input id="playerName" maxlength="20" autocomplete="nickname" placeholder="Your name" /><button id="submitScoreBtn" type="button">SUBMIT</button></div><p id="scoreMessage" role="status"></p></div><button id="restartBtn">RUN IT BACK</button></div></div>
+      <p class="dash-help">Tap/click discounted cards for points. Red cards cost a life. Missed deals disappear. No purchase required.</p>
+    </section>
+    <section class="dash-board" aria-labelledby="boardTitle"><div class="board-heading"><div><p class="eyebrow">MONTHLY SKILL BOARD</p><h2 id="boardTitle">DEAL DASH // TOP RUNS</h2></div><span id="leaderboardMonth">Loading…</span></div><p class="board-note">Scores are reviewed before any prize promotion is awarded.</p><ol id="leaderboardList"><li>Loading scores…</li></ol></section>
+  </main>
+  <script src="{{ url_for('static', filename='deal-dash.js', v='1') }}"></script>
+</body>
+</html>

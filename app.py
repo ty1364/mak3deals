@@ -9,7 +9,7 @@ DATABASE = "deals.db"
 SITE_AD_TV = """
 <style>
 .hero,.simple-hero{position:relative}
-.site-ad-tv{position:absolute;top:24px;right:8%;z-index:4;width:min(42%,500px);min-height:238px;padding:14px;border:2px solid rgba(255,82,211,.75);border-radius:12px;background:#08091a;color:#f7f7ff;box-shadow:0 0 24px rgba(255,55,207,.3),inset 0 0 30px rgba(38,111,190,.16);font:800 10px/1.3 system-ui,sans-serif;letter-spacing:.12em;pointer-events:auto}
+.site-ad-tv{position:absolute;top:24px;right:8%;z-index:4;width:min(42%,500px);min-height:238px;padding:14px;border:2px solid rgba(255,82,211,.75);border-radius:12px;background:#08091a;color:#f7f7ff;box-shadow:0 0 24px rgba(255,55,207,.3),inset 0 0 30px rgba(38,111,190,.16);font:800 10px/1.3 system-ui,sans-serif;letter-spacing:.12em}
 .site-ad-tv-top,.site-ad-tv-foot{display:flex;justify-content:space-between;color:#aeb8e4}.site-ad-live{color:#ff5dbe}.site-ad-tv-screen{display:flex;align-items:center;justify-content:space-between;min-height:72px;margin:6px 0;padding:10px;border:1px solid rgba(92,238,255,.55);background:radial-gradient(circle at 50% 40%,#233a86,#0b102c 70%)}.site-ad-tv-screen strong{font-size:16px;line-height:.8;color:#fff;text-shadow:0 0 10px #50eaff}.site-ad-tv-screen em{color:#ff5bd7;font-style:normal}.site-ad-tv-screen small{color:#bdefff;font-size:8px;line-height:1.4;text-align:right;letter-spacing:.06em}@media(max-width:700px){.site-ad-tv{right:8px;bottom:8px;transform:scale(.8);transform-origin:bottom right}}
 .site-ad-tv-screen{flex:1;min-height:180px;margin:10px 0;padding:22px;border-color:rgba(92,238,255,.7);background:radial-gradient(circle at 50% 40%,#233a86,#0b102c 70%)}.site-ad-tv-screen strong{font-size:clamp(22px,3vw,38px)}.site-ad-tv-screen small{font-size:11px}
 @media(max-width:700px){.site-ad-tv{position:relative;top:auto;right:auto;width:100%;min-height:150px;margin:28px 0 0;transform:none}.site-ad-tv-screen{min-height:100px}.site-ad-tv-screen strong{font-size:24px}}
@@ -238,19 +238,33 @@ def watchlist():
 def game():
     return render_template("game.html")
 
+@app.route("/games")
+def games():
+    return render_template("games.html")
+
+@app.route("/game/deal-dash")
+def deal_dash():
+    return render_template("deal-dash.html")
+
 @app.route("/api/leaderboard")
 def leaderboard():
     month = date.today().strftime("%Y-%m")
+    game_name = request.args.get("game", "void-strike").strip().lower()
+    if game_name not in {"void-strike", "deal-dash"}:
+        game_name = "void-strike"
     rows = db().execute(
         "SELECT player_name, score, wave, submitted_at FROM game_scores "
         "WHERE game=? AND month=? ORDER BY score DESC, wave DESC, id ASC LIMIT 25",
-        ("void-strike", month),
+        (game_name, month),
     ).fetchall()
-    return jsonify({"game": "void-strike", "month": month, "scores": [dict(row) for row in rows]})
+    return jsonify({"game": game_name, "month": month, "scores": [dict(row) for row in rows]})
 
 @app.route("/api/score", methods=["POST"])
 def submit_score():
     payload = request.get_json(silent=True) or {}
+    game_name = str(payload.get("game", "void-strike")).strip().lower()
+    if game_name not in {"void-strike", "deal-dash"}:
+        return jsonify({"error": "That game is not available."}), 400
     name = " ".join(str(payload.get("name", "")).split())[:20]
     try:
         score = int(payload.get("score", 0))
@@ -267,7 +281,7 @@ def submit_score():
         "INSERT INTO game_scores "
         "(game, month, player_name, score, wave, duration_seconds, submitted_at) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        ("void-strike", month, name, score, wave, duration, datetime.now().isoformat()),
+        (game_name, month, name, score, wave, duration, datetime.now().isoformat()),
     )
     db().commit()
     return jsonify({"ok": True, "message": "Score submitted for review."})

@@ -1,4 +1,4 @@
-.ad-tv{pointer-events:auto}
+.game-wrap .ad-tv{pointer-events:none}
 .ad-player-screen{gap:10px}
 .ad-player-copy{display:grid;gap:5px;min-width:0;letter-spacing:.02em}
 .ad-player-copy strong{font-size:clamp(13px,2.2vw,24px);line-height:1.02;letter-spacing:-.04em}

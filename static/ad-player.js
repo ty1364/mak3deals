@@ -3,7 +3,7 @@
   if (!players.length) return;
 
   const housePlacements = [
-    { provider: "Mak3Deals house promo", title: "Take a shopping break.", detail: "Play Void Strike and chase the monthly high score.", href: "/game", cta: "Play now →", tone: "pink" },
+    { provider: "Mak3Deals house promo", title: "Take a shopping break.", detail: "Play Void Strike or Deal Dash and chase the monthly high score.", href: "/games", cta: "Play now →", tone: "pink" },
     { provider: "Direct sponsor placement", title: "Put your business in front of shoppers.", detail: "Verified local and online offers can appear here.", href: "/submit", cta: "Submit a deal →", tone: "blue" },
     { provider: "Google AdSense slot", title: "Google ads are coming.", detail: "This placement is ready for AdSense approval and ad-unit setup.", href: "/affiliate-disclosure", cta: "View disclosure →", tone: "gold" }
   ];
@@ -31,10 +31,10 @@
     player.querySelector(".ad-player-screen").innerHTML = `${image}<div class="ad-player-copy ${escapeHtml(placement.tone)}"><span class="ad-player-provider">${escapeHtml(placement.provider)}</span><strong>${escapeHtml(placement.title)}</strong><span class="ad-player-detail">${escapeHtml(placement.detail)}</span><a class="ad-player-cta" href="${escapeHtml(placement.href)}">${escapeHtml(placement.cta)}</a></div>`;
   }
 
-  fetch("/api/offers?store=Walmart", { headers: { Accept: "application/json" } })
+  fetch("/api/offers", { headers: { Accept: "application/json" } })
     .then((response) => response.ok ? response.json() : { offers: [] })
     .then((data) => {
-      const placements = [...(data.offers || []).slice(0, 1).map(offerPlacement), ...housePlacements];
+      const placements = [...(data.offers || []).slice(0, 3).map(offerPlacement), ...housePlacements];
       players.forEach((player) => {
         let index = 0;
         render(player, placements[index]);
