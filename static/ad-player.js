@@ -31,10 +31,15 @@
     player.querySelector(".ad-player-screen").innerHTML = `${image}<div class="ad-player-copy ${escapeHtml(placement.tone)}"><span class="ad-player-provider">${escapeHtml(placement.provider)}</span><strong>${escapeHtml(placement.title)}</strong><span class="ad-player-detail">${escapeHtml(placement.detail)}</span><a class="ad-player-cta" href="${escapeHtml(placement.href)}">${escapeHtml(placement.cta)}</a></div>`;
   }
 
-  fetch("/api/offers?v=ba96013", { cache: "no-store", headers: { Accept: "application/json" } })
-    .then((response) => response.ok ? response.json() : { offers: [] })
-    .then((data) => {
-      const placements = [...(data.offers || []).slice(0, 3).map(offerPlacement), ...housePlacements];
+  const verifiedStoreFeeds = ["Walmart", "Best Buy"].map((store) =>
+    fetch(`/api/offers?store=${encodeURIComponent(store)}&v=4fa3930`, { cache: "no-store", headers: { Accept: "application/json" } })
+      .then((response) => response.ok ? response.json() : { offers: [] })
+  );
+
+  Promise.all(verifiedStoreFeeds)
+    .then((feeds) => {
+      const verifiedOffers = feeds.flatMap((data) => data.offers || []);
+      const placements = [...verifiedOffers.slice(0, 4).map(offerPlacement), ...housePlacements];
       players.forEach((player) => {
         let index = 0;
         render(player, placements[index]);
