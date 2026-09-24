@@ -12,12 +12,14 @@
 <main>
   <section class="simple-hero compare-hero"><p class="eyebrow">VERIFIED PRICE CHECK</p><h1>{{ product.title }}</h1><p>We only place listings together when they have the same verified product key. Prices, stock, delivery, and memberships can change at the retailer.</p></section>
   <section class="comparison-wrap">
-    <p class="compare-count">{{ offers|length }} verified retailer {% if offers|length == 1 %}listing{% else %}listings{% endif %}</p>
+    <div class="product-overview">
+      <div class="product-overview-photo {% if not product.image_url %}photo-fallback{% endif %}">{% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.title }}" loading="lazy">{% else %}<span>{{ product.category }}</span>{% endif %}</div>
+      <div><p class="compare-count">{{ offers|length }} verified retailer {% if offers|length == 1 %}listing{% else %}listings{% endif %}</p><h2>Pick the store that works best for you.</h2><p>Same verified product, current prices side by side. We show a tie when prices are the same.</p></div>
+    </div>
     <div class="comparison-grid">
       {% for offer in offers %}
       <article class="comparison-card {% if offer.id in best_ids %}best-price{% endif %}">
         {% if offer.id in best_ids %}<span class="best-badge">Lowest verified price</span>{% endif %}
-        <div class="deal-photo compact {% if not offer.image_url %}photo-fallback{% endif %}">{% if offer.image_url %}<img src="{{ offer.image_url }}" alt="{{ offer.title }}" loading="lazy">{% else %}<span>{{ offer.category }}</span>{% endif %}</div>
         <p class="store">{{ offer.store }} · {{ offer.city }}</p><h2>{{ offer.title }}</h2>
         {% if offer.sale_price %}<div class="price-row"><strong>{{ offer.sale_price }}</strong>{% if offer.regular_price %}<del>{{ offer.regular_price }}</del>{% endif %}</div>{% endif %}
         <p>{{ offer.description }}</p><p class="terms"><strong>Terms:</strong> {{ offer.offer_terms or 'See retailer for details.' }}</p>

@@ -136,11 +136,20 @@ def home():
     if search:
         query += " AND (store LIKE ? OR title LIKE ? OR description LIKE ? OR city LIKE ?)"
         values.extend([f"%{search}%"] * 4)
-    deals = db().execute(query + " ORDER BY verified DESC, expires_on ASC", values).fetchall()
+    raw_deals = db().execute(query + " ORDER BY verified DESC, expires_on ASC", values).fetchall()
     comparison_counts = {}
-    for deal in deals:
+    for deal in raw_deals:
         if deal["product_key"]:
             comparison_counts[deal["product_key"]] = comparison_counts.get(deal["product_key"], 0) + 1
+    # Matched retailer listings are one shopping opportunity, not duplicate cards.
+    deals, shown_product_keys = [], set()
+    for deal in raw_deals:
+        product_key = deal["product_key"]
+        if product_key and comparison_counts.get(product_key, 0) > 1:
+            if product_key in shown_product_keys:
+                continue
+            shown_product_keys.add(product_key)
+        deals.append(deal)
     cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city")]
     categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
     return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, search=search, comparison_counts=comparison_counts)
