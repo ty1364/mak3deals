@@ -23,11 +23,11 @@ function render(coupons) {
 function renderOffers(offers) {
   if (!offers.length) return '<p class="muted">No matching verified Mak3Deals offer yet. We will not recommend an unrelated product.</p>';
   return '<h3>Mak3Deals matches</h3>' + offers.map(offer => `
-    <article class="offer"><strong>${escapeHtml(offer.title)}</strong>
+    <article class="offer">${offer.image_url && /^https:\/\//i.test(offer.image_url) ? `<img class="offer-image" src="${escapeHtml(offer.image_url)}" alt="${escapeHtml(offer.title)}" loading="lazy">` : ''}<strong>${escapeHtml(offer.title)}</strong>
       <span class="offer-price">${escapeHtml(offer.sale_price || "See offer")}</span>
       ${offer.regular_price ? `<span class="muted"> regularly ${escapeHtml(offer.regular_price)}</span>` : ''}
       <p class="muted">Checked ${escapeHtml(offer.checked_on || "recently")} · Ends ${escapeHtml(offer.expires_on)}</p>
-      <a href="https://mak3deals.com/click/${offer.id}" target="_blank">Get deal →</a>
+      <a href="${offer.product_key ? `https://mak3deals.com/compare/${encodeURIComponent(offer.product_key)}` : `https://mak3deals.com/click/${encodeURIComponent(offer.id)}`}" target="_blank">${offer.product_key ? 'Compare stores →' : 'Get deal →'}</a>
     </article>`).join('');
 }
 
