@@ -22,7 +22,7 @@ function render(coupons) {
 
 function renderOffers(offers) {
   if (!offers.length) return '<p class="muted">No matching verified Mak3Deals offer yet. We will not recommend an unrelated product.</p>';
-  return '<h3>Mak3Deals matches</h3>' + offers.map(offer => `
+  return '<h3>Verified Mak3Deals savings</h3>' + offers.map(offer => `
     <article class="offer">${offer.image_url && /^https:\/\//i.test(offer.image_url) ? `<img class="offer-image" src="${escapeHtml(offer.image_url)}" alt="${escapeHtml(offer.title)}" loading="lazy">` : ''}<strong>${escapeHtml(offer.title)}</strong>
       <span class="offer-price">${escapeHtml(offer.sale_price || "See offer")}</span>
       ${offer.regular_price ? `<span class="muted"> regularly ${escapeHtml(offer.regular_price)}</span>` : ''}
@@ -57,9 +57,18 @@ chrome.tabs.query({active: true, currentWindow: true}, tabs => {
       chrome.runtime.sendMessage({type: "find-coupons", store: details.store}, response => {
         if (chrome.runtime.lastError || !response?.ok) { status.textContent = "Savings service is temporarily unavailable."; return; }
         render(response.coupons);
-        chrome.runtime.sendMessage({type: "find-offers", store: details.store, query: details.title}, offerResponse => {
-          if (offerResponse?.ok) results.insertAdjacentHTML('afterbegin', renderOffers(offerResponse.offers));
-        });
+        const showOffers = offerResponse => {
+          if (offerResponse?.ok && offerResponse.offers?.length) {
+            results.insertAdjacentHTML('afterbegin', renderOffers(offerResponse.offers));
+          } else {
+            // Store and category pages often have no single product title. Fall
+            // back to current verified offers from that retailer, with photos.
+            chrome.runtime.sendMessage({type: "find-offers", store: details.store}, fallbackResponse => {
+              if (fallbackResponse?.ok) results.insertAdjacentHTML('afterbegin', renderOffers(fallbackResponse.offers || []));
+            });
+          }
+        };
+        chrome.runtime.sendMessage({type: "find-offers", store: details.store, query: details.title}, showOffers);
       });
     })
     .catch(() => { status.textContent = "This page does not allow savings detection."; });

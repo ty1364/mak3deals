@@ -189,11 +189,9 @@ def coupon_api():
 
 @app.route("/api/offers")
 def offer_api():
-    """Return current verified offers that match a product title."""
+    """Return current verified offers that match a product title or store."""
     store = request.args.get("store", "").strip()
     search = " ".join(request.args.get("q", "").lower().split())
-    if not search:
-        return jsonify({"offers": []})
     query = ("SELECT id, store, title, description, sale_price, regular_price, offer_terms, "
              "expires_on, checked_on, link, affiliate_url, product_key, image_url FROM deals "
              "WHERE verified=1 AND expires_on >= ?")
@@ -201,6 +199,9 @@ def offer_api():
     if store:
         query += " AND lower(store)=lower(?)"
         values.append(store[:80])
+    if not search:
+        rows = db().execute(query + " ORDER BY checked_on DESC, expires_on ASC LIMIT 10", values).fetchall()
+        return jsonify({"offers": [dict(row) for row in rows]})
     rows = db().execute(query + " ORDER BY checked_on DESC, expires_on ASC LIMIT 100", values).fetchall()
     tokens = [token for token in search.split() if len(token) > 2]
     matches = []
