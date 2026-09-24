@@ -3,7 +3,7 @@
   if (!players.length) return;
 
   const housePlacements = [
-    { provider: "Mak3Deals house promo", title: "Take a shopping break.", detail: "Play Void Strike or Deal Dash and chase the monthly high score.", href: "/games", cta: "Play now →", tone: "pink" },
+    { provider: "Mak3Deals house promo", title: "Take a shopping break.", detail: "Survive Void Strike or solve a Tile Shift puzzle.", href: "/games", cta: "Play now →", tone: "pink" },
     { provider: "Direct sponsor placement", title: "Put your business in front of shoppers.", detail: "Verified local and online offers can appear here.", href: "/submit", cta: "Submit a deal →", tone: "blue" },
     { provider: "Google AdSense slot", title: "Google ads are coming.", detail: "This placement is ready for AdSense approval and ad-unit setup.", href: "/affiliate-disclosure", cta: "View disclosure →", tone: "gold" }
   ];
