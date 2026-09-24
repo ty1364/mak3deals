@@ -150,7 +150,7 @@ def home():
                 continue
             shown_product_keys.add(product_key)
         deals.append(deal)
-    cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city")]
+    cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city") if r[0] not in {"All", "Online"}]
     categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
     return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, search=search, comparison_counts=comparison_counts)
 
