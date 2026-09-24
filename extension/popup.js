@@ -47,8 +47,8 @@ chrome.tabs.query({active: true, currentWindow: true}, tabs => {
     const title = document.querySelector("h1")?.innerText?.trim() || document.title || "";
     return {store: match ? match[1] : "", title: title.slice(0, 180), supported: Boolean(match), checkoutLike: fields.length > 0};
   }})
-    .then(results => {
-      const details = results[0]?.result || {};
+    .then(injectionResults => {
+      const details = injectionResults[0]?.result || {};
       if (!details.supported) {
         status.textContent = "This store is not supported yet.";
         return;
