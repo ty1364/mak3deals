@@ -132,13 +132,25 @@ def home():
     city = request.args.get("city", "All")
     category = request.args.get("category", "All")
     search = request.args.get("q", "").strip()
+    sort = request.args.get("sort", "featured")
+    sort_order = {
+        "featured": "verified DESC, expires_on ASC, id DESC",
+        "price_asc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) ASC, verified DESC",
+        "price_desc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) DESC, verified DESC",
+        "name_asc": "LOWER(title) ASC, verified DESC",
+        "name_desc": "LOWER(title) DESC, verified DESC",
+        "newest": "created_at DESC, verified DESC",
+        "oldest": "created_at ASC, verified DESC",
+    }
+    if sort not in sort_order:
+        sort = "featured"
     query, values = "SELECT * FROM deals WHERE expires_on >= ?", [date.today().isoformat()]
     if city != "All": query += " AND city = ?"; values.append(city)
     if category != "All": query += " AND category = ?"; values.append(category)
     if search:
         query += " AND (store LIKE ? OR title LIKE ? OR description LIKE ? OR city LIKE ?)"
         values.extend([f"%{search}%"] * 4)
-    raw_deals = db().execute(query + " ORDER BY verified DESC, expires_on ASC", values).fetchall()
+    raw_deals = db().execute(query + " ORDER BY " + sort_order[sort], values).fetchall()
     comparison_counts = {}
     for deal in raw_deals:
         if deal["product_key"]:
@@ -154,7 +166,8 @@ def home():
         deals.append(deal)
     cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city") if r[0] not in {"All", "Online"}]
     categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
-    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, search=search, comparison_counts=comparison_counts)
+    sort_options = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
+    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=sort_options, search=search, comparison_counts=comparison_counts)
 
 @app.route("/compare/<product_key>")
 def compare_product(product_key):

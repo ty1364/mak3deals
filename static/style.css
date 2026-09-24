@@ -4,6 +4,7 @@
 .filters label{gap:7px;color:#172033;font-size:.9rem}
 .filters label span{display:block;letter-spacing:.02em}
 .filters select{min-width:210px;height:48px;padding:0 40px 0 14px;border:1px solid #b8c8d3;border-radius:10px;background:#fff;color:#172033;font-weight:700;box-shadow:0 3px 10px #21304412;cursor:pointer}
+.filters select#sort-select{min-width:220px}
 .filters select:focus{outline:3px solid #167c7230;border-color:#167c72}
 .filters button{height:48px;padding:0 22px;border-radius:10px;box-shadow:0 5px 12px #ed7d2440;transition:transform .15s ease,filter .15s ease}
 .filters button:hover{transform:translateY(-1px);filter:brightness(1.05)}
