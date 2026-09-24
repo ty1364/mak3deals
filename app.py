@@ -1,7 +1,10 @@
 from datetime import date, datetime, timedelta
+import hmac
+import os
 import re
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request
+from offer_pipeline import ensure_feed_schema, refresh_sources
 
 app = Flask(__name__)
 DATABASE = "deals.db"
@@ -72,6 +75,7 @@ def setup():
         submitted_at TEXT NOT NULL, review_status TEXT DEFAULT 'pending');
         CREATE INDEX IF NOT EXISTS idx_game_scores_month_score
         ON game_scores (game, month, score DESC);""")
+    ensure_feed_schema(database)
     existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
     for column, definition in {
         "deal_kind": "TEXT DEFAULT 'deal'", "sale_price": "TEXT", "regular_price": "TEXT",
@@ -229,6 +233,43 @@ def offer_api():
             matches.append(item)
     matches.sort(key=lambda item: (-item["match_score"], item["expires_on"]))
     return jsonify({"offers": matches[:10]})
+
+@app.route("/api/feed-status")
+def feed_status_api():
+    """Public health summary; it never exposes credentials or unpublished data."""
+    ensure_feed_schema(db())
+    latest = db().execute(
+        "SELECT started_at, completed_at, published_count, retired_count, error_count, mode, message "
+        "FROM feed_runs ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    sources = db().execute(
+        "SELECT source_key, store, url, mode, enabled, http_status, status, checked_at, offer_count, message "
+        "FROM feed_sources ORDER BY store"
+    ).fetchall()
+    return jsonify({
+        "generator": "Mak3Deals verified offer health",
+        "latest_run": dict(latest) if latest else None,
+        "sources": [dict(source) for source in sources],
+    })
+
+@app.route("/internal/refresh-offers", methods=["POST"])
+def internal_refresh_offers():
+    """Protected hook for a future Render cron job or another trusted scheduler."""
+    expected = os.environ.get("MAK3DEALS_REFRESH_TOKEN", "").strip()
+    provided = request.headers.get("X-Mak3Deals-Refresh-Token", "").strip()
+    if not expected or not provided or not hmac.compare_digest(expected, provided):
+        return jsonify({"error": "Not authorized."}), 403
+    return jsonify(refresh_sources(db()))
+
+@app.route("/feed-status")
+def feed_status_page():
+    ensure_feed_schema(db())
+    latest = db().execute(
+        "SELECT started_at, completed_at, published_count, retired_count, error_count, mode, message "
+        "FROM feed_runs ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    sources = db().execute("SELECT * FROM feed_sources ORDER BY store").fetchall()
+    return render_template("feed-status.html", latest=latest, sources=sources)
 
 @app.route("/watchlist")
 def watchlist():

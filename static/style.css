@@ -9,3 +9,5 @@
 .filters button{height:48px;padding:0 22px;border-radius:10px;box-shadow:0 5px 12px #ed7d2440;transition:transform .15s ease,filter .15s ease}
 .filters button:hover{transform:translateY(-1px);filter:brightness(1.05)}
 @media(max-width:700px){.filters{gap:12px;padding-top:18px;padding-bottom:18px}.filters select,.filters button{width:100%}}
+ .legal-card{margin:24px 0;padding:22px;border:1px solid #d8dce8;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(18,33,58,.06)}
+.feed-source{display:grid;grid-template-columns:1fr auto;gap:6px 18px;padding:16px 0;border-top:1px solid #e5e8ef}.feed-source h3{margin:0 0 4px}.feed-source p{margin:0;color:#536078}.feed-source small{grid-column:1/-1;color:#6d7890}.feed-source-status{align-self:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;text-transform:capitalize}.feed-source-status.reachable{background:#dff8ec;color:#087342}.feed-source-status.pending{background:#fff1c7;color:#8b5c00}.feed-source-status.error{background:#ffe2e5;color:#a7192e}.feed-source-status.skipped{background:#e8edf5;color:#55657e}

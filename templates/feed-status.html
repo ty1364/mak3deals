@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Offer feed status · Mak3Deals</title>
+  <meta name="google-adsense-account" content="ca-pub-3943554631291586">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="navbar">
+    <a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a>
+    <nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/submit">Submit a Deal</a></nav>
+  </header>
+  <main class="legal-wrap">
+    <p class="eyebrow">FEED CONTROL</p>
+    <h1>Verified offer generator</h1>
+    <p>The generator checks approved retailer sources, records feed health, and retires expired listings. It does not invent coupon codes, prices, or product photos.</p>
+    <section class="legal-card">
+      <h2>Latest run</h2>
+      {% if latest %}
+        <p><strong>{{ latest[1] or latest[0] }}</strong> · {{ latest[5] }}</p>
+        <p>{{ latest[6] }}</p>
+        <p>Imported: {{ latest[2] }} · Retired: {{ latest[3] }} · Errors: {{ latest[4] }}</p>
+      {% else %}
+        <p>No scheduled run has completed yet.</p>
+      {% endif %}
+    </section>
+    <section class="legal-card">
+      <h2>Sources</h2>
+      {% for source in sources %}
+        <article class="feed-source">
+          <div><h3>{{ source[1] }}</h3><p><a href="{{ source[2] }}" rel="nofollow sponsored">Official source</a> · {{ source[3] }}</p></div>
+          <div class="feed-source-status {{ source[6] }}">{{ source[6] }}</div>
+          <small>{{ source[9] or 'Waiting for first check.' }}</small>
+        </article>
+      {% endfor %}
+    </section>
+  </main>
+  <footer><strong>Mak3Deals</strong><span><a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/affiliate-disclosure">Affiliate disclosure</a> · <a href="/contact">Contact</a></span></footer>
+</body>
+</html>
