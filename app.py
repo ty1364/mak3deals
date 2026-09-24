@@ -16,7 +16,7 @@ SITE_AD_TV = """
 .ad-player-screen{gap:16px}.ad-player-copy{display:grid;gap:7px;min-width:0;letter-spacing:.02em}.ad-player-copy strong{font-size:clamp(18px,2.4vw,30px);line-height:1.02;letter-spacing:-.04em}.ad-player-copy.pink strong{color:#ff9ee8}.ad-player-copy.blue strong{color:#8cecff}.ad-player-copy.gold strong{color:#ffd36f}.ad-player-copy.cyan strong{color:#a7f7ff}.ad-player-provider,.ad-player-detail{font-size:10px;line-height:1.35;letter-spacing:.04em;color:#bdefff}.ad-player-provider{color:#ff7bdd;text-transform:uppercase}.ad-player-detail{color:#e1e6ff}.ad-player-image{width:88px;height:88px;flex:0 0 88px;object-fit:cover;border-radius:10px;border:1px solid rgba(115,244,255,.5);background:#fff}.ad-player-cta,.ad-player-disclosure{color:#8cecff;text-decoration:none;letter-spacing:.04em}.ad-player-cta{justify-self:start;padding:7px 10px;border:1px solid rgba(115,244,255,.55);border-radius:999px;font-size:10px}.ad-player-cta:hover,.ad-player-disclosure:hover{color:#fff;background:rgba(115,244,255,.12)}.ad-player-disclosure{font-size:9px}
 </style>
 <aside class="site-ad-tv" data-ad-player aria-label="Mak3Deals advertising channel"><div class="site-ad-tv-top"><span>AD CHANNEL</span><span class="site-ad-live">● LIVE</span></div><div class="site-ad-tv-screen ad-player-screen"><div class="ad-player-copy"><strong>MAK3<br><em>DEALS</em></strong><span class="ad-player-detail">Loading verified placements…</span></div></div><div class="site-ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div></aside>
-<script src="/static/ad-player.js?v=4925c9f" defer></script>
+<script src="/static/ad-player.js?v=b43bf1a" defer></script>
 """
 
 def db():
