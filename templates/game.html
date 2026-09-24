@@ -15,15 +15,6 @@
     <section class="game-wrap" aria-label="VOID STRIKE game">
       <canvas id="game" width="1280" height="720" tabindex="0"></canvas>
 
-      <aside class="ad-tv" data-ad-player aria-label="Mak3Deals advertising channel">
-        <div class="ad-tv-top"><span>AD CHANNEL</span><span class="ad-live">● LIVE</span></div>
-        <div class="ad-tv-screen ad-player-screen">
-          <div class="ad-scanline"></div>
-          <div class="ad-player-copy"><strong>MAK3<br><em>DEALS</em></strong><span class="ad-player-detail">Loading verified placements…</span></div>
-        </div>
-        <div class="ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div>
-      </aside>
-
       <div class="hud" aria-hidden="true">
         <div class="hud-left">
           <div class="brand">VOID <span>STRIKE</span></div>
@@ -67,6 +58,13 @@
     </section>
 
     <p class="controls">MOUSE = AIM · CLICK = FIRE · SHOOT POWER-UPS · RAPID FIRE = AUTOMATIC · SPACE = NOVA</p>
+    <aside class="ad-tv game-ad-below" data-ad-player aria-label="Mak3Deals advertising channel">
+      <div class="ad-tv-top"><span>AD CHANNEL</span><span class="ad-live">● LIVE</span></div>
+      <div class="ad-tv-screen ad-player-screen">
+        <div class="ad-player-copy"><strong>MAK3 DEALS</strong><span class="ad-player-detail">Loading verified placements…</span></div>
+      </div>
+      <div class="ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div>
+    </aside>
     <section class="leaderboard" aria-labelledby="leaderboardTitle">
       <div class="leaderboard-heading">
         <div><span class="eyebrow">MONTHLY SKILL BOARD</span><h2 id="leaderboardTitle">VOID STRIKE // TOP RUNS</h2></div>
@@ -80,7 +78,7 @@
   <script src="{{ url_for('static', filename='void-strike.js', v='ec22cae') }}"></script>
   <script src="{{ url_for('static', filename='void-strike-aim.js', v='ec22cae') }}"></script>
   <script src="{{ url_for('static', filename='void-strike-rapid.js', v='ec22cae') }}"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='ad-player.css', v='b028b3b') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ad-player.css', v='below-arena-1') }}">
   <script src="{{ url_for('static', filename='ad-player.js', v='b028b3b') }}" defer></script>
 </body>
 </html>

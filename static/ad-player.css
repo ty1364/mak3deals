@@ -1,4 +1,8 @@
 .game-wrap .ad-tv{pointer-events:none}
+.shell > .game-ad-below{position:static;inset:auto;z-index:auto;width:min(100%,760px);padding:12px;transform:none;pointer-events:auto;flex-shrink:0}
+.game-ad-below .ad-tv-screen{min-height:100px;padding:16px}
+.game-ad-below .ad-player-provider,.game-ad-below .ad-player-detail,.game-ad-below .ad-player-disclosure{font-size:11px}
+.game-ad-below .ad-player-cta{font-size:12px;padding:8px 12px}
 .ad-player-screen{gap:10px}
 .ad-player-copy{display:grid;gap:5px;min-width:0;letter-spacing:.02em}
 .ad-player-copy strong{font-size:clamp(13px,2.2vw,24px);line-height:1.02;letter-spacing:-.04em}
