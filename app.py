@@ -153,8 +153,23 @@ def home():
             shown_product_keys.add(product_key)
         deals.append(deal)
     cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city") if r[0] not in {"All", "Online"}]
-    categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
-    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, search=search, comparison_counts=comparison_counts)
+    categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals WHERE expires_on >= ? ORDER BY category", (date.today().isoformat(),))]
+    category_count_query = "SELECT category, product_key FROM deals WHERE expires_on >= ?"
+    category_count_values = [date.today().isoformat()]
+    if city != "All":
+        category_count_query += " AND city = ?"
+        category_count_values.append(city)
+    category_count_query += " ORDER BY category"
+    category_counts = {}
+    counted_product_keys = set()
+    for row in db().execute(category_count_query, category_count_values):
+        product_key = row["product_key"]
+        if product_key and product_key in counted_product_keys:
+            continue
+        if product_key:
+            counted_product_keys.add(product_key)
+        category_counts[row["category"]] = category_counts.get(row["category"], 0) + 1
+    return render_template("index.html", deals=deals, cities=cities, categories=categories, category_counts=category_counts, selected_city=city, selected_category=category, search=search, comparison_counts=comparison_counts, result_count=len(deals))
 
 @app.route("/compare/<product_key>")
 def compare_product(product_key):
