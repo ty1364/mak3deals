@@ -3,7 +3,7 @@
   const MAX_LEVEL = 1000;
   const COLORS = ['red','orange','yellow','green','blue','purple','cyan','pink'];
   let level = readNumber('bubble-crush-level', 1);
-  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false;
+  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false, pointerStart = null, suppressClick = false;
 
   function readNumber(key, fallback) {
     try { const value = Number(localStorage.getItem(key)); return Number.isFinite(value) && value > 0 ? value : fallback; } catch { return fallback; }
@@ -78,10 +78,32 @@
     board.forEach((color, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '') + (animate ? ' drop-in' : '');
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
-      button.addEventListener('click', () => choose(index)); boardEl.appendChild(button);
+      button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } void choose(index); });
+      button.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        if (solved || animating || moves <= 0) return;
+        pointerStart = {index, x: event.clientX, y: event.clientY};
+        button.setPointerCapture?.(event.pointerId);
+      });
+      button.addEventListener('pointerup', event => {
+        if (!pointerStart || pointerStart.index !== index) return;
+        const start = pointerStart; pointerStart = null;
+        const dx = event.clientX - start.x, dy = event.clientY - start.y;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+        event.preventDefault(); suppressClick = true;
+        const target = swipeDestination(start.index, dx, dy);
+        if (target < 0) { selected = -1; el('message').textContent = 'Swipe one space toward the board.'; render(); return; }
+        selected = start.index; render(); void choose(target);
+      });
+      boardEl.appendChild(button);
     });
     el('level').textContent = level + ' / ' + MAX_LEVEL; el('moves').textContent = moves; el('score').textContent = score.toLocaleString(); el('goal').textContent = Math.min(cleared, config.target) + ' / ' + config.target;
     el('levelProgress').style.width = Math.max(.1, level / MAX_LEVEL * 100) + '%'; el('timer').textContent = clock(elapsed);
+  }
+  function swipeDestination(index, dx, dy) {
+    const row = Math.floor(index / config.size), col = index % config.size;
+    if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? (col < config.size - 1 ? index + 1 : -1) : (col > 0 ? index - 1 : -1);
+    return dy > 0 ? (row < config.size - 1 ? index + config.size : -1) : (row > 0 ? index - config.size : -1);
   }
   async function choose(index) {
     if (solved || animating || moves <= 0) return;
@@ -135,7 +157,7 @@
   function start() {
     config = levelConfig(level); moves = config.moves; score = 0; cleared = 0; started = 0; elapsed = 0; solved = false; selected = -1; makeBoard(); el('next').hidden = true;
     el('message').textContent = 'Level ' + level + ' · Clear ' + config.target + ' bubbles in ' + config.moves + ' swaps.';
-    el('instruction').textContent = level < 45 ? 'Swap adjacent bubbles to make lines of three or more. Cascades earn combo bonuses.' : 'Frozen bubbles take two neighboring matches to break. ' + config.colors + ' colors are in play — plan your chain carefully.';
+    el('instruction').textContent = level < 45 ? 'Swipe a bubble one space in any direction to swap. Only lines of three or more clear.' : 'Swipe one space at a time. Frozen bubbles take two neighboring matches to break. ' + config.colors + ' colors are in play — plan your chain carefully.';
     render(); bestText();
   }
   el('next').addEventListener('click', () => { if (level < MAX_LEVEL) { level++; start(); } });
