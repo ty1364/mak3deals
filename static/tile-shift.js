@@ -178,7 +178,11 @@
     for (let col = 0; col < config.size; col++) {
       const kept = [];
       for (let row = config.size - 1; row >= 0; row--) { const index = row * config.size + col; if (board[index] !== null) kept.push({color: board[index], ice: frozen[index]}); }
-      for (let row = config.size - 1; row >= 0; row--) { const item = kept[config.size - 1 - row]; const index = row * config.size + col; board[index] = item.color; frozen[index] = item.ice; }
+      for (let row = config.size - 1; row >= 0; row--) {
+        const item = kept[config.size - 1 - row], index = row * config.size + col;
+        board[index] = item ? item.color : null;
+        frozen[index] = item ? item.ice : 0;
+      }
       for (let row = config.size - kept.length - 1; row >= 0; row--) { const index = row * config.size + col; board[index] = refillColor(row, col); frozen[index] = 0; }
     }
   }
