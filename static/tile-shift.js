@@ -98,9 +98,19 @@
     board.forEach((color, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '') + (animate ? ' drop-in' : '');
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
-      button.addEventListener('click', () => { void choose(index); });
-      if (supportsPointerEvents) button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
-      else {
+      if (supportsPointerEvents) {
+        button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
+        button.addEventListener('pointerup', event => {
+          if (!pointerStart || pointerStart.index !== index) return;
+          const start = pointerStart;
+          const dx = event.clientX - start.x, dy = event.clientY - start.y;
+          if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) {
+            pointerStart = null;
+            void choose(index);
+          }
+        });
+      } else {
+        button.addEventListener('click', () => { void choose(index); });
         button.addEventListener('mousedown', event => { if (event.button === 0) beginGesture(index, event); });
         button.addEventListener('touchstart', event => { const touch = event.changedTouches[0]; if (touch) beginGesture(index, touch); }, {passive: true});
       }
