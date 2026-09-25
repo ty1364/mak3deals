@@ -2,6 +2,7 @@
   const el = id => document.getElementById(id);
   const MAX_LEVEL = 1000;
   const COLORS = ['red','orange','yellow','green','blue','purple','cyan','pink'];
+  const supportsPointerEvents = 'PointerEvent' in window;
   let level = readNumber('bubble-crush-level', 1);
   let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false, pointerStart = null, suppressClick = false, suppressClickTimer = null;
 
@@ -83,21 +84,26 @@
   }
   function render(animate = false) {
     const boardEl = el('board'); boardEl.style.setProperty('--size', config.size); boardEl.replaceChildren();
-    boardEl.onpointermove = trackGesture;
-    boardEl.onpointerup = finishSwipe;
-    boardEl.onpointercancel = () => { pointerStart = null; };
-    boardEl.onmousemove = trackGesture;
-    boardEl.onmouseup = finishSwipe;
-    boardEl.ontouchmove = event => { const touch = event.changedTouches[0]; if (touch) trackGesture(touch); };
-    boardEl.ontouchend = event => { const touch = event.changedTouches[0]; if (touch) finishSwipe(touch); };
-    boardEl.ontouchcancel = () => { pointerStart = null; };
+    if (supportsPointerEvents) {
+      boardEl.onpointermove = trackGesture;
+      boardEl.onpointerup = finishSwipe;
+      boardEl.onpointercancel = () => { pointerStart = null; };
+    } else {
+      boardEl.onmousemove = trackGesture;
+      boardEl.onmouseup = finishSwipe;
+      boardEl.ontouchmove = event => { const touch = event.changedTouches[0]; if (touch) trackGesture(touch); };
+      boardEl.ontouchend = event => { const touch = event.changedTouches[0]; if (touch) finishSwipe(touch); };
+      boardEl.ontouchcancel = () => { pointerStart = null; };
+    }
     board.forEach((color, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '') + (animate ? ' drop-in' : '');
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
       button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; clearTimeout(suppressClickTimer); return; } void choose(index); });
-      button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
-      button.addEventListener('mousedown', event => { if (event.button === 0) beginGesture(index, event); });
-      button.addEventListener('touchstart', event => { const touch = event.changedTouches[0]; if (touch) beginGesture(index, touch); }, {passive: true});
+      if (supportsPointerEvents) button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
+      else {
+        button.addEventListener('mousedown', event => { if (event.button === 0) beginGesture(index, event); });
+        button.addEventListener('touchstart', event => { const touch = event.changedTouches[0]; if (touch) beginGesture(index, touch); }, {passive: true});
+      }
       boardEl.appendChild(button);
     });
     el('level').textContent = level + ' / ' + MAX_LEVEL; el('moves').textContent = moves; el('score').textContent = score.toLocaleString(); el('goal').textContent = Math.min(cleared, config.target) + ' / ' + config.target;
