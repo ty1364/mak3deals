@@ -3,7 +3,7 @@
   const MAX_LEVEL = 1000;
   const COLORS = ['red','orange','yellow','green','blue','purple','cyan','pink'];
   let level = readNumber('bubble-crush-level', 1);
-  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1;
+  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false;
 
   function readNumber(key, fallback) {
     try { const value = Number(localStorage.getItem(key)); return Number.isFinite(value) && value > 0 ? value : fallback; } catch { return fallback; }
@@ -73,34 +73,36 @@
     const colors = board.slice().sort(() => Math.random() - .5); let attempts = 0;
     do { board = colors.slice().sort(() => Math.random() - .5); attempts++; } while ((findMatches().length || !hasValidSwap()) && attempts < 150);
   }
-  function render() {
+  function render(animate = false) {
     const boardEl = el('board'); boardEl.style.setProperty('--size', config.size); boardEl.replaceChildren();
     board.forEach((color, index) => {
-      const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '');
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '') + (animate ? ' drop-in' : '');
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
       button.addEventListener('click', () => choose(index)); boardEl.appendChild(button);
     });
     el('level').textContent = level + ' / ' + MAX_LEVEL; el('moves').textContent = moves; el('score').textContent = score.toLocaleString(); el('goal').textContent = Math.min(cleared, config.target) + ' / ' + config.target;
     el('levelProgress').style.width = Math.max(.1, level / MAX_LEVEL * 100) + '%'; el('timer').textContent = clock(elapsed);
   }
-  function choose(index) {
-    if (solved || moves <= 0) return;
+  async function choose(index) {
+    if (solved || animating || moves <= 0) return;
     if (selected < 0) { selected = index; el('message').textContent = 'Now choose an adjacent bubble to swap.'; render(); return; }
     if (selected === index) { selected = -1; el('message').textContent = 'Select a bubble to begin a swap.'; render(); return; }
     if (!neighbors(selected).includes(index)) { selected = index; el('message').textContent = 'That bubble is too far away. Choose a neighbor.'; render(); return; }
     const first = selected; selected = -1; swap(first, index);
     if (!findMatches().length) { swap(first, index); el('message').textContent = 'That swap does not make three. Try another move.'; render(); return; }
-    if (!started) started = Date.now(); moves--; resolveCascades();
+    if (!started) started = Date.now(); moves--; animating = true; await resolveCascades(); animating = false;
     if (cleared >= config.target) finish(true); else if (moves <= 0) finish(false);
     else if (!hasValidSwap()) { shufflePlayableBoard(); el('message').textContent = 'No matches available — the board was reshuffled.'; }
     render();
   }
-  function resolveCascades() {
+  async function resolveCascades() {
     let combo = 0, matches = findMatches();
     while (matches.length && combo < 50) {
-      combo++; matches.forEach(index => { board[index] = null; cleared++; neighbors(index).forEach(next => { if (frozen[next]) frozen[next]--; }); });
+      combo++; matches.forEach(index => el('board').children[index]?.classList.add('matched'));
+      await new Promise(resolve => setTimeout(resolve, 260));
+      matches.forEach(index => { board[index] = null; cleared++; neighbors(index).forEach(next => { if (frozen[next]) frozen[next]--; }); });
       score += matches.length * matches.length * 10 + combo * 35 + (matches.length >= 4 ? matches.length * 10 : 0);
-      collapse(); matches = findMatches();
+      collapse(); render(true); await new Promise(resolve => setTimeout(resolve, 220)); matches = findMatches();
     }
     if (combo > 1) el('message').textContent = 'Cascade x' + combo + '! Keep it going.';
     else el('message').textContent = 'Match cleared. Find your next three.';
