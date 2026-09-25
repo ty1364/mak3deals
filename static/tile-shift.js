@@ -75,6 +75,9 @@
   }
   function render(animate = false) {
     const boardEl = el('board'); boardEl.style.setProperty('--size', config.size); boardEl.replaceChildren();
+    boardEl.onpointermove = event => {
+      if (pointerStart && Math.max(Math.abs(event.clientX - pointerStart.x), Math.abs(event.clientY - pointerStart.y)) >= 18) finishSwipe(event);
+    };
     boardEl.onpointerup = finishSwipe;
     boardEl.onpointercancel = () => { pointerStart = null; };
     board.forEach((color, index) => {
