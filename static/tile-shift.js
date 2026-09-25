@@ -3,7 +3,7 @@
   const MAX_LEVEL = 1000;
   const COLORS = ['red','orange','yellow','green','blue','purple','cyan','pink'];
   let level = readNumber('bubble-crush-level', 1);
-  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false, pointerStart = null, suppressClick = false;
+  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false, pointerStart = null, suppressClick = false, suppressClickTimer = null;
 
   function readNumber(key, fallback) {
     try { const value = Number(localStorage.getItem(key)); return Number.isFinite(value) && value > 0 ? value : fallback; } catch { return fallback; }
@@ -94,7 +94,7 @@
     board.forEach((color, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '') + (animate ? ' drop-in' : '');
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
-      button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } void choose(index); });
+      button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; clearTimeout(suppressClickTimer); return; } void choose(index); });
       button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
       button.addEventListener('mousedown', event => { if (event.button === 0) beginGesture(index, event); });
       button.addEventListener('touchstart', event => { const touch = event.changedTouches[0]; if (touch) beginGesture(index, touch); }, {passive: true});
@@ -108,7 +108,7 @@
     const start = pointerStart; pointerStart = null;
     const dx = event.clientX - start.x, dy = event.clientY - start.y;
     if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
-    event.preventDefault(); suppressClick = true;
+    event.preventDefault(); suppressClick = true; clearTimeout(suppressClickTimer); suppressClickTimer = setTimeout(() => { suppressClick = false; }, 450);
     const target = swipeDestination(start.index, dx, dy);
     if (target < 0) { selected = -1; el('message').textContent = 'Swipe one space toward the board.'; render(); return; }
     selected = start.index; render(); void choose(target);
