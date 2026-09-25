@@ -4,7 +4,7 @@
   const COLORS = ['red','orange','yellow','green','blue','purple','cyan','pink'];
   const supportsPointerEvents = 'PointerEvent' in window;
   let level = readNumber('bubble-crush-level', 1);
-  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false, pointerStart = null, pointerTapHandled = false;
+  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false, pointerStart = null, suppressNextClick = false;
 
   function readNumber(key, fallback) {
     try { const value = Number(localStorage.getItem(key)); return Number.isFinite(value) && value > 0 ? value : fallback; } catch { return fallback; }
@@ -76,13 +76,6 @@
   }
   function beginGesture(index, event) {
     if (solved || animating || moves <= 0) return;
-    if (selected >= 0) {
-      pointerStart = null;
-      pointerTapHandled = true;
-      void choose(index);
-      return;
-    }
-    pointerTapHandled = false;
     pointerStart = {index, x: event.clientX, y: event.clientY};
     if (event.pointerId != null && event.currentTarget?.setPointerCapture) event.currentTarget.setPointerCapture(event.pointerId);
   }
@@ -107,7 +100,7 @@
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
       if (supportsPointerEvents) {
         button.addEventListener('click', () => {
-          if (pointerTapHandled) { pointerTapHandled = false; return; }
+          if (suppressNextClick) { suppressNextClick = false; return; }
           void choose(index);
         });
         button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
@@ -129,6 +122,7 @@
     event.preventDefault();
     const target = swipeDestination(start.index, dx, dy);
     if (target < 0) { selected = -1; el('message').textContent = 'Swipe one space toward the board.'; render(); return; }
+    suppressNextClick = true;
     selected = start.index; render(); void choose(target);
   }
   function swipeDestination(index, dx, dy) {
@@ -203,7 +197,7 @@
     el('best').textContent = best ? 'Level ' + level + ' best: ' + best.score.toLocaleString() + ' points · ' + best.moves + ' moves left' : 'Level ' + level + ' · ' + config.colors + ' colors · ' + (config.frozenCount ? config.frozenCount + ' frozen bubbles' : 'no frozen bubbles yet');
   }
   function start() {
-    config = levelConfig(level); moves = config.moves; score = 0; cleared = 0; started = 0; elapsed = 0; solved = false; selected = -1; makeBoard(); el('next').hidden = true;
+    config = levelConfig(level); moves = config.moves; score = 0; cleared = 0; started = 0; elapsed = 0; solved = false; selected = -1; pointerStart = null; suppressNextClick = false; makeBoard(); el('next').hidden = true;
     el('message').textContent = 'Level ' + level + ' · Clear ' + config.target + ' bubbles in ' + config.moves + ' swaps.';
     el('instruction').textContent = level < 45 ? 'Swipe a bubble one space in any direction to swap. Only lines of three or more clear.' : 'Swipe one space at a time. Frozen bubbles take two neighboring matches to break. ' + config.colors + ' colors are in play — plan your chain carefully.';
     render(); bestText();
