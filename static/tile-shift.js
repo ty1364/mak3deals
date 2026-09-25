@@ -73,23 +73,31 @@
     const colors = board.slice().sort(() => Math.random() - .5); let attempts = 0;
     do { board = colors.slice().sort(() => Math.random() - .5); attempts++; } while ((findMatches().length || !hasValidSwap()) && attempts < 150);
   }
+  function beginGesture(index, event) {
+    if (solved || animating || moves <= 0) return;
+    pointerStart = {index, x: event.clientX, y: event.clientY};
+    if (event.pointerId != null && event.currentTarget?.setPointerCapture) event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  function trackGesture(event) {
+    if (pointerStart && Math.max(Math.abs(event.clientX - pointerStart.x), Math.abs(event.clientY - pointerStart.y)) >= 18) finishSwipe(event);
+  }
   function render(animate = false) {
     const boardEl = el('board'); boardEl.style.setProperty('--size', config.size); boardEl.replaceChildren();
-    boardEl.onpointermove = event => {
-      if (pointerStart && Math.max(Math.abs(event.clientX - pointerStart.x), Math.abs(event.clientY - pointerStart.y)) >= 18) finishSwipe(event);
-    };
+    boardEl.onpointermove = trackGesture;
     boardEl.onpointerup = finishSwipe;
     boardEl.onpointercancel = () => { pointerStart = null; };
+    boardEl.onmousemove = trackGesture;
+    boardEl.onmouseup = finishSwipe;
+    boardEl.ontouchmove = event => { const touch = event.changedTouches[0]; if (touch) trackGesture(touch); };
+    boardEl.ontouchend = event => { const touch = event.changedTouches[0]; if (touch) finishSwipe(touch); };
+    boardEl.ontouchcancel = () => { pointerStart = null; };
     board.forEach((color, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '') + (animate ? ' drop-in' : '');
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
       button.addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } void choose(index); });
-      button.addEventListener('pointerdown', event => {
-        if (event.pointerType === 'mouse' && event.button !== 0) return;
-        if (solved || animating || moves <= 0) return;
-        pointerStart = {index, x: event.clientX, y: event.clientY};
-        button.setPointerCapture?.(event.pointerId);
-      });
+      button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
+      button.addEventListener('mousedown', event => { if (event.button === 0) beginGesture(index, event); });
+      button.addEventListener('touchstart', event => { const touch = event.changedTouches[0]; if (touch) beginGesture(index, touch); }, {passive: true});
       boardEl.appendChild(button);
     });
     el('level').textContent = level + ' / ' + MAX_LEVEL; el('moves').textContent = moves; el('score').textContent = score.toLocaleString(); el('goal').textContent = Math.min(cleared, config.target) + ' / ' + config.target;
