@@ -29,25 +29,18 @@
   }
   function findMatches() {
     const found = new Set(), size = config.size;
-    const addRun = run => { if (run.length >= 3) run.forEach(index => found.add(index)); };
-    for (let row = 0; row < size; row++) {
+    const scanLine = indexes => {
       let run = [];
-      for (let col = 0; col < size; col++) {
-        const index = row * size + col;
-        if (board[index] !== null && !frozen[index] && (run.length === 0 || board[index] === board[run[0]])) run.push(index);
-        else { addRun(run); run = board[index] !== null && !frozen[index] ? [index] : []; }
-      }
-      addRun(run);
-    }
-    for (let col = 0; col < size; col++) {
-      let run = [];
-      for (let row = 0; row < size; row++) {
-        const index = row * size + col;
-        if (board[index] !== null && !frozen[index] && (run.length === 0 || board[index] === board[run[0]])) run.push(index);
-        else { addRun(run); run = board[index] !== null && !frozen[index] ? [index] : []; }
-      }
-      addRun(run);
-    }
+      const addRun = () => { if (run.length >= 3) run.forEach(index => found.add(index)); };
+      indexes.forEach(index => {
+        const playable = board[index] !== null && !frozen[index];
+        if (playable && (run.length === 0 || board[index] === board[run[0]])) run.push(index);
+        else { addRun(); run = playable ? [index] : []; }
+      });
+      addRun();
+    };
+    for (let row = 0; row < size; row++) scanLine(Array.from({length: size}, (_, col) => row * size + col));
+    for (let col = 0; col < size; col++) scanLine(Array.from({length: size}, (_, row) => row * size + col));
     return Array.from(found);
   }
   function swap(a, b) { const color = board[a]; board[a] = board[b]; board[b] = color; const ice = frozen[a]; frozen[a] = frozen[b]; frozen[b] = ice; }
@@ -62,17 +55,24 @@
     return false;
   }
   function makeBoard() {
-    const cells = config.size * config.size; let attempts = 0;
-    do {
+    const cells = config.size * config.size;
+    for (let attempts = 0; attempts < 10000; attempts++) {
       board = Array.from({length: cells}, randomColor); frozen = Array(cells).fill(0);
       const positions = Array.from({length: cells}, (_, i) => i).sort(() => Math.random() - .5);
       positions.slice(0, config.frozenCount).forEach(index => { frozen[index] = 2; });
-      attempts++;
-    } while ((findMatches().length || !hasValidSwap()) && attempts < 150);
+      if (!findMatches().length && hasValidSwap()) return;
+    }
+    board = Array.from({length: cells}, (_, index) => (Math.floor(index / config.size) * 2 + index) % config.colors);
+    frozen = Array(cells).fill(0);
   }
   function shufflePlayableBoard() {
-    const colors = board.slice().sort(() => Math.random() - .5); let attempts = 0;
-    do { board = colors.slice().sort(() => Math.random() - .5); attempts++; } while ((findMatches().length || !hasValidSwap()) && attempts < 150);
+    const colors = board.filter(color => color !== null).sort(() => Math.random() - .5);
+    for (let attempts = 0; attempts < 10000; attempts++) {
+      board = Array.from({length: config.size * config.size}, (_, index) => colors[index % colors.length]);
+      board.sort(() => Math.random() - .5);
+      if (!findMatches().length && hasValidSwap()) return;
+    }
+    makeBoard();
   }
   function beginGesture(index, event) {
     if (solved || animating || moves <= 0) return;
