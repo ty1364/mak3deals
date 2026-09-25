@@ -90,12 +90,13 @@
     if (!neighbors(selected).includes(index)) { selected = index; el('message').textContent = 'That bubble is too far away. Choose a neighbor.'; render(); return; }
     const first = selected; selected = -1; swap(first, index);
     if (!findMatches().length) { swap(first, index); el('message').textContent = 'That swap does not make three. Try another move.'; render(); return; }
-    if (!started) started = Date.now(); moves--; animating = true; await resolveCascades(); animating = false;
+    if (!started) started = Date.now(); moves--; animating = true; await resolveCascades(); animating = false; selected = -1;
     if (cleared >= config.target) finish(true); else if (moves <= 0) finish(false);
     else if (!hasValidSwap()) { shufflePlayableBoard(); el('message').textContent = 'No matches available — the board was reshuffled.'; }
     render();
   }
   async function resolveCascades() {
+    selected = -1;
     let combo = 0, matches = findMatches();
     while (matches.length && combo < 50) {
       combo++; matches.forEach(index => el('board').children[index]?.classList.add('matched'));
