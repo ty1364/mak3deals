@@ -1,65 +1,109 @@
 (() => {
   const el = id => document.getElementById(id);
-  let level = 1, size = 3, tiles = [], initial = [], moves = 0, started = 0, elapsed = 0, solved = false;
-  const neighbors = (index, n) => [index-n,index+n,index-1,index+1].filter(i => i>=0 && i<n*n && Math.abs(i%n-index%n)+Math.abs(Math.floor(i/n)-Math.floor(index/n))===1);
-  const complete = a => a.every((v,i) => v === (i+1)%a.length);
-  const clock = seconds => `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;
-  function bestText() {
-    try { const best = JSON.parse(localStorage.getItem(`tile-shift-best-${level}`)); el('best').textContent = best ? `Level ${level} best: ${best.moves} moves · ${clock(best.seconds)}` : 'Solve this level to set your first personal best.'; }
-    catch { el('best').textContent = 'Personal-best storage unavailable.'; }
+  const MAX_LEVEL = 1000;
+  const COLORS = ['red','orange','yellow','green','blue','purple','cyan','pink'];
+  let level = readNumber('bubble-crush-level', 1);
+  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1;
+
+  function readNumber(key, fallback) {
+    try { const value = Number(localStorage.getItem(key)); return Number.isFinite(value) && value > 0 ? value : fallback; } catch { return fallback; }
   }
-  function render(focusValue) {
-    const blank = tiles.indexOf(0), available = neighbors(blank,size);
-    el('board').style.setProperty('--size',size);
-    el('board').replaceChildren(...tiles.map((value,index) => {
-      const tile = document.createElement(value ? 'button' : 'div');
-      tile.className = value ? `tile${value===index+1?' correct':''}${available.includes(index)?' movable':''}` : 'empty';
-      if (value) { tile.textContent=value; tile.dataset.value=value; tile.setAttribute('aria-label',`Tile ${value}${available.includes(index)?', slide into empty space':''}`); tile.disabled=solved; tile.addEventListener('click',()=>move(index)); }
-      else tile.setAttribute('aria-label','Empty space');
-      return tile;
-    }));
-    el('level').textContent=level; el('moves').textContent=moves;
-    if(focusValue) el('board').querySelector(`[data-value="${focusValue}"]`)?.focus({preventScroll:true});
+  function save(key, value) { try { localStorage.setItem(key, String(value)); } catch {} }
+  function clock(seconds) { return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0'); }
+  function levelConfig(number) {
+    const size = number <= 20 ? 7 : number <= 150 ? 8 : number <= 500 ? 9 : 10;
+    const colors = Math.min(8, 4 + Math.floor((number - 1) / 140));
+    const moves = Math.max(16, 30 - Math.floor((number - 1) / 72));
+    const cells = size * size;
+    const target = Math.min(Math.floor(cells * .72), Math.round(cells * (.24 + Math.min(.32, number / 3200))));
+    const frozenCount = number < 45 ? 0 : Math.min(Math.floor(cells * .18), Math.floor((number - 35) / 22));
+    return {size, colors, moves, target, frozenCount};
   }
-  function move(index) {
-    const blank=tiles.indexOf(0);
-    if(solved || !neighbors(blank,size).includes(index)) return;
-    if(!started) started=Date.now();
-    const value=tiles[index]; [tiles[index],tiles[blank]]=[tiles[blank],tiles[index]]; moves++;
-    solved=complete(tiles);
-    if(solved) {
-      elapsed=Math.floor((Date.now()-started)/1000);
-      el('message').textContent=`Solved! ${moves} moves in ${clock(elapsed)}.`;
-      el('next').hidden=false;
-      try { const key=`tile-shift-best-${level}`, old=JSON.parse(localStorage.getItem(key)); if(!old || moves<old.moves || (moves===old.moves && elapsed<old.seconds)) localStorage.setItem(key,JSON.stringify({moves,seconds:elapsed})); } catch {}
-      bestText();
+  function randomColor() { return Math.floor(Math.random() * config.colors); }
+  function neighbors(index) {
+    const row = Math.floor(index / config.size), col = index % config.size, result = [];
+    if (row) result.push(index - config.size); if (row < config.size - 1) result.push(index + config.size);
+    if (col) result.push(index - 1); if (col < config.size - 1) result.push(index + 1);
+    return result;
+  }
+  function groupAt(index) {
+    if (board[index] === null || board[index] === undefined) return [];
+    const color = board[index], group = [], queue = [index], seen = new Set([index]);
+    while (queue.length) {
+      const current = queue.shift(); group.push(current);
+      neighbors(current).forEach(next => { if (!seen.has(next) && board[next] === color) { seen.add(next); queue.push(next); } });
     }
-    render(value);
-    if(solved) el('next').focus({preventScroll:true});
+    return group;
   }
-  function start(newPuzzle=true) {
-    size=level<=3?3:4;
-    if(newPuzzle) {
-      tiles=Array.from({length:size*size},(_,i)=>(i+1)%(size*size));
-      let blank=tiles.length-1, previous=-1;
-      const steps=Math.min(180,8+level*8);
-      // Legal moves from the solved board guarantee every puzzle is solvable.
-      for(let i=0;i<steps;i++) { const options=neighbors(blank,size).filter(v=>v!==previous); const next=options[Math.floor(Math.random()*options.length)]; [tiles[blank],tiles[next]]=[tiles[next],tiles[blank]];previous=blank;blank=next; }
-      if(complete(tiles)) { const next=neighbors(blank,size)[0]; [tiles[blank],tiles[next]]=[tiles[next],tiles[blank]]; }
-      initial=[...tiles];
-    } else tiles=[...initial];
-    moves=0;started=0;elapsed=0;solved=false;
-    el('timer').textContent='0:00';el('next').hidden=true;
-    el('message').textContent=`Level ${level} · ${size} × ${size}${level===1?' warm-up':''}`;
-    render();bestText();
+  function hasMove() { return board.some((value, index) => value !== null && groupAt(index).length >= 2); }
+  function makeBoard() {
+    const cells = config.size * config.size;
+    board = Array.from({length: cells}, randomColor);
+    frozen = Array(cells).fill(0);
+    const positions = Array.from({length: cells}, (_, i) => i).sort(() => Math.random() - .5);
+    positions.slice(0, config.frozenCount).forEach(index => { frozen[index] = 2; });
+    let guard = 0; while (!hasMove() && guard++ < 20) board = Array.from({length: cells}, randomColor);
   }
-  el('next').addEventListener('click',()=>{level++;start();});
-  el('restart').addEventListener('click',()=>start(false));
-  el('reset').addEventListener('click',()=>{level=1;start();});
-  el('board').addEventListener('keydown',event=>{
-    const delta={ArrowUp:-size,ArrowDown:size,ArrowLeft:-1,ArrowRight:1}[event.key];
-    if(delta!==undefined) {event.preventDefault();move(tiles.indexOf(0)+delta);}
-  });
-  setInterval(()=>{if(started&&!solved)elapsed=Math.floor((Date.now()-started)/1000);el('timer').textContent=clock(elapsed);},250);
+  function render() {
+    const boardEl = el('board'); boardEl.style.setProperty('--size', config.size); boardEl.replaceChildren();
+    board.forEach((color, index) => {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '');
+      button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : ''));
+      button.addEventListener('click', () => choose(index)); boardEl.appendChild(button);
+    });
+    el('level').textContent = level + ' / ' + MAX_LEVEL; el('moves').textContent = moves; el('score').textContent = score.toLocaleString(); el('goal').textContent = Math.min(cleared, config.target) + ' / ' + config.target;
+    el('levelProgress').style.width = Math.max(.1, level / MAX_LEVEL * 100) + '%';
+    el('timer').textContent = clock(elapsed);
+  }
+  function choose(index) {
+    if (solved || moves <= 0 || board[index] === null) return;
+    const group = groupAt(index);
+    if (group.length < 2) { selected = index; renderSelection(); el('message').textContent = 'That bubble needs a neighbor. Find a connected color group.'; return; }
+    if (!started) started = Date.now();
+    selected = -1; moves--; const bonus = group.length >= 7 ? 180 : group.length >= 5 ? 90 : group.length >= 4 ? 35 : 0;
+    let removed = 0;
+    group.forEach(cell => { if (frozen[cell]) frozen[cell]--; else { board[cell] = null; removed++; } });
+    cleared += removed; score += removed * removed * 10 + bonus + (removed >= 4 ? removed * 5 : 0);
+    collapse();
+    if (cleared >= config.target) finish(true);
+    else if (moves <= 0) finish(false);
+    else if (!hasMove()) { score += 25; makeBoard(); el('message').textContent = 'No moves left on the board — reshuffled! +25'; }
+    render();
+  }
+  function renderSelection() { Array.from(el('board').children).forEach((node, i) => node.classList.toggle('selected', i === selected)); }
+  function collapse() {
+    for (let col = 0; col < config.size; col++) {
+      const kept = [];
+      for (let row = config.size - 1; row >= 0; row--) { const index = row * config.size + col; if (board[index] !== null) kept.push({color: board[index], ice: frozen[index]}); }
+      while (kept.length < config.size) kept.push({color: randomColor(), ice: 0});
+      for (let row = config.size - 1; row >= 0; row--) { const item = kept[config.size - 1 - row]; const index = row * config.size + col; board[index] = item.color; frozen[index] = item.ice; }
+    }
+  }
+  function finish(won) {
+    solved = true; elapsed = Math.floor((Date.now() - started) / 1000);
+    if (won) {
+      const bestKey = 'bubble-crush-best-' + level, old = readBest(bestKey);
+      if (!old || score > old.score || (score === old.score && moves > old.moves)) save(bestKey, JSON.stringify({score, moves, seconds: elapsed}));
+      if (level < MAX_LEVEL) save('bubble-crush-level', level + 1);
+      el('message').textContent = level === MAX_LEVEL ? 'Campaign complete! You crushed all 1,000 levels.' : 'Level cleared! ' + Math.max(0, moves) + ' moves left · ' + clock(elapsed) + '.';
+      el('next').hidden = level >= MAX_LEVEL;
+    } else el('message').textContent = 'Out of moves. You cleared ' + cleared + ' bubbles — try again.';
+    bestText();
+  }
+  function readBest(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } }
+  function bestText() {
+    const best = readBest('bubble-crush-best-' + level);
+    el('best').textContent = best ? 'Level ' + level + ' best: ' + best.score.toLocaleString() + ' points · ' + best.moves + ' moves left' : 'Level ' + level + ' · ' + config.colors + ' colors · ' + (config.frozenCount ? config.frozenCount + ' frozen bubbles' : 'no frozen bubbles yet');
+  }
+  function start() {
+    config = levelConfig(level); moves = config.moves; score = 0; cleared = 0; started = 0; elapsed = 0; solved = false; selected = -1; makeBoard(); el('next').hidden = true;
+    el('message').textContent = 'Level ' + level + ' · Clear ' + config.target + ' bubbles in ' + config.moves + ' moves.';
+    el('instruction').textContent = level < 45 ? 'Clear groups of two or more matching bubbles. Bigger groups create bigger combos.' : 'Frozen bubbles take two hits. ' + config.colors + ' colors are in play — plan your chain carefully.';
+    render(); bestText();
+  }
+  el('next').addEventListener('click', () => { if (level < MAX_LEVEL) { level++; start(); } });
+  el('restart').addEventListener('click', start);
+  el('reset').addEventListener('click', () => { level = 1; save('bubble-crush-level', 1); start(); });
+  setInterval(() => { if (started && !solved) elapsed = Math.floor((Date.now() - started) / 1000); el('timer').textContent = clock(elapsed); }, 250);
   start();
 })();

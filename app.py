@@ -44,7 +44,7 @@ def close_db(error):
 def add_site_ad_tv(response):
     # Keep the sponsored panel on every normal HTML page, but avoid duplicating
     # the custom arcade TV already rendered by /game and never touch API data.
-    if request.path not in {"/game", "/game/deal-dash", "/game/tile-shift"} and response.content_type.startswith("text/html"):
+    if request.path not in {"/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush"} and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
             if '<section class="hero">' in html:
@@ -285,6 +285,7 @@ def games():
 
 @app.route("/game/deal-dash")
 @app.route("/game/tile-shift")
+@app.route("/game/bubble-crush")
 def deal_dash():
     return render_template("tile-shift.html")
 
@@ -292,7 +293,7 @@ def deal_dash():
 def leaderboard():
     month = date.today().strftime("%Y-%m")
     game_name = request.args.get("game", "void-strike").strip().lower()
-    if game_name not in {"void-strike", "deal-dash"}:
+    if game_name not in {"void-strike", "deal-dash", "bubble-crush"}:
         game_name = "void-strike"
     rows = db().execute(
         "SELECT player_name, score, wave, submitted_at FROM game_scores "
@@ -305,7 +306,7 @@ def leaderboard():
 def submit_score():
     payload = request.get_json(silent=True) or {}
     game_name = str(payload.get("game", "void-strike")).strip().lower()
-    if game_name not in {"void-strike", "deal-dash"}:
+    if game_name not in {"void-strike", "deal-dash", "bubble-crush"}:
         return jsonify({"error": "That game is not available."}), 400
     name = " ".join(str(payload.get("name", "")).split())[:20]
     try:
