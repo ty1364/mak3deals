@@ -155,12 +155,25 @@
     if (combo > 1) el('message').textContent = 'Cascade x' + combo + '! Keep it going.';
     else el('message').textContent = 'Match cleared. Find your next three.';
   }
+  function refillColor(row, col) {
+    const size = config.size;
+    const leftOne = col > 0 ? board[row * size + col - 1] : null;
+    const leftTwo = col > 1 ? board[row * size + col - 2] : null;
+    const belowOne = row < size - 1 ? board[(row + 1) * size + col] : null;
+    const belowTwo = row < size - 2 ? board[(row + 2) * size + col] : null;
+    const candidates = Array.from({length: config.colors}, (_, color) => color).filter(color => {
+      const makesRow = color === leftOne && color === leftTwo;
+      const makesColumn = color === belowOne && color === belowTwo;
+      return !makesRow && !makesColumn;
+    });
+    return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : randomColor();
+  }
   function collapse() {
     for (let col = 0; col < config.size; col++) {
       const kept = [];
       for (let row = config.size - 1; row >= 0; row--) { const index = row * config.size + col; if (board[index] !== null) kept.push({color: board[index], ice: frozen[index]}); }
-      while (kept.length < config.size) kept.push({color: randomColor(), ice: 0});
       for (let row = config.size - 1; row >= 0; row--) { const item = kept[config.size - 1 - row]; const index = row * config.size + col; board[index] = item.color; frozen[index] = item.ice; }
+      for (let row = config.size - kept.length - 1; row >= 0; row--) { const index = row * config.size + col; board[index] = refillColor(row, col); frozen[index] = 0; }
     }
   }
   function finish(won) {
