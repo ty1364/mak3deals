@@ -4,7 +4,7 @@
   const COLORS = ['red','orange','yellow','green','blue','purple','cyan','pink'];
   const supportsPointerEvents = 'PointerEvent' in window;
   let level = readNumber('bubble-crush-level', 1);
-  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false, pointerStart = null, suppressClick = false, suppressClickIndex = -1, suppressClickTimer = null;
+  let config = null, board = [], frozen = [], moves = 0, score = 0, cleared = 0, started = 0, elapsed = 0, solved = false, selected = -1, animating = false, pointerStart = null;
 
   function readNumber(key, fallback) {
     try { const value = Number(localStorage.getItem(key)); return Number.isFinite(value) && value > 0 ? value : fallback; } catch { return fallback; }
@@ -98,13 +98,7 @@
     board.forEach((color, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '') + (animate ? ' drop-in' : '');
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
-      button.addEventListener('click', () => {
-        if (suppressClick && suppressClickIndex === index) {
-          suppressClick = false; suppressClickIndex = -1; clearTimeout(suppressClickTimer); return;
-        }
-        if (suppressClick) { suppressClick = false; suppressClickIndex = -1; clearTimeout(suppressClickTimer); }
-        void choose(index);
-      });
+      button.addEventListener('click', () => { void choose(index); });
       if (supportsPointerEvents) button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
       else {
         button.addEventListener('mousedown', event => { if (event.button === 0) beginGesture(index, event); });
@@ -120,7 +114,7 @@
     const start = pointerStart; pointerStart = null;
     const dx = event.clientX - start.x, dy = event.clientY - start.y;
     if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
-    event.preventDefault(); suppressClick = true; suppressClickIndex = start.index; clearTimeout(suppressClickTimer); suppressClickTimer = setTimeout(() => { suppressClick = false; suppressClickIndex = -1; }, 450);
+    event.preventDefault();
     const target = swipeDestination(start.index, dx, dy);
     if (target < 0) { selected = -1; el('message').textContent = 'Swipe one space toward the board.'; render(); return; }
     selected = start.index; render(); void choose(target);
