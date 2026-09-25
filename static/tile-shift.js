@@ -76,6 +76,11 @@
   }
   function beginGesture(index, event) {
     if (solved || animating || moves <= 0) return;
+    if (selected >= 0) {
+      pointerStart = null;
+      void choose(index);
+      return;
+    }
     pointerStart = {index, x: event.clientX, y: event.clientY};
     if (event.pointerId != null && event.currentTarget?.setPointerCapture) event.currentTarget.setPointerCapture(event.pointerId);
   }
