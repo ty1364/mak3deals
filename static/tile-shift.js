@@ -137,7 +137,16 @@
     if (!neighbors(selected).includes(index)) { selected = index; el('message').textContent = 'That bubble is too far away. Choose a neighbor.'; render(); return; }
     const first = selected; selected = -1; swap(first, index);
     if (!findMatches().length) { swap(first, index); el('message').textContent = 'That swap does not make three. Try another move.'; render(); return; }
-    if (!started) started = Date.now(); moves--; animating = true; await resolveCascades(); animating = false; selected = -1;
+    if (!started) started = Date.now(); moves--; animating = true;
+    try {
+      await resolveCascades();
+    } catch (error) {
+      console.error('Bubble Crush cascade error', error);
+      el('message').textContent = 'The board recovered from a cascade error. Keep playing.';
+    } finally {
+      animating = false;
+      selected = -1;
+    }
     if (cleared >= config.target) finish(true); else if (moves <= 0) finish(false);
     else if (!hasValidSwap()) { shufflePlayableBoard(); el('message').textContent = 'No matches available — the board was reshuffled.'; }
     render();
