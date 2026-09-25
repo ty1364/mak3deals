@@ -26,51 +26,85 @@
     if (col) result.push(index - 1); if (col < config.size - 1) result.push(index + 1);
     return result;
   }
-  function groupAt(index) {
-    if (board[index] === null || board[index] === undefined) return [];
-    const color = board[index], group = [], queue = [index], seen = new Set([index]);
-    while (queue.length) {
-      const current = queue.shift(); group.push(current);
-      neighbors(current).forEach(next => { if (!seen.has(next) && board[next] === color) { seen.add(next); queue.push(next); } });
+  function findMatches() {
+    const found = new Set(), size = config.size;
+    const addRun = run => { if (run.length >= 3) run.forEach(index => found.add(index)); };
+    for (let row = 0; row < size; row++) {
+      let run = [];
+      for (let col = 0; col < size; col++) {
+        const index = row * size + col;
+        if (board[index] !== null && !frozen[index] && (run.length === 0 || board[index] === board[run[0]])) run.push(index);
+        else { addRun(run); run = board[index] !== null && !frozen[index] ? [index] : []; }
+      }
+      addRun(run);
     }
-    return group;
+    for (let col = 0; col < size; col++) {
+      let run = [];
+      for (let row = 0; row < size; row++) {
+        const index = row * size + col;
+        if (board[index] !== null && !frozen[index] && (run.length === 0 || board[index] === board[run[0]])) run.push(index);
+        else { addRun(run); run = board[index] !== null && !frozen[index] ? [index] : []; }
+      }
+      addRun(run);
+    }
+    return Array.from(found);
   }
-  function hasMove() { return board.some((value, index) => value !== null && groupAt(index).length >= 2); }
+  function swap(a, b) { const color = board[a]; board[a] = board[b]; board[b] = color; const ice = frozen[a]; frozen[a] = frozen[b]; frozen[b] = ice; }
+  function hasValidSwap() {
+    for (let index = 0; index < board.length; index++) {
+      for (const next of neighbors(index)) {
+        if (next <= index || board[index] === null || board[next] === null) continue;
+        swap(index, next); const valid = findMatches().length > 0; swap(index, next);
+        if (valid) return true;
+      }
+    }
+    return false;
+  }
   function makeBoard() {
-    const cells = config.size * config.size;
-    board = Array.from({length: cells}, randomColor);
-    frozen = Array(cells).fill(0);
-    const positions = Array.from({length: cells}, (_, i) => i).sort(() => Math.random() - .5);
-    positions.slice(0, config.frozenCount).forEach(index => { frozen[index] = 2; });
-    let guard = 0; while (!hasMove() && guard++ < 20) board = Array.from({length: cells}, randomColor);
+    const cells = config.size * config.size; let attempts = 0;
+    do {
+      board = Array.from({length: cells}, randomColor); frozen = Array(cells).fill(0);
+      const positions = Array.from({length: cells}, (_, i) => i).sort(() => Math.random() - .5);
+      positions.slice(0, config.frozenCount).forEach(index => { frozen[index] = 2; });
+      attempts++;
+    } while ((findMatches().length || !hasValidSwap()) && attempts < 150);
+  }
+  function shufflePlayableBoard() {
+    const colors = board.slice().sort(() => Math.random() - .5); let attempts = 0;
+    do { board = colors.slice().sort(() => Math.random() - .5); attempts++; } while ((findMatches().length || !hasValidSwap()) && attempts < 150);
   }
   function render() {
     const boardEl = el('board'); boardEl.style.setProperty('--size', config.size); boardEl.replaceChildren();
     board.forEach((color, index) => {
-      const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '');
-      button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : ''));
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '');
+      button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
       button.addEventListener('click', () => choose(index)); boardEl.appendChild(button);
     });
     el('level').textContent = level + ' / ' + MAX_LEVEL; el('moves').textContent = moves; el('score').textContent = score.toLocaleString(); el('goal').textContent = Math.min(cleared, config.target) + ' / ' + config.target;
-    el('levelProgress').style.width = Math.max(.1, level / MAX_LEVEL * 100) + '%';
-    el('timer').textContent = clock(elapsed);
+    el('levelProgress').style.width = Math.max(.1, level / MAX_LEVEL * 100) + '%'; el('timer').textContent = clock(elapsed);
   }
   function choose(index) {
-    if (solved || moves <= 0 || board[index] === null) return;
-    const group = groupAt(index);
-    if (group.length < 2) { selected = index; renderSelection(); el('message').textContent = 'That bubble needs a neighbor. Find a connected color group.'; return; }
-    if (!started) started = Date.now();
-    selected = -1; moves--; const bonus = group.length >= 7 ? 180 : group.length >= 5 ? 90 : group.length >= 4 ? 35 : 0;
-    let removed = 0;
-    group.forEach(cell => { if (frozen[cell]) frozen[cell]--; else { board[cell] = null; removed++; } });
-    cleared += removed; score += removed * removed * 10 + bonus + (removed >= 4 ? removed * 5 : 0);
-    collapse();
-    if (cleared >= config.target) finish(true);
-    else if (moves <= 0) finish(false);
-    else if (!hasMove()) { score += 25; makeBoard(); el('message').textContent = 'No moves left on the board — reshuffled! +25'; }
+    if (solved || moves <= 0) return;
+    if (selected < 0) { selected = index; el('message').textContent = 'Now choose an adjacent bubble to swap.'; render(); return; }
+    if (selected === index) { selected = -1; el('message').textContent = 'Select a bubble to begin a swap.'; render(); return; }
+    if (!neighbors(selected).includes(index)) { selected = index; el('message').textContent = 'That bubble is too far away. Choose a neighbor.'; render(); return; }
+    const first = selected; selected = -1; swap(first, index);
+    if (!findMatches().length) { swap(first, index); el('message').textContent = 'That swap does not make three. Try another move.'; render(); return; }
+    if (!started) started = Date.now(); moves--; resolveCascades();
+    if (cleared >= config.target) finish(true); else if (moves <= 0) finish(false);
+    else if (!hasValidSwap()) { shufflePlayableBoard(); el('message').textContent = 'No matches available — the board was reshuffled.'; }
     render();
   }
-  function renderSelection() { Array.from(el('board').children).forEach((node, i) => node.classList.toggle('selected', i === selected)); }
+  function resolveCascades() {
+    let combo = 0, matches = findMatches();
+    while (matches.length && combo < 50) {
+      combo++; matches.forEach(index => { board[index] = null; cleared++; neighbors(index).forEach(next => { if (frozen[next]) frozen[next]--; }); });
+      score += matches.length * matches.length * 10 + combo * 35 + (matches.length >= 4 ? matches.length * 10 : 0);
+      collapse(); matches = findMatches();
+    }
+    if (combo > 1) el('message').textContent = 'Cascade x' + combo + '! Keep it going.';
+    else el('message').textContent = 'Match cleared. Find your next three.';
+  }
   function collapse() {
     for (let col = 0; col < config.size; col++) {
       const kept = [];
@@ -97,8 +131,8 @@
   }
   function start() {
     config = levelConfig(level); moves = config.moves; score = 0; cleared = 0; started = 0; elapsed = 0; solved = false; selected = -1; makeBoard(); el('next').hidden = true;
-    el('message').textContent = 'Level ' + level + ' · Clear ' + config.target + ' bubbles in ' + config.moves + ' moves.';
-    el('instruction').textContent = level < 45 ? 'Clear groups of two or more matching bubbles. Bigger groups create bigger combos.' : 'Frozen bubbles take two hits. ' + config.colors + ' colors are in play — plan your chain carefully.';
+    el('message').textContent = 'Level ' + level + ' · Clear ' + config.target + ' bubbles in ' + config.moves + ' swaps.';
+    el('instruction').textContent = level < 45 ? 'Swap adjacent bubbles to make lines of three or more. Cascades earn combo bonuses.' : 'Frozen bubbles take two neighboring matches to break. ' + config.colors + ' colors are in play — plan your chain carefully.';
     render(); bestText();
   }
   el('next').addEventListener('click', () => { if (level < MAX_LEVEL) { level++; start(); } });
