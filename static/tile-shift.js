@@ -75,6 +75,8 @@
   }
   function render(animate = false) {
     const boardEl = el('board'); boardEl.style.setProperty('--size', config.size); boardEl.replaceChildren();
+    boardEl.onpointerup = finishSwipe;
+    boardEl.onpointercancel = () => { pointerStart = null; };
     board.forEach((color, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'bubble ' + (COLORS[color] || 'blue') + (frozen[index] ? ' frozen' : '') + (selected === index ? ' selected' : '') + (animate ? ' drop-in' : '');
       button.dataset.index = index; button.setAttribute('role', 'gridcell'); button.setAttribute('aria-label', (COLORS[color] || 'bubble') + ' bubble' + (frozen[index] ? ', frozen' : '') + (selected === index ? ', selected' : ''));
@@ -85,20 +87,20 @@
         pointerStart = {index, x: event.clientX, y: event.clientY};
         button.setPointerCapture?.(event.pointerId);
       });
-      button.addEventListener('pointerup', event => {
-        if (!pointerStart || pointerStart.index !== index) return;
-        const start = pointerStart; pointerStart = null;
-        const dx = event.clientX - start.x, dy = event.clientY - start.y;
-        if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
-        event.preventDefault(); suppressClick = true;
-        const target = swipeDestination(start.index, dx, dy);
-        if (target < 0) { selected = -1; el('message').textContent = 'Swipe one space toward the board.'; render(); return; }
-        selected = start.index; render(); void choose(target);
-      });
       boardEl.appendChild(button);
     });
     el('level').textContent = level + ' / ' + MAX_LEVEL; el('moves').textContent = moves; el('score').textContent = score.toLocaleString(); el('goal').textContent = Math.min(cleared, config.target) + ' / ' + config.target;
     el('levelProgress').style.width = Math.max(.1, level / MAX_LEVEL * 100) + '%'; el('timer').textContent = clock(elapsed);
+  }
+  function finishSwipe(event) {
+    if (!pointerStart) return;
+    const start = pointerStart; pointerStart = null;
+    const dx = event.clientX - start.x, dy = event.clientY - start.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+    event.preventDefault(); suppressClick = true;
+    const target = swipeDestination(start.index, dx, dy);
+    if (target < 0) { selected = -1; el('message').textContent = 'Swipe one space toward the board.'; render(); return; }
+    selected = start.index; render(); void choose(target);
   }
   function swipeDestination(index, dx, dy) {
     const row = Math.floor(index / config.size), col = index % config.size;
