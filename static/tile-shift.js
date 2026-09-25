@@ -103,7 +103,7 @@
           if (suppressNextClick) { suppressNextClick = false; return; }
           void choose(index);
         });
-        button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; beginGesture(index, event); });
+        button.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' || event.button !== 0) return; beginGesture(index, event); });
       } else {
         button.addEventListener('click', () => { void choose(index); });
         button.addEventListener('mousedown', event => { if (event.button === 0) beginGesture(index, event); });
