@@ -142,7 +142,8 @@
       await resolveCascades();
     } catch (error) {
       console.error('Bubble Crush cascade error', error);
-      el('message').textContent = 'The board recovered from a cascade error. Keep playing.';
+      const detail = error instanceof Error ? error.message : String(error);
+      el('message').textContent = 'Cascade recovered: ' + detail;
     } finally {
       animating = false;
       selected = -1;
