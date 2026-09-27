@@ -17,6 +17,13 @@
       <h1>THE GAME <span>ROOM</span></h1>
       <p>Take a shopping break, beat your best run, and submit your score. No purchase is required to play.</p>
     </header>
+    <aside class="games-ad-slot" data-ad-player aria-label="Mak3Deals advertising channel">
+      <div class="ad-tv-top"><span>AD CHANNEL</span><span class="ad-live">● LIVE</span></div>
+      <div class="ad-tv-screen ad-player-screen">
+        <div class="ad-player-copy"><strong>MAK3 DEALS</strong><span class="ad-player-detail">Loading verified placements…</span></div>
+      </div>
+      <div class="ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div>
+    </aside>
     <section class="game-grid" aria-label="Mak3Deals games">
       <article class="game-card featured-card">
         <div class="game-card-art strike-art"><span>VOID</span><strong>STRIKE</strong><i>✦</i></div>
@@ -29,5 +36,7 @@
     </section>
     <aside class="games-rules"><strong>Scoreboards are reviewed.</strong><span>Free skill games only. Any monthly prize promotion will be posted with official rules, eligibility, and the active prize before it begins.</span></aside>
   </main>
+  <link rel="stylesheet" href="{{ url_for('static', filename='ad-player.css', v='games-flow-1') }}" />
+  <script src="{{ url_for('static', filename='ad-player.js', v='b028b3b') }}" defer></script>
 </body>
 </html>

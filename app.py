@@ -44,7 +44,7 @@ def close_db(error):
 def add_site_ad_tv(response):
     # Keep the sponsored panel on every normal HTML page, but avoid duplicating
     # the custom arcade TV already rendered by /game and never touch API data.
-    if request.path not in {"/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush"} and response.content_type.startswith("text/html"):
+    if request.path not in {"/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush"} and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
             if '<section class="hero">' in html:
