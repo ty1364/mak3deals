@@ -15,7 +15,7 @@
 /* Layout polish: keep the hero, ad channel, controls, and offer grid aligned. */
 .hero{position:relative;min-height:470px;align-items:center}
 .hero>div:first-of-type{max-width:650px;padding-right:24px}
-.hero-note{position:absolute;right:8%;bottom:48px;width:220px;padding:18px 0 0 20px}
+.hero-note{position:absolute;right:8%;bottom:28px;width:220px;padding:18px 0 0 20px}
 .city-row{padding-left:max(6%,calc((100% - 1180px)/2));padding-right:max(6%,calc((100% - 1180px)/2))}
 .filters{padding-left:max(6%,calc((100% - 1180px)/2));padding-right:max(6%,calc((100% - 1180px)/2))}
 .section-heading{max-width:1180px;margin:0 auto;padding-left:0;padding-right:0}
