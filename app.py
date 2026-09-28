@@ -4,6 +4,7 @@ import os
 import re
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request
+from daily_game import evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 
@@ -279,6 +280,15 @@ def guide_detail(slug):
     if not guide:
         abort(404)
     return render_template("guide.html", guide=guide)
+
+@app.route("/daily")
+def daily_game():
+    return render_template("daily.html", puzzle_date=puzzle_date())
+
+@app.route("/api/daily/guess", methods=["POST"])
+def daily_guess():
+    payload = request.get_json(silent=True) or {}
+    return jsonify(evaluate_guess(payload.get("guess", ""), payload.get("attempts", 0)))
 
 @app.route("/robots.txt")
 def robots():
