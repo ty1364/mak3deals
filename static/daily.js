@@ -11,8 +11,10 @@
   const practiceButton = document.getElementById("practice-run");
   const scoreCount = document.getElementById("score-count");
   const streakCount = document.getElementById("streak-count");
-  const practiceMode = new URLSearchParams(location.search).get("practice") === "1";
+  const query = new URLSearchParams(location.search);
+  const practiceMode = query.get("practice") === "1";
   const storageKey = `mak3deals-dailydrop-${puzzleDate}-${practiceMode ? "practice" : "official"}`;
+  if (query.get("reset") === "1") localStorage.removeItem(storageKey);
   const statsKey = "mak3deals-dailydrop-stats";
   const rows = [];
   const keys = {};
