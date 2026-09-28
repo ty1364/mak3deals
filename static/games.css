@@ -15,3 +15,4 @@
 .cart-art{background:radial-gradient(circle at 75% 20%,#0f9f8d,#123c54 44%,#071224)}.cart-art strong{color:#8df7c5;text-shadow:0 0 22px #2ff0b1}.cart-art i{font-size:76px}
 @media(max-width:980px){.game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.game-grid{grid-template-columns:1fr}}
+.vault-art{background:radial-gradient(circle at 62% 18%,#ffb52e,#7d244f 40%,#080b22)}.vault-art strong{color:#ffe8a6;text-shadow:0 0 22px #ff7c2f}.vault-art i{color:#8df7c5;font-size:110px}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vault Runner · Mak3Deals</title>
+  <meta name="description" content="Vault Runner is an original free roguelite browser game from Mak3Deals." />
+  <meta name="google-adsense-account" content="ca-pub-3943554631291586" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vault-runner.css', v='1') }}" />
+</head>
+<body>
+  <main class="vault-shell">
+    <a class="vault-back" href="/games">← Game Room</a>
+    <header class="vault-hero">
+      <p class="eyebrow">MAK3DEALS ORIGINAL // FREE TO PLAY</p>
+      <h1>VAULT <span>RUNNER</span></h1>
+      <p>Raid the savings vault. Build your loadout. Trust nothing with a red warning.</p>
+    </header>
+    <section class="vault-game" aria-label="Vault Runner game">
+      <canvas id="vaultCanvas" width="1200" height="700" tabindex="0" aria-label="Vault Runner play field"></canvas>
+      <div id="startOverlay" class="vault-overlay">
+        <p class="eyebrow">THE VAULT OPENS IN 3…</p>
+        <h2>RUN<br><span>SMART.</span></h2>
+        <p>Collect savings shards, dodge scam bots, and choose a power-up after every round.</p>
+        <button id="startBtn" type="button">ENTER THE VAULT</button>
+        <small>WASD / arrows · mouse · touch</small>
+      </div>
+      <div id="upgradeOverlay" class="vault-overlay hidden">
+        <p class="eyebrow">ROUND CLEARED</p>
+        <h2>CHOOSE<br><span>YOUR EDGE.</span></h2>
+        <p>Pick one upgrade. It stays active for the rest of this run.</p>
+        <div id="upgradeChoices" class="upgrade-choices"></div>
+      </div>
+      <div id="endOverlay" class="vault-overlay hidden">
+        <p class="eyebrow">VAULT SEALED</p>
+        <h2 id="endTitle">RUN OVER</h2>
+        <div class="end-score"><small>FINAL SCORE</small><strong id="finalScore">0</strong><span id="runSummary"></span></div>
+        <div class="score-submit">
+          <label for="playerName">Submit this run to the monthly board</label>
+          <div><input id="playerName" maxlength="20" autocomplete="nickname" placeholder="Your name" /><button id="submitScoreBtn" type="button">SUBMIT</button></div>
+          <p id="scoreMessage" role="status"></p>
+        </div>
+        <button id="restartBtn" type="button">RUN IT BACK</button>
+      </div>
+    </section>
+    <aside class="vault-ad" data-ad-player aria-label="Advertising">
+      <div class="ad-label">AD CHANNEL <a href="/affiliate-disclosure">Disclosure</a></div>
+      <div class="ad-player-screen"><p>Loading verified offers…</p></div>
+    </aside>
+    <section class="vault-board" aria-labelledby="boardTitle">
+      <div class="board-heading"><div><p class="eyebrow">MONTHLY SKILL BOARD</p><h2 id="boardTitle">VAULT RUNNER // TOP RAIDS</h2></div><span id="leaderboardMonth">Loading…</span></div>
+      <p>Free skill game. Scores are reviewed before any prize promotion is awarded.</p>
+      <ol id="leaderboardList"><li>Loading scores…</li></ol>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='vault-runner.js', v='1') }}"></script>
+  <script src="{{ url_for('static', filename='ad-player.js', v='vault-runner-1') }}" defer></script>
+</body>
+</html>
