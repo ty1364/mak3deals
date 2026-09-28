@@ -4,7 +4,7 @@ import os
 import re
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request
-from daily_game import daily_clue, daily_hint, evaluate_guess, puzzle_date
+from daily_game import daily_session, daily_hint, evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 
@@ -283,12 +283,17 @@ def guide_detail(slug):
 
 @app.route("/daily")
 def daily_game():
-    return render_template("daily.html", puzzle_date=puzzle_date(), daily_clue=daily_clue(), practice=request.args.get("practice") == "1")
+    return render_template("daily.html", puzzle_date=puzzle_date(), daily_session=daily_session(), practice=request.args.get("practice") == "1")
 
 @app.route("/api/daily/guess", methods=["POST"])
 def daily_guess():
     payload = request.get_json(silent=True) or {}
-    return jsonify(evaluate_guess(payload.get("guess", ""), payload.get("attempts", 0)))
+    return jsonify(evaluate_guess(
+        payload.get("guess", ""),
+        payload.get("attempts", 0),
+        payload.get("puzzle_index", 0),
+        payload.get("hints_used", 0),
+    ))
 
 
 @app.route("/api/daily/hint", methods=["POST"])
@@ -298,7 +303,7 @@ def daily_hint_api():
         hint_index = int(payload.get("hint_index", 0))
     except (TypeError, ValueError):
         hint_index = 0
-    return jsonify(daily_hint(hint_index))
+    return jsonify(daily_hint(hint_index, payload.get("puzzle_index", 0)))
 
 @app.route("/robots.txt")
 def robots():

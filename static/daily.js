@@ -1,5 +1,7 @@
 (function () {
   const puzzleDate = window.DAILY_PUZZLE_DATE;
+  const sessionSpec = window.DAILY_SESSION;
+  const totalPuzzles = sessionSpec.puzzle_count;
   const board = document.getElementById("daily-board");
   const keyboard = document.getElementById("daily-keyboard");
   const message = document.getElementById("daily-message");
@@ -11,28 +13,64 @@
   const practiceButton = document.getElementById("practice-run");
   const scoreCount = document.getElementById("score-count");
   const streakCount = document.getElementById("streak-count");
+  const puzzleCount = document.getElementById("puzzle-count");
+  const puzzleDots = document.getElementById("puzzle-dots");
+  const clueLabel = document.getElementById("clue-label");
+  const clueText = document.getElementById("clue-text");
   const query = new URLSearchParams(location.search);
   const practiceMode = query.get("practice") === "1";
   const storageKey = `mak3deals-dailydrop-${puzzleDate}-${practiceMode ? "practice" : "official"}`;
-  if (query.get("reset") === "1") localStorage.removeItem(storageKey);
   const statsKey = "mak3deals-dailydrop-stats";
+  const hintCosts = [150, 300];
   const rows = [];
   const keys = {};
   let currentGuess = "";
   let rowIndex = 0;
-  let finished = false;
-  let hintsUsed = 0;
-  let solvedAt = 0;
-  let currentScore = 1000;
-  const hintCosts = [150, 300];
+  let busy = false;
 
-  function potentialScore(attempts) {
-    return Math.max(0, 1000 - Math.max(0, attempts - 1) * 100 - hintCosts.slice(0, hintsUsed).reduce((total, cost) => total + cost, 0));
+  if (query.get("reset") === "1") {
+    localStorage.removeItem(storageKey);
+    query.delete("reset");
+    history.replaceState({}, "", `${location.pathname}${query.toString() ? `?${query}` : ""}`);
   }
 
-  function updateScore(attempts, won, final) {
-    currentScore = won ? potentialScore(attempts) : final ? 0 : potentialScore(attempts);
-    scoreCount.textContent = currentScore;
+  function emptyPuzzle() {
+    return { guesses: [], hintsUsed: 0, hints: [], complete: false, won: false, answer: null, points: 0 };
+  }
+
+  function newSession() {
+    return { puzzleIndex: 0, completed: false, puzzles: Array.from({ length: totalPuzzles }, emptyPuzzle) };
+  }
+
+  function loadSession() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+      if (!saved || !Array.isArray(saved.puzzles) || saved.puzzles.length !== totalPuzzles) return newSession();
+      saved.puzzles = saved.puzzles.map((puzzle) => ({ ...emptyPuzzle(), ...puzzle }));
+      saved.puzzleIndex = Math.max(0, Math.min(totalPuzzles - 1, Number(saved.puzzleIndex) || 0));
+      return saved;
+    } catch (_) {
+      return newSession();
+    }
+  }
+
+  let session = loadSession();
+
+  function persist() {
+    localStorage.setItem(storageKey, JSON.stringify(session));
+  }
+
+  function currentPuzzle() {
+    return session.puzzles[session.puzzleIndex];
+  }
+
+  function totalScore() {
+    return session.puzzles.reduce((total, puzzle) => total + (puzzle.points || 0), 0);
+  }
+
+  function setMessage(text, error) {
+    message.textContent = text;
+    message.classList.toggle("error", Boolean(error));
   }
 
   function makeBoard() {
@@ -49,6 +87,18 @@
     }
   }
 
+  function addKey(label, wide) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `key${wide ? " wide" : ""}`;
+    button.dataset.baseClass = button.className;
+    button.textContent = label;
+    button.setAttribute("aria-label", label === "⌫" ? "Backspace" : label);
+    button.addEventListener("click", () => handleKey(label));
+    keyboard.appendChild(button);
+    if (!wide) keys[label] = button;
+  }
+
   function makeKeyboard() {
     ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"].forEach((line, index) => {
       [...line].forEach((letter) => addKey(letter));
@@ -57,27 +107,17 @@
     });
   }
 
-  function addKey(label, wide) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `key${wide ? " wide" : ""}`;
-    button.textContent = label;
-    button.setAttribute("aria-label", label === "⌫" ? "Backspace" : label);
-    button.addEventListener("click", () => handleKey(label));
-    keyboard.appendChild(button);
-    if (!wide) keys[label] = button;
+  function clearBoard() {
+    rows.flat().forEach((cell) => { cell.className = "daily-cell"; cell.textContent = ""; });
+    keyboard.querySelectorAll("button").forEach((button) => { button.className = button.dataset.baseClass; button.disabled = false; button.dataset.rank = ""; });
   }
 
   function paintDraft() {
+    if (rowIndex > 5) return;
     rows[rowIndex].forEach((cell, index) => {
       cell.textContent = currentGuess[index] || "";
       cell.classList.toggle("filled", Boolean(currentGuess[index]));
     });
-  }
-
-  function setMessage(text, error) {
-    message.textContent = text;
-    message.classList.toggle("error", Boolean(error));
   }
 
   function updateKeyColors(guess, pattern) {
@@ -85,7 +125,7 @@
       const button = keys[letter];
       if (!button) return;
       const priority = { absent: 1, present: 2, correct: 3 };
-      const previous = button.dataset.rank ? Number(button.dataset.rank) : 0;
+      const previous = Number(button.dataset.rank || 0);
       if (priority[pattern[index]] > previous) {
         button.dataset.rank = priority[pattern[index]];
         button.className = `key ${pattern[index]}`;
@@ -93,143 +133,161 @@
     });
   }
 
-  function paintResult(guess, pattern) {
+  function paintResult(guess, pattern, row) {
     [...guess].forEach((letter, index) => {
-      const cell = rows[rowIndex][index];
+      const cell = rows[row][index];
       cell.textContent = letter;
       cell.className = `daily-cell ${pattern[index]}`;
     });
     updateKeyColors(guess, pattern);
   }
 
-  function saveState(answer, solved) {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    saved.guesses = saved.guesses || [];
-    saved.guesses.push({ guess: currentGuess, pattern: rows[rowIndex].map((cell) => [...cell.classList].find((item) => ["correct", "present", "absent"].includes(item))) });
-    if (solved && !saved.solvedAt) saved.solvedAt = saved.guesses.length;
-    if (answer) saved.answer = answer;
-    localStorage.setItem(storageKey, JSON.stringify(saved));
-    return saved;
+  function updateProgress() {
+    puzzleCount.textContent = session.completed ? "Six puzzles complete" : `Puzzle ${session.puzzleIndex + 1} of ${totalPuzzles}`;
+    puzzleDots.replaceChildren(...session.puzzles.map((puzzle, index) => {
+      const dot = document.createElement("span");
+      dot.className = `puzzle-dot${puzzle.complete ? (puzzle.won ? " won" : " missed") : ""}${!session.completed && index === session.puzzleIndex ? " current" : ""}`;
+      dot.textContent = index + 1;
+      return dot;
+    }));
   }
 
-  function finish(won, answer) {
-    finished = true;
-    shareButton.disabled = false;
-    hintButton.disabled = true;
-    keyboard.querySelectorAll("button").forEach((button) => { button.disabled = true; });
-    practiceButton.hidden = false;
-    practiceButton.textContent = practiceMode ? "Start another practice run" : "Practice this puzzle again";
-    inputHelp.textContent = practiceMode ? "Practice run complete. Start another practice run whenever you want." : "Today's official run is complete. A new puzzle opens tomorrow, or you can practice this puzzle again.";
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    updateScore(saved.solvedAt || (saved.guesses || []).length, won, true);
+  function updateScore() {
+    scoreCount.textContent = totalScore();
+  }
+
+  function updateHintButton() {
+    const puzzle = currentPuzzle();
+    const remaining = Math.max(0, 2 - puzzle.hintsUsed);
+    const nextCost = hintCosts[puzzle.hintsUsed];
+    hintsLeft.textContent = nextCost ? `(${remaining} left · −${nextCost} pts)` : "(0 left)";
+    hintButton.disabled = session.completed || puzzle.complete || remaining === 0;
+  }
+
+  function renderPuzzle() {
+    const puzzle = currentPuzzle();
+    currentGuess = "";
+    rowIndex = puzzle.guesses.length;
+    clearBoard();
+    updateProgress();
+    updateScore();
+    const clue = sessionSpec.clues[session.puzzleIndex];
+    clueLabel.textContent = `PUZZLE ${session.puzzleIndex + 1} CLUE · ${clue.category}`;
+    clueText.textContent = clue.clue;
+    puzzle.guesses.forEach((guess, index) => paintResult(guess.guess, guess.pattern, index));
+    hintPanel.hidden = !puzzle.hints.length;
+    hintPanel.textContent = puzzle.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
+    updateHintButton();
+    inputHelp.textContent = "Build your guess by tapping the letters below or typing on your keyboard. Press Enter to submit.";
+    setMessage(rowIndex ? "Keep going. This puzzle still has guesses available." : "Guess a five-letter word to begin.");
+  }
+
+  function updateStreak() {
     const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
     if (stats.lastDate !== puzzleDate) {
-      stats.streak = stats.lastDate && isYesterday(stats.lastDate) ? (stats.streak || 0) + 1 : 1;
+      const then = stats.lastDate ? new Date(`${stats.lastDate}T00:00:00`) : null;
+      const now = new Date(`${puzzleDate}T00:00:00`);
+      stats.streak = then && Math.round((now - then) / 86400000) === 1 ? (stats.streak || 0) + 1 : 1;
       stats.lastDate = puzzleDate;
       localStorage.setItem(statsKey, JSON.stringify(stats));
     }
     streakCount.textContent = stats.streak || 1;
-    setMessage(practiceMode ? `Practice complete: ${won ? `you found ${answer}` : `the word was ${answer}`}. Score: ${currentScore}.` : won ? `You found ${answer} and scored ${currentScore} points. New puzzle tomorrow.` : `The word was ${answer}. Final score: ${currentScore}. New puzzle tomorrow.`);
   }
 
-  function isYesterday(previous) {
-    const then = new Date(`${previous}T00:00:00`);
-    const now = new Date(`${puzzleDate}T00:00:00`);
-    return Math.round((now - then) / 86400000) === 1;
+  function completeSession() {
+    session.completed = true;
+    persist();
+    updateProgress();
+    updateScore();
+    updateStreak();
+    keyboard.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+    hintButton.disabled = true;
+    shareButton.disabled = false;
+    practiceButton.hidden = false;
+    practiceButton.textContent = practiceMode ? "Start another practice session" : "Start a practice session";
+    inputHelp.textContent = "Six-puzzle session complete. Your final score is ready to share.";
+    const solved = session.puzzles.filter((puzzle) => puzzle.won).length;
+    setMessage(`Session complete: ${solved} of ${totalPuzzles} solved · ${totalScore()} points.`);
   }
 
-  function updateHintButton() {
-    const remaining = Math.max(0, 2 - hintsUsed);
-    const nextCost = hintCosts[hintsUsed];
-    hintsLeft.textContent = nextCost ? `(${remaining} left · −${nextCost} pts)` : "(0 left)";
-    hintButton.disabled = finished || solvedAt || remaining === 0;
+  function advancePuzzle(result) {
+    const puzzle = currentPuzzle();
+    puzzle.complete = true;
+    puzzle.won = result.won;
+    puzzle.answer = result.answer;
+    puzzle.points = result.points || 0;
+    if (session.puzzleIndex === totalPuzzles - 1) {
+      completeSession();
+      return;
+    }
+    const completedNumber = session.puzzleIndex + 1;
+    session.puzzleIndex += 1;
+    persist();
+    renderPuzzle();
+    setMessage(result.won ? `Puzzle ${completedNumber} solved for ${puzzle.points} points. Puzzle ${session.puzzleIndex + 1} is live.` : `Puzzle ${completedNumber} answer: ${puzzle.answer}. Puzzle ${session.puzzleIndex + 1} is live.`);
   }
-
-  hintButton.addEventListener("click", async () => {
-    if (finished || solvedAt || hintsUsed >= 2) return;
-    const response = await fetch("/api/daily/hint", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hint_index: hintsUsed })
-    });
-    const result = await response.json();
-    if (!result.ok) { setMessage(result.error, true); return; }
-    hintsUsed += 1;
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    saved.hintsUsed = hintsUsed;
-    saved.hints = saved.hints || [];
-    saved.hints.push(result.hint);
-    localStorage.setItem(storageKey, JSON.stringify(saved));
-    hintPanel.hidden = false;
-    hintPanel.textContent = saved.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
-    updateScore((saved.guesses || []).length, false);
-    updateHintButton();
-  });
 
   async function submitGuess() {
-    if (finished || currentGuess.length !== 5) {
+    if (busy || session.completed || currentGuess.length !== 5) {
       if (currentGuess.length !== 5) setMessage("Use five letters before submitting.", true);
       return;
     }
-    const guess = currentGuess;
-    const response = await fetch("/api/daily/guess", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ guess, attempts: rowIndex + 1 }) });
+    busy = true;
+    const puzzle = currentPuzzle();
+    const response = await fetch("/api/daily/guess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guess: currentGuess, attempts: rowIndex + 1, puzzle_index: session.puzzleIndex, hints_used: puzzle.hintsUsed })
+    });
     const result = await response.json();
-    if (!result.ok) { setMessage(result.error, true); return; }
-    paintResult(result.guess, result.pattern);
-    const saved = saveState(result.answer, result.won);
-    solvedAt = saved.solvedAt || 0;
-    updateScore(solvedAt || rowIndex + 1, Boolean(solvedAt));
-    updateHintButton();
+    if (!result.ok) { setMessage(result.error, true); busy = false; return; }
+    paintResult(result.guess, result.pattern, rowIndex);
+    puzzle.guesses.push({ guess: result.guess, pattern: result.pattern });
     currentGuess = "";
-    if (rowIndex === 5) finish(Boolean(saved.solvedAt), result.answer || "the daily word");
+    if (result.finished) advancePuzzle(result);
     else {
       rowIndex += 1;
-      setMessage(result.won ? `Correct—${currentScore} points locked. Finish all six turns.` : "Keep going. The board is giving you clues.");
+      persist();
+      setMessage("Keep going. The board is giving you clues.");
     }
+    busy = false;
+  }
+
+  async function revealHint() {
+    const puzzle = currentPuzzle();
+    if (session.completed || puzzle.complete || puzzle.hintsUsed >= 2) return;
+    const response = await fetch("/api/daily/hint", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hint_index: puzzle.hintsUsed, puzzle_index: session.puzzleIndex })
+    });
+    const result = await response.json();
+    if (!result.ok) { setMessage(result.error, true); return; }
+    puzzle.hintsUsed += 1;
+    puzzle.hints.push(result.hint);
+    persist();
+    hintPanel.hidden = false;
+    hintPanel.textContent = puzzle.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
+    updateHintButton();
   }
 
   function handleKey(key) {
-    if (finished) return;
+    if (session.completed || busy) return;
     if (key === "ENTER") return submitGuess();
     if (key === "⌫") currentGuess = currentGuess.slice(0, -1);
     else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) currentGuess += key;
     paintDraft();
   }
 
-  function restore() {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
-    hintsUsed = saved.hintsUsed || 0;
-    solvedAt = saved.solvedAt || 0;
-    updateHintButton();
-    if (saved.hints && saved.hints.length) {
-      hintPanel.hidden = false;
-      hintPanel.textContent = saved.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
-    }
-    streakCount.textContent = stats.streak || 0;
-    updateScore(saved.solvedAt || (saved.guesses || []).length, Boolean(saved.solvedAt), Boolean(saved.answer));
-    (saved.guesses || []).forEach((item) => {
-      if (rowIndex > 5) return;
-      paintResult(item.guess, item.pattern);
-      rowIndex += 1;
-    });
-    if (saved.answer) finish(Boolean(saved.solvedAt), saved.answer);
-    else if (rowIndex) setMessage("Keep going. The board is giving you clues.");
-  }
-
   shareButton.addEventListener("click", async () => {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    const squares = (saved.guesses || []).map((item) => item.pattern.map((state) => state === "correct" ? "🟨" : state === "present" ? "🟩" : "⬜").join("")).join("\n");
-    const text = `DealDrop Daily ${puzzleDate} · ${currentScore} points\n${squares}\nPlay: ${location.origin}/daily`;
+    const lines = session.puzzles.map((puzzle, index) => `Puzzle ${index + 1}: ${puzzle.won ? `${puzzle.points} pts` : "missed"}`);
+    const text = `DealDrop Daily ${puzzleDate} · ${totalScore()} points\n${lines.join("\n")}\nPlay: ${location.origin}/daily`;
     try { await navigator.clipboard.writeText(text); setMessage("Result copied. Send it to somebody who thinks they can beat you."); }
     catch (_) { setMessage(text); }
   });
 
-  practiceButton.addEventListener("click", () => {
-    if (practiceMode) localStorage.removeItem(storageKey);
-    location.href = "/daily?practice=1&v=daily-practice";
-  });
-
+  hintButton.addEventListener("click", revealHint);
+  practiceButton.addEventListener("click", () => { location.href = "/daily?practice=1&reset=1"; });
   document.getElementById("show-how").addEventListener("click", () => {
     const panel = document.getElementById("how-to-play");
     panel.hidden = !panel.hidden;
@@ -240,5 +298,14 @@
     else if (/^[a-zA-Z]$/.test(event.key)) handleKey(event.key.toUpperCase());
   });
 
-  makeBoard(); makeKeyboard(); restore();
+  makeBoard();
+  makeKeyboard();
+  if (session.completed) {
+    renderPuzzle();
+    completeSession();
+  } else {
+    const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
+    streakCount.textContent = stats.streak || 0;
+    renderPuzzle();
+  }
 })();

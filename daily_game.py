@@ -64,20 +64,33 @@ DAILY_CLUES = {
 }
 
 HINT_COSTS = (150, 300)
+PUZZLES_PER_SESSION = 6
 
 
 def puzzle_date():
     return date.today().isoformat()
 
 
-def answer_for(day=None):
+def answer_for(day=None, puzzle_index=0):
     day = day or date.today()
-    return DAILY_WORDS[(day.toordinal() * 7) % len(DAILY_WORDS)]
+    try:
+        puzzle_index = int(puzzle_index)
+    except (TypeError, ValueError):
+        puzzle_index = 0
+    puzzle_index = max(0, min(PUZZLES_PER_SESSION - 1, puzzle_index))
+    return DAILY_WORDS[(day.toordinal() * 7 + puzzle_index * 7) % len(DAILY_WORDS)]
 
 
-def daily_clue():
-    answer = answer_for()
+def daily_clue(puzzle_index=0):
+    answer = answer_for(puzzle_index=puzzle_index)
     return {"category": "Shopper's vocabulary", "clue": DAILY_CLUES.get(answer, "Today's word is connected to finding a better deal.")}
+
+
+def daily_session():
+    return {
+        "puzzle_count": PUZZLES_PER_SESSION,
+        "clues": [daily_clue(index) for index in range(PUZZLES_PER_SESSION)],
+    }
 
 
 def daily_score(attempts=0, hints_used=0, won=False):
@@ -87,9 +100,9 @@ def daily_score(attempts=0, hints_used=0, won=False):
         hints_used = max(0, min(len(HINT_COSTS), int(hints_used or 0)))
     except (TypeError, ValueError):
         attempts, hints_used = 0, 0
+    if not won:
+        return 0
     score = 1000 - max(0, attempts - 1) * 100 - sum(HINT_COSTS[:hints_used])
-    if not won and attempts >= 6:
-        score = max(0, score - 100)
     return max(0, score)
 
 
@@ -111,14 +124,24 @@ def score_guess(guess, answer):
     return result
 
 
-def evaluate_guess(guess, attempts=0):
+def evaluate_guess(guess, attempts=0, puzzle_index=0, hints_used=0):
     normalized = re.sub(r"[^a-z]", "", (guess or "").lower()).upper()
     if len(normalized) != 5 or not normalized.isalpha():
         return {"ok": False, "error": "Enter a five-letter word."}
-    answer = answer_for()
+    try:
+        puzzle_index = int(puzzle_index)
+    except (TypeError, ValueError):
+        puzzle_index = 0
+    if puzzle_index < 0 or puzzle_index >= PUZZLES_PER_SESSION:
+        return {"ok": False, "error": "That puzzle is not available in this session."}
+    answer = answer_for(puzzle_index=puzzle_index)
     pattern = score_guess(normalized, answer)
     won = normalized == answer
-    reveal = int(attempts or 0) >= 6
+    try:
+        attempts = int(attempts or 0)
+    except (TypeError, ValueError):
+        attempts = 0
+    reveal = won or attempts >= 6
     return {
         "ok": True,
         "guess": normalized,
@@ -126,12 +149,22 @@ def evaluate_guess(guess, attempts=0):
         "won": won,
         "finished": reveal,
         "puzzle_date": puzzle_date(),
+        "puzzle_index": puzzle_index,
+        "next_puzzle_index": puzzle_index + 1 if reveal and puzzle_index + 1 < PUZZLES_PER_SESSION else None,
+        "session_complete": reveal and puzzle_index == PUZZLES_PER_SESSION - 1,
+        "points": daily_score(attempts, hints_used, won) if reveal else None,
         "answer": answer if reveal else None,
     }
 
 
-def daily_hint(hint_index=0):
-    answer = answer_for()
+def daily_hint(hint_index=0, puzzle_index=0):
+    try:
+        puzzle_index = int(puzzle_index)
+    except (TypeError, ValueError):
+        puzzle_index = 0
+    if puzzle_index < 0 or puzzle_index >= PUZZLES_PER_SESSION:
+        return {"ok": False, "error": "That puzzle is not available in this session."}
+    answer = answer_for(puzzle_index=puzzle_index)
     if hint_index == 0:
         return {"ok": True, "hint_index": 0, "hint": DAILY_HINTS.get(answer, "This word is connected to finding a better deal."), "cost": HINT_COSTS[0]}
     if hint_index == 1:
