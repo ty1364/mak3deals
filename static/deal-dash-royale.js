@@ -45,6 +45,7 @@
   let targetLane = 1;
   let jumpY = 0;
   let jumpVelocity = 0;
+  let hurtCooldown = 0;
   let objects = [];
   let particles = [];
   let ai = [];
@@ -59,6 +60,7 @@
     phase = 'idle'; round = 1; score = 0; lives = 3; elapsed = 0; roundTime = 42;
     lastRun = null; distance = 0; spawnClock = 0; sceneryClock = 0; runnerLane = 1;
     targetLane = 1; jumpY = 0; jumpVelocity = 0; objects = []; particles = [];
+    hurtCooldown = 0;
     ai = makeRivals(10); messageEl.textContent = '';
   }
 
@@ -123,12 +125,15 @@
     round += 1; roundTime = Math.max(28, 42 - round * 5); elapsed = 0; distance = 0;
     spawnClock = 0; objects = []; ai = makeRivals(Math.max(3, 11 - round * 3));
     runnerLane = 1; targetLane = 1; jumpY = 0; jumpVelocity = 0;
+    hurtCooldown = 0;
     roundOverlay.classList.add('hidden'); phase = 'race'; lastFrame = performance.now();
     requestAnimationFrame(loop);
   }
 
   function loseLife() {
+    if (hurtCooldown > 0) return;
     lives -= 1; burst(laneX(runnerLane), 470 - jumpY, '#ff668e', 18);
+    hurtCooldown = 1.35;
     if (lives <= 0) finish(false, 'OUT OF LIVES');
   }
 
@@ -141,6 +146,7 @@
   function update(dt) {
     if (phase !== 'race') return;
     elapsed += dt; roundTime -= dt; distance += currentSpeed() * dt;
+    hurtCooldown = Math.max(0, hurtCooldown - dt);
     sceneryClock += dt * currentSpeed() * 9; spawnClock -= dt;
     if (spawnClock <= 0) {
       spawnObject(); spawnClock = Math.max(0.5, 0.92 - round * 0.1 - elapsed * 0.003);
