@@ -8,6 +8,7 @@
   <meta name="google-adsense-account" content="ca-pub-3943554631291586" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='deal-siege.css', v='1') }}" />
+  <style>.fire-btn{position:absolute;right:24px;bottom:24px;border:2px solid #ffd36f;border-radius:999px;padding:13px 22px;background:#082c3ce8;color:#ffd36f;font-weight:1000;letter-spacing:.12em;cursor:pointer;box-shadow:0 0 24px #ffd36f45;z-index:3}.fire-btn:hover{background:#12495a}.fire-btn.hidden{display:none}</style>
 </head>
 <body>
   <main class="siege-shell">
@@ -20,6 +21,7 @@
 
     <section class="siege-game" aria-label="Deal Siege timed knockdown game">
       <canvas id="siegeCanvas" width="1200" height="700" tabindex="0" aria-label="Deal Siege timed knockdown battle"></canvas>
+      <button id="fireBtn" class="fire-btn hidden" type="button">FIRE</button>
 
       <div id="startOverlay" class="siege-overlay">
         <p class="eyebrow">45-SECOND HEAD-TO-HEAD</p>

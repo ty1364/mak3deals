@@ -12,6 +12,7 @@
   const palette = { teal: '#20d8c6', coral: '#ff6b70', gold: '#ffc438' };
   const startOverlay = document.getElementById('startOverlay'); const endOverlay = document.getElementById('endOverlay');
   const startBtn = document.getElementById('startBtn'); const restartBtn = document.getElementById('restartBtn');
+  const fireBtn = document.getElementById('fireBtn');
   const scoreEl = document.getElementById('finalScore'); const summaryEl = document.getElementById('runSummary');
   const nameEl = document.getElementById('playerName'); const submitBtn = document.getElementById('submitScoreBtn'); const messageEl = document.getElementById('scoreMessage');
   const monthEl = document.getElementById('leaderboardMonth'); const listEl = document.getElementById('leaderboardList');
@@ -46,14 +47,14 @@
   }
 
   function start() {
-    reset(); phase = 'race'; runStartedAt = Date.now(); startOverlay.classList.add('hidden'); endOverlay.classList.add('hidden'); canvas.focus(); lastFrame = performance.now(); requestAnimationFrame(loop);
+    reset(); phase = 'race'; runStartedAt = Date.now(); startOverlay.classList.add('hidden'); endOverlay.classList.add('hidden'); fireBtn.classList.remove('hidden'); canvas.focus(); lastFrame = performance.now(); requestAnimationFrame(loop);
   }
 
   function finish() {
     phase = 'over'; const winner = playerScore === rivalScore ? 'TIE GAME' : playerScore > rivalScore ? 'YOU WIN' : 'RIVAL WINS';
     lastRun = { score: Math.max(1, Math.floor(playerScore)), wave: Math.max(1, Math.floor(playerScore / 100)), duration: Math.max(10, Math.floor((Date.now() - runStartedAt) / 1000)) };
     scoreEl.textContent = lastRun.score.toLocaleString(); summaryEl.textContent = `${winner} · ${playerScore} YOUR POINTS · ${rivalScore} RIVAL POINTS`;
-    document.getElementById('endTitle').textContent = winner === 'YOU WIN' ? 'CHAMPION' : winner === 'TIE GAME' ? 'DEAD EVEN' : 'RIVAL WINS'; endOverlay.classList.remove('hidden'); loadBoard();
+    document.getElementById('endTitle').textContent = winner === 'YOU WIN' ? 'CHAMPION' : winner === 'TIE GAME' ? 'DEAD EVEN' : 'RIVAL WINS'; fireBtn.classList.add('hidden'); endOverlay.classList.remove('hidden'); loadBoard();
   }
 
   function screenPoint(event) { const rect = canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * W / rect.width, y: (event.clientY - rect.top) * H / rect.height }; }
@@ -61,6 +62,8 @@
     const origin = { x: 128, y: 520 }; const dx = clamp(point.x - origin.x, 70, 280); const dy = clamp(point.y - origin.y, -260, 120); const power = clamp(Math.hypot(dx, dy), 70, 300);
     projectiles.push({ x: origin.x, y: origin.y, vx: dx * 2.6, vy: dy * 2.6, owner: 'player', radius: 18, spin: 0 }); aim.dragging = false; lastLaunchAt = performance.now(); burst(origin.x, origin.y, palette[playerColor], 8);
   }
+
+  function fireDefault() { if (phase === 'race') launchPlayer({ x: W * .8, y: 450 }); }
 
   function launchAi() {
     const living = playerTargets.filter(target => target.alive); if (!living.length) return;
@@ -140,9 +143,9 @@
   canvas.addEventListener('pointermove', event => { if (!aim.dragging) return; const point = screenPoint(event); aim.x = clamp(point.x, 170, 480); aim.y = clamp(point.y, 230, 570); });
   canvas.addEventListener('pointerup', event => { if (!aim.dragging) return; launchPlayer(screenPoint(event)); });
   canvas.addEventListener('click', event => { if (phase !== 'race' || performance.now() - lastLaunchAt < 250) return; const point = screenPoint(event); if (point.x > 180) launchPlayer({ x: W * .8, y: 450 }); });
-  window.addEventListener('keydown', event => { if (event.key.toLowerCase() === 'r') start(); });
+  window.addEventListener('keydown', event => { if (event.key.toLowerCase() === 'r') start(); else if (event.key === ' ') { event.preventDefault(); fireDefault(); } });
   document.querySelectorAll('.color-choice').forEach(button => button.addEventListener('click', () => { playerColor = button.dataset.color; document.querySelectorAll('.color-choice').forEach(choice => choice.classList.toggle('selected', choice === button)); }));
-  startBtn.addEventListener('click', start); restartBtn.addEventListener('click', start);
+  startBtn.addEventListener('click', start); restartBtn.addEventListener('click', start); fireBtn.addEventListener('click', fireDefault);
   submitBtn.addEventListener('click', async () => { const name = nameEl.value.trim(); if (name.length < 2) { messageEl.textContent = 'Enter at least 2 characters.'; return; } submitBtn.disabled = true; messageEl.textContent = 'Submitting…'; try { const response = await fetch('/api/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: 'deal-siege', name, ...lastRun }) }); const data = await response.json(); messageEl.textContent = data.message || data.error || 'Done.'; loadBoard(); } catch { messageEl.textContent = 'Could not submit right now.'; } finally { submitBtn.disabled = false; } });
   async function loadBoard() { try { const response = await fetch('/api/leaderboard?game=deal-siege'); const data = await response.json(); monthEl.textContent = data.month || 'Current month'; listEl.replaceChildren(); if (!data.scores.length) { const empty = document.createElement('li'); empty.textContent = 'No finalists yet — be the first to qualify.'; listEl.appendChild(empty); return; } data.scores.forEach((entry, index) => { const item = document.createElement('li'); item.innerHTML = `<span class="rank">${String(index + 1).padStart(2, '0')}</span><span>${escapeHtml(entry.player_name)}</span><strong>${Number(entry.score).toLocaleString()}</strong><small>ROUND ${entry.wave}</small>`; listEl.appendChild(item); }); } catch { monthEl.textContent = 'Offline'; } }
   reset(); draw(); loadBoard();
