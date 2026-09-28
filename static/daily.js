@@ -102,7 +102,7 @@
   function makeKeyboard() {
     ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"].forEach((line, index) => {
       [...line].forEach((letter) => addKey(letter));
-      if (index === 1) addKey("ENTER", true);
+      if (index === 1) addKey("SUBMIT", true);
       if (index === 2) addKey("⌫", true);
     });
   }
@@ -118,6 +118,7 @@
       cell.textContent = currentGuess[index] || "";
       cell.classList.toggle("filled", Boolean(currentGuess[index]));
     });
+    if (currentGuess.length === 5) setMessage("Ready — press Submit to check your guess.");
   }
 
   function updateKeyColors(guess, pattern) {
@@ -178,7 +179,7 @@
     hintPanel.hidden = !puzzle.hints.length;
     hintPanel.textContent = puzzle.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
     updateHintButton();
-    inputHelp.textContent = "Build your guess by tapping the letters below or typing on your keyboard. Press Enter to submit.";
+    inputHelp.textContent = "Build your guess by tapping the letters below or typing on your keyboard. Press Submit or Enter to check it.";
     setMessage(rowIndex ? "Keep going. This puzzle still has guesses available." : "Guess a five-letter word to begin.");
   }
 
@@ -234,46 +235,55 @@
     }
     busy = true;
     const puzzle = currentPuzzle();
-    const response = await fetch("/api/daily/guess", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guess: currentGuess, attempts: rowIndex + 1, puzzle_index: session.puzzleIndex, hints_used: puzzle.hintsUsed })
-    });
-    const result = await response.json();
-    if (!result.ok) { setMessage(result.error, true); busy = false; return; }
-    paintResult(result.guess, result.pattern, rowIndex);
-    puzzle.guesses.push({ guess: result.guess, pattern: result.pattern });
-    currentGuess = "";
-    if (result.finished) advancePuzzle(result);
-    else {
-      rowIndex += 1;
-      persist();
-      setMessage("Keep going. The board is giving you clues.");
+    try {
+      const response = await fetch("/api/daily/guess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guess: currentGuess, attempts: rowIndex + 1, puzzle_index: session.puzzleIndex, hints_used: puzzle.hintsUsed })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) { setMessage(result.error || "That guess could not be checked. Please try again.", true); return; }
+      paintResult(result.guess, result.pattern, rowIndex);
+      puzzle.guesses.push({ guess: result.guess, pattern: result.pattern });
+      currentGuess = "";
+      if (result.finished) advancePuzzle(result);
+      else {
+        rowIndex += 1;
+        persist();
+        setMessage("Keep going. The board is giving you clues.");
+      }
+    } catch (_) {
+      setMessage("We could not check that guess. Your letters are still on the board—press Submit to try again.", true);
+    } finally {
+      busy = false;
     }
-    busy = false;
   }
 
   async function revealHint() {
     const puzzle = currentPuzzle();
     if (session.completed || puzzle.complete || puzzle.hintsUsed >= 2) return;
-    const response = await fetch("/api/daily/hint", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hint_index: puzzle.hintsUsed, puzzle_index: session.puzzleIndex })
-    });
-    const result = await response.json();
-    if (!result.ok) { setMessage(result.error, true); return; }
-    puzzle.hintsUsed += 1;
-    puzzle.hints.push(result.hint);
-    persist();
-    hintPanel.hidden = false;
-    hintPanel.textContent = puzzle.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
-    updateHintButton();
+    try {
+      const response = await fetch("/api/daily/hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hint_index: puzzle.hintsUsed, puzzle_index: session.puzzleIndex })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) { setMessage(result.error || "That hint is unavailable right now.", true); return; }
+      puzzle.hintsUsed += 1;
+      puzzle.hints.push(result.hint);
+      persist();
+      hintPanel.hidden = false;
+      hintPanel.textContent = puzzle.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
+      updateHintButton();
+    } catch (_) {
+      setMessage("We could not load that hint. Please try again.", true);
+    }
   }
 
   function handleKey(key) {
     if (session.completed || busy) return;
-    if (key === "ENTER") return submitGuess();
+    if (key === "ENTER" || key === "SUBMIT") return submitGuess();
     if (key === "⌫") currentGuess = currentGuess.slice(0, -1);
     else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) currentGuess += key;
     paintDraft();
@@ -293,8 +303,14 @@
     panel.hidden = !panel.hidden;
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") handleKey("ENTER");
-    else if (event.key === "Backspace") handleKey("⌫");
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (!event.repeat) handleKey("ENTER");
+    }
+    else if (event.key === "Backspace") {
+      event.preventDefault();
+      handleKey("⌫");
+    }
     else if (/^[a-zA-Z]$/.test(event.key)) handleKey(event.key.toUpperCase());
   });
 
