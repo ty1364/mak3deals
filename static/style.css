@@ -49,3 +49,18 @@
 @media(max-width:900px){.simple-hero{padding-right:6%!important}}
 @media(min-width:901px){.hero>div:first-of-type{max-width:650px!important}}
 .simple-hero.compare-hero{padding-right:8%!important}@media(max-width:700px){.simple-hero.compare-hero{padding-right:6%!important}}
+
+/* Homepage ad channel: keep the player in the marked upper-right hero area. */
+.hero{align-items:stretch}
+.hero>div:first-of-type{flex:1 1 52%;align-self:center}
+.hero-right{display:flex;flex:1 1 48%;min-width:0;flex-direction:column;justify-content:center;gap:18px}
+.hero-right .hero-ad-slot{width:100%;max-width:none;margin:0;padding:0}
+.hero-right .site-ad-tv{min-height:300px;height:100%;padding:14px}
+.hero-right .site-ad-tv-screen{flex:1;min-height:220px}
+.hero-right .hero-note{position:static;width:auto;margin:0;padding:18px 0 0 20px}
+@media(max-width:900px){
+  .hero-right{width:100%;margin-top:34px}
+  .hero-right .site-ad-tv{min-height:230px;height:auto}
+  .hero-right .site-ad-tv-screen{min-height:150px}
+  .hero-right .hero-note{margin-top:0}
+}
