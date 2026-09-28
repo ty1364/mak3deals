@@ -64,3 +64,17 @@
   .hero-right .site-ad-tv-screen{min-height:150px}
   .hero-right .hero-note{margin-top:0}
 }
+
+/* Other public savings sections use the same deliberate hero placement. */
+.simple-hero{display:flex;align-items:center;justify-content:space-between;gap:40px;padding-right:8%!important}
+.simple-hero-copy{flex:1 1 52%;min-width:0;max-width:680px}
+.simple-hero-right{display:flex;flex:1 1 48%;min-width:0;justify-content:center}
+.simple-hero-right .hero-ad-slot{width:100%;max-width:none;margin:0;padding:0}
+.simple-hero-right .site-ad-tv{min-height:270px}
+.simple-hero-right .site-ad-tv-screen{min-height:190px}
+@media(max-width:900px){
+  .simple-hero{display:block;padding-right:6%!important}
+  .simple-hero-right{margin-top:30px}
+  .simple-hero-right .site-ad-tv{min-height:230px}
+  .simple-hero-right .site-ad-tv-screen{min-height:150px}
+}

@@ -101,7 +101,7 @@ def add_site_ad_tv(response):
     # Submit is a utility form and should stay distraction-free. Game routes
     # have their own dedicated placements. Normal savings pages get one
     # clearly labeled channel, and the homepage puts it in the hero column.
-    excluded_paths = {"/submit", "/daily", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege"}
+    excluded_paths = {"/submit", "/daily", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status"}
     if request.path not in excluded_paths and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
@@ -123,7 +123,9 @@ def add_site_ad_tv(response):
             elif re.search(r'<section class="simple-hero[^\"]*">', html):
                 hero_match = re.search(r'<section class="simple-hero[^\"]*">', html)
                 hero_end = html.find("</section>", hero_match.end())
-                html = html[:hero_end + len("</section>")] + SITE_AD_TV + html[hero_end + len("</section>"):]
+                hero_content = html[hero_match.end():hero_end]
+                replacement = f'{html[hero_match.start():hero_match.end()]}<div class="simple-hero-copy">{hero_content}</div><div class="simple-hero-right">{SITE_AD_HERO}</div></section>'
+                html = html[:hero_match.start()] + replacement + html[hero_end + len("</section>"):]
             else:
                 main_match = re.search(r'<main[^>]*>', html)
                 if main_match:
