@@ -86,7 +86,7 @@
 
   function jump() {
     if (phase === 'race' && jumpY <= 1) {
-      jumpVelocity = 760; burst(laneX(targetLane), 535, '#ffd36f', 8);
+      jumpVelocity = 900; burst(laneX(targetLane), 535, '#ffd36f', 8);
     }
   }
 
@@ -133,7 +133,7 @@
   function loseLife() {
     if (hurtCooldown > 0) return;
     lives -= 1; burst(laneX(runnerLane), 470 - jumpY, '#ff668e', 18);
-    hurtCooldown = 1.35;
+    hurtCooldown = 1.8;
     if (lives <= 0) finish(false, 'OUT OF LIVES');
   }
 
@@ -149,11 +149,11 @@
     hurtCooldown = Math.max(0, hurtCooldown - dt);
     sceneryClock += dt * currentSpeed() * 9; spawnClock -= dt;
     if (spawnClock <= 0) {
-      spawnObject(); spawnClock = Math.max(0.5, 0.92 - round * 0.1 - elapsed * 0.003);
+      spawnObject(); spawnClock = Math.max(0.72, 1.08 - round * 0.08 - elapsed * 0.002);
     }
     runnerLane += (targetLane - runnerLane) * Math.min(1, dt * 12);
     if (jumpY > 0 || jumpVelocity > 0) {
-      jumpY += jumpVelocity * dt; jumpVelocity -= 1850 * dt;
+      jumpY += jumpVelocity * dt; jumpVelocity -= 1700 * dt;
       if (jumpY <= 0) { jumpY = 0; jumpVelocity = 0; }
     }
     for (const item of objects) {
@@ -162,7 +162,7 @@
         item.hit = true;
         if (item.type === 'token') { score += 120; burst(laneX(item.lane), 440, '#ffd36f', 16); }
         else if (item.type === 'spring') { jumpVelocity = 980; score += 60; burst(laneX(item.lane), 500, '#8cecff', 12); }
-        else if (jumpY < 58) { loseLife(); item.z = -0.2; }
+        else if (jumpY < 105) { loseLife(); item.z = -0.2; }
         else { score += 55; burst(laneX(item.lane), 440, '#8df7c5', 10); }
       }
     }
@@ -215,7 +215,8 @@
     if (rival.z < 0 || rival.z > 1.2) return;
     const point = trackPoint(rival.z); const size = 18 + (1 - rival.z / 1.2) * 32; const x = W / 2 + (rival.lane - 1) * point.laneGap; const y = point.y - size + Math.sin(rival.wobble) * 3;
     ctx.save(); ctx.fillStyle = rival.color; ctx.shadowColor = rival.color; ctx.shadowBlur = 12; ctx.beginPath(); ctx.ellipse(x, y, size * 0.68, size, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0; ctx.fillStyle = '#101a35'; ctx.fillRect(x - size * 0.34, y - size * 0.2, size * 0.68, size * 0.23); ctx.restore();
+    ctx.shadowBlur = 0; ctx.fillStyle = '#101a35'; ctx.fillRect(x - size * 0.34, y - size * 0.2, size * 0.68, size * 0.2);
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x - size * 0.2, y - size * 0.1, Math.max(2, size * 0.07), 0, Math.PI * 2); ctx.arc(x + size * 0.2, y - size * 0.1, Math.max(2, size * 0.07), 0, Math.PI * 2); ctx.fill(); ctx.restore();
   }
 
   function drawObject(item) {
