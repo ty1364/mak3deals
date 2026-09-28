@@ -139,7 +139,7 @@
   canvas.addEventListener('pointerdown', event => { if (phase !== 'race') return; const point = screenPoint(event); if (point.x < 245 && point.y > 410) { aim.dragging = true; aim.x = point.x; aim.y = point.y; canvas.setPointerCapture(event.pointerId); } });
   canvas.addEventListener('pointermove', event => { if (!aim.dragging) return; const point = screenPoint(event); aim.x = clamp(point.x, 170, 480); aim.y = clamp(point.y, 230, 570); });
   canvas.addEventListener('pointerup', event => { if (!aim.dragging) return; launchPlayer(screenPoint(event)); });
-  canvas.addEventListener('click', event => { if (phase !== 'race' || performance.now() - lastLaunchAt < 250) return; const point = screenPoint(event); if (point.x > 180) launchPlayer(point); });
+  canvas.addEventListener('click', event => { if (phase !== 'race' || performance.now() - lastLaunchAt < 250) return; const point = screenPoint(event); if (point.x > 180) launchPlayer({ x: W * .8, y: 450 }); });
   window.addEventListener('keydown', event => { if (event.key.toLowerCase() === 'r') start(); });
   document.querySelectorAll('.color-choice').forEach(button => button.addEventListener('click', () => { playerColor = button.dataset.color; document.querySelectorAll('.color-choice').forEach(choice => choice.classList.toggle('selected', choice === button)); }));
   startBtn.addEventListener('click', start); restartBtn.addEventListener('click', start);
