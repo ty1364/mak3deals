@@ -75,6 +75,8 @@
   let jumpVelocity = 0;
   let hurtCooldown = 0;
   let courseCursor = 0;
+  let playerZ = 0;
+  let place = 1;
   let objects = [];
   let particles = [];
   let ai = [];
@@ -88,15 +90,22 @@
   function reset() {
     phase = 'idle'; round = 1; score = 0; lives = 3; elapsed = 0; roundTime = 42;
     lastRun = null; distance = 0; spawnClock = 0; sceneryClock = 0; runnerLane = 1;
-    targetLane = 1; jumpY = 0; jumpVelocity = 0; objects = []; particles = [];
+    targetLane = 1; jumpY = 0; jumpVelocity = 0; playerZ = 0; place = 1; particles = [];
     hurtCooldown = 0; courseCursor = 0;
-    ai = makeRivals(10); messageEl.textContent = '';
+    objects = makeCourse(); ai = makeRivals(10); messageEl.textContent = '';
   }
 
   function makeRivals(count) {
     return Array.from({ length: count }, (_, index) => ({
-      lane: index % 3, z: 0.18 + index * 0.07, color: colors[(index + 1) % colors.length],
+      lane: index % 3, z: 0.03 + (index % 5) * 0.045, color: colors[(index + 1) % colors.length],
       wobble: Math.random() * Math.PI * 2, pace: 0.8 + Math.random() * 0.35
+    }));
+  }
+
+  function makeCourse() {
+    const duration = 42 - (round - 1) * 5;
+    return courseBlueprints[round - 1].layout.map(spec => ({
+      ...spec, z: Math.min(1.06, (spec.at / duration) * 1.02), spin: Math.random() * Math.PI * 2, hit: false
     }));
   }
 
@@ -131,7 +140,7 @@
     lastRun = { score: Math.max(1, Math.floor(score)), wave: round, duration: Math.max(10, Math.floor((Date.now() - runStartedAt) / 1000)) };
     scoreEl.textContent = lastRun.score.toLocaleString();
     summaryEl.textContent = `${reason} · ${lives} LIVES LEFT · ROUND ${round}`;
-    document.getElementById('endTitle').textContent = won ? 'CHAMPION' : 'ELIMINATED';
+    document.getElementById('endTitle').textContent = won ? 'CHAMPION' : 'RACE COMPLETE';
     endOverlay.classList.remove('hidden'); loadBoard();
   }
 
@@ -145,7 +154,7 @@
 
   function nextRound() {
     round += 1; roundTime = Math.max(28, 42 - round * 5); elapsed = 0; distance = 0;
-    spawnClock = 0; courseCursor = 0; objects = []; ai = makeRivals(Math.max(3, 11 - round * 3));
+    spawnClock = 0; courseCursor = 0; playerZ = 0; objects = makeCourse(); ai = makeRivals(Math.max(3, 11 - round * 3));
     runnerLane = 1; targetLane = 1; jumpY = 0; jumpVelocity = 0;
     hurtCooldown = 0; courseCursor = 0;
     roundOverlay.classList.add('hidden'); phase = 'race'; lastFrame = performance.now();
@@ -167,33 +176,38 @@
 
   function update(dt) {
     if (phase !== 'race') return;
-    elapsed += dt; roundTime -= dt; distance += currentSpeed() * dt;
+    elapsed += dt; roundTime -= dt;
     hurtCooldown = Math.max(0, hurtCooldown - dt);
-    sceneryClock += dt * currentSpeed() * 9;
-    const blueprint = courseBlueprints[round - 1].layout;
-    while (courseCursor < blueprint.length && elapsed >= blueprint[courseCursor].at) spawnObject(blueprint[courseCursor++]);
+    const totalTime = 42 - (round - 1) * 5;
+    playerZ = Math.min(1.08, playerZ + (dt / totalTime) * 1.02);
     runnerLane += (targetLane - runnerLane) * Math.min(1, dt * 12);
     if (jumpY > 0 || jumpVelocity > 0) {
       jumpY += jumpVelocity * dt; jumpVelocity -= 1700 * dt;
       if (jumpY <= 0) { jumpY = 0; jumpVelocity = 0; }
     }
     for (const item of objects) {
-      item.z -= currentSpeed() * dt; item.spin += dt * 4;
-      if (!item.hit && item.z < 0.13 && item.z > -0.03 && Math.abs(item.lane - Math.round(runnerLane)) === 0) {
+      item.spin += dt * 4;
+      if (!item.hit && Math.abs(item.z - playerZ) < 0.018 && Math.abs(item.lane - Math.round(runnerLane)) === 0) {
         item.hit = true;
         if (item.type === 'token') { score += 120; burst(laneX(item.lane), 440, '#ffd36f', 16); }
-        else if (item.type === 'spring') { jumpVelocity = 980; score += 60; burst(laneX(item.lane), 500, '#8cecff', 12); }
-        else if (jumpY < 105) { loseLife(); item.z = -0.2; }
+        else if (item.type === 'spring') { playerZ = Math.min(1.08, playerZ + 0.045); jumpVelocity = 980; score += 60; burst(laneX(item.lane), 500, '#8cecff', 12); }
+        else if (jumpY < 105) { loseLife(); }
         else { score += 55; burst(laneX(item.lane), 440, '#8df7c5', 10); }
       }
     }
-    objects = objects.filter(item => item.z > -0.25);
-    for (const rival of ai) { rival.z -= currentSpeed() * dt * rival.pace; rival.wobble += dt * 8; if (rival.z < -0.15) rival.z = 0.5 + Math.random() * 0.8; }
+    for (const rival of ai) {
+      rival.z = Math.min(1.1, rival.z + (dt / totalTime) * 1.02 * rival.pace);
+      rival.wobble += dt * 8;
+    }
+    place = 1 + ai.filter(rival => rival.z > playerZ).length;
     for (let index = particles.length - 1; index >= 0; index -= 1) {
       const particle = particles[index]; particle.x += particle.vx * dt; particle.y += particle.vy * dt; particle.vy += 240 * dt; particle.life -= dt;
       if (particle.life <= 0) particles.splice(index, 1);
     }
-    if (roundTime <= 0) { if (round >= 3) finish(true, 'FINAL ROUND WINNER'); else clearRound(); }
+    if (playerZ >= 1.06) {
+      if (round >= 3) finish(place === 1, `FINISH LINE · PLACE ${place}`);
+      else clearRound();
+    } else if (roundTime <= 0) finish(false, 'TIME RAN OUT');
   }
 
   function drawBackground() {
@@ -204,7 +218,7 @@
     ctx.fillStyle = 'rgba(3, 19, 30, .12)'; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#9ef8ff';
     for (let index = 0; index < 18; index += 1) {
-      const x = (index * 91 + sceneryClock * 28) % (W + 80) - 40; const y = 92 + (index % 4) * 28;
+      const x = (index * 91) % (W + 80) - 40; const y = 92 + (index % 4) * 28;
       ctx.globalAlpha = 0.25 + (index % 3) * 0.12; ctx.fillRect(x, y, 6, 6);
     }
     ctx.globalAlpha = 1;
@@ -219,7 +233,7 @@
     const horizon = trackPoint(1.15); const near = trackPoint(0);
     ctx.save();
     for (let index = 0; index < 14; index += 1) {
-      const z = ((index / 14) + sceneryClock * 0.42) % 1.15; const point = trackPoint(z); const next = trackPoint(Math.min(1.15, z + 0.045));
+      const z = index / 14; const point = trackPoint(z); const next = trackPoint(Math.min(1.15, z + 0.045));
       ctx.strokeStyle = index % 2 ? 'rgba(230, 255, 247, .2)' : 'rgba(255, 211, 111, .14)';
       ctx.lineWidth = Math.max(1, 4 * (1 - z / 1.15)); ctx.beginPath();
       ctx.moveTo(W / 2 - point.width / 2, point.y); ctx.lineTo(W / 2 + point.width / 2, point.y); ctx.stroke();
@@ -259,10 +273,12 @@
   }
 
   function drawRunner() {
-    const x = laneX(runnerLane); const bob = Math.sin(elapsed * 15) * 5; const tilt = Math.sin(elapsed * 15) * 0.035; const y = 535 - jumpY + bob;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.globalAlpha = 0.25; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 8 + jumpY * 0.06, 62, 13, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
-    if (runnerImage.complete && runnerImage.naturalWidth) ctx.drawImage(runnerImage, -78, -155, 156, 156);
-    else { ctx.fillStyle = '#8df7c5'; ctx.beginPath(); ctx.ellipse(0, -75, 55, 76, 0, 0, Math.PI * 2); ctx.fill(); }
+    const point = trackPoint(playerZ); const scale = 0.55 + (1 - playerZ / 1.15) * 0.55;
+    const size = 78 + (1 - playerZ / 1.15) * 72; const x = W / 2 + (runnerLane - 1) * point.laneGap;
+    const bob = Math.sin(elapsed * 15) * 3; const tilt = Math.sin(elapsed * 15) * 0.035; const y = point.y - jumpY * 0.45 + bob;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.globalAlpha = 0.25; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 6 + jumpY * 0.05, size * 0.42, size * 0.09, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    if (runnerImage.complete && runnerImage.naturalWidth) ctx.drawImage(runnerImage, -size / 2, -size, size, size);
+    else { ctx.fillStyle = '#8df7c5'; ctx.beginPath(); ctx.ellipse(0, -size * 0.5, size * 0.35, size * 0.48, 0, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
   }
 
@@ -277,11 +293,12 @@
     ctx.font = '800 13px system-ui'; ctx.fillStyle = '#ffd36f'; ctx.fillText(`ROUND ${round}/3`, 38, 68);
     ctx.fillStyle = '#8cecff'; ctx.fillText(courseBlueprints[round - 1].name, 145, 68);
     ctx.fillStyle = '#8df7c5'; ctx.fillText(`LANE ${laneNames[Math.round(runnerLane)]}`, 345, 68);
-    ctx.fillStyle = '#cce8ee'; ctx.fillText(`SCORE ${Math.floor(score).toLocaleString()}`, 485, 68);
+    ctx.fillStyle = '#cce8ee'; ctx.fillText(`PLACE ${place}/${ai.length + 1}`, 485, 68);
+    ctx.fillStyle = '#cce8ee'; ctx.fillText(`SCORE ${Math.floor(score).toLocaleString()}`, 610, 68);
     ctx.fillStyle = '#ff9eae'; ctx.fillText(`LIVES ${'♥'.repeat(lives)}${'♡'.repeat(3 - lives)}`, W - 150, 42);
     ctx.fillStyle = '#cce8ee'; ctx.font = '700 12px system-ui'; ctx.fillText(`${Math.max(0, Math.ceil(roundTime))}s · A/D lane shift · SPACE jump`, W - 330, 68);
     ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(38, 82, 360, 5);
-    ctx.fillStyle = '#ffd36f'; ctx.fillRect(38, 82, 360 * clamp(elapsed / roundTime, 0, 1), 5);
+    ctx.fillStyle = '#ffd36f'; ctx.fillRect(38, 82, 360 * clamp(playerZ / 1.06, 0, 1), 5);
   }
 
   function loop(now) {
