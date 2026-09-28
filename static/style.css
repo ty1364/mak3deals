@@ -30,3 +30,16 @@
   .deals{padding-left:6%;padding-right:6%}
   .play-banner{margin-left:6%;margin-right:6%}
 }
+
+/* Deal discovery polish */
+.hero-proof{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:20px;color:#d4eee8;font-size:.82rem;font-weight:700}
+.hero-proof span{white-space:nowrap}
+.source-hub-card{border-color:#cfe2dd;box-shadow:0 12px 28px rgba(22,124,114,.08)}
+.source-hub-card .deal-photo{background:linear-gradient(135deg,#e7f6f1,#d9eaf4 58%,#fff3da);align-items:flex-start;justify-content:space-between;flex-direction:column;padding:20px 22px;color:#123b57}
+.retailer-mark{font-size:1.65rem;font-weight:900;letter-spacing:-.05em}
+.deal-photo small{font-size:.7rem;font-weight:900;letter-spacing:.14em;color:#167c72}
+.live-source-line{display:flex;align-items:center;gap:8px;margin:4px 0 8px;color:#167c72;font-size:.86rem;font-weight:800}
+.live-dot{width:9px;height:9px;border-radius:50%;background:#24b47e;box-shadow:0 0 0 4px #24b47e22}
+.empty-results{grid-column:1/-1;padding:40px;border:1px dashed #cbd8dc;border-radius:16px;background:#fff;text-align:center}
+.empty-results p{color:#657084}
+.empty-results .outline{display:inline-block;margin-top:10px}
