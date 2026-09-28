@@ -104,8 +104,13 @@ def add_site_ad_tv(response):
         if "class=\"site-ad-tv\"" not in html:
             if '<section class="hero">' in html:
                 html = html.replace('<section class="hero">', '<section class="hero">' + SITE_AD_TV, 1)
-            elif '<section class="simple-hero">' in html:
-                html = html.replace('<section class="simple-hero">', '<section class="simple-hero">' + SITE_AD_TV, 1)
+            elif re.search(r'<section class="simple-hero[^\"]*">', html):
+                html = re.sub(
+                    r'<section class="simple-hero[^\"]*">',
+                    lambda match: match.group(0) + SITE_AD_TV,
+                    html,
+                    count=1,
+                )
             else:
                 html = html.replace("</body>", SITE_AD_TV + "</body>")
             response.set_data(html)
