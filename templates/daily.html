@@ -5,7 +5,7 @@
   <title>DealDrop Daily · Mak3Deals</title>
   <meta name="description" content="Play DealDrop Daily, an original daily savings word puzzle from Mak3Deals.">
   <meta name="google-adsense-account" content="ca-pub-3943554631291586">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='daily.css', v='daily-v6') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='daily.css', v='daily-v7') }}">
 </head>
 <body>
   <header class="navbar"><a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/guides">Guides</a><a class="active-nav" href="/daily">Daily game</a><a href="/sources">Sources</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
@@ -20,12 +20,12 @@
       <div id="daily-keyboard" class="daily-keyboard" aria-label="Game keyboard"></div>
       <div class="daily-actions"><button id="hint-button" class="hint-btn" type="button">Reveal a hint <span id="hints-left">(2 left · −150 pts)</span></button><button id="share-result" class="deal-btn" type="button" disabled>Share result</button><button id="show-how" class="outline" type="button">How to play</button><button id="practice-run" class="outline" type="button" hidden>Practice this puzzle again</button></div>
       <p id="daily-hint" class="daily-hint" role="status" hidden></p>
-      <aside id="how-to-play" class="how-to-play" hidden><strong>How to play</strong><p>Use the clue before you guess. Type any five-letter word. Gold means the letter is in the word and in the right spot. Mint means the letter belongs in the word but needs a new spot. Gray means it is not in today's word. You get six guesses. Hint 1 costs 150 points; Hint 2 costs 300. Your board resets with the next daily puzzle.</p></aside>
+      <aside id="how-to-play" class="how-to-play" hidden><strong>How to play</strong><p>Use the clue before you guess. Type any five-letter word. Gold means the letter is in the word and in the right spot. Mint means the letter belongs in the word but needs a new spot. Gray means it is not in today's word. You always play all six turns. Finding the word locks your score; the run completes after turn six. Hint 1 costs 150 points; Hint 2 costs 300.</p></aside>
     </section>
     <section class="contest-card" aria-labelledby="contest-title"><div><p class="eyebrow dark">SCORE CHALLENGE</p><h2 id="contest-title">Play free. Chase a $500 prize.</h2><p>Build your best daily scores and compete for a planned $500 prize. No purchase is needed to play.</p></div><div class="contest-status"><strong>LAUNCH-READY</strong><span>Official rules, eligibility, and winner verification will be posted before entries open.</span></div></section>
   </main>
   <footer><strong>Mak3Deals</strong><span><a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/affiliate-disclosure">Affiliate disclosure</a> · <a href="/contact">Contact</a></span></footer>
   <script>window.DAILY_PUZZLE_DATE={{ puzzle_date|tojson }};</script>
-  <script src="{{ url_for('static', filename='daily.js', v='daily-v6') }}"></script>
+  <script src="{{ url_for('static', filename='daily.js', v='daily-v7') }}"></script>
 </body>
 </html>

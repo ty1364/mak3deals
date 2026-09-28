@@ -118,13 +118,13 @@ def evaluate_guess(guess, attempts=0):
     answer = answer_for()
     pattern = score_guess(normalized, answer)
     won = normalized == answer
-    reveal = won or int(attempts or 0) >= 6
+    reveal = int(attempts or 0) >= 6
     return {
         "ok": True,
         "guess": normalized,
         "pattern": pattern,
         "won": won,
-        "finished": won,
+        "finished": reveal,
         "puzzle_date": puzzle_date(),
         "answer": answer if reveal else None,
     }

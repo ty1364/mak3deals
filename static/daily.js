@@ -22,17 +22,16 @@
   let rowIndex = 0;
   let finished = false;
   let hintsUsed = 0;
+  let solvedAt = 0;
   let currentScore = 1000;
   const hintCosts = [150, 300];
 
-  function calculateScore(attempts, won) {
-    let score = 1000 - Math.max(0, attempts - 1) * 100 - hintCosts.slice(0, hintsUsed).reduce((total, cost) => total + cost, 0);
-    if (!won && attempts >= 6) score -= 100;
-    return Math.max(0, score);
+  function potentialScore(attempts) {
+    return Math.max(0, 1000 - Math.max(0, attempts - 1) * 100 - hintCosts.slice(0, hintsUsed).reduce((total, cost) => total + cost, 0));
   }
 
-  function updateScore(attempts, won) {
-    currentScore = calculateScore(attempts, won);
+  function updateScore(attempts, won, final) {
+    currentScore = won ? potentialScore(attempts) : final ? 0 : potentialScore(attempts);
     scoreCount.textContent = currentScore;
   }
 
@@ -103,12 +102,14 @@
     updateKeyColors(guess, pattern);
   }
 
-  function saveState(answer) {
+  function saveState(answer, solved) {
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
     saved.guesses = saved.guesses || [];
     saved.guesses.push({ guess: currentGuess, pattern: rows[rowIndex].map((cell) => [...cell.classList].find((item) => ["correct", "present", "absent"].includes(item))) });
+    if (solved && !saved.solvedAt) saved.solvedAt = saved.guesses.length;
     if (answer) saved.answer = answer;
     localStorage.setItem(storageKey, JSON.stringify(saved));
+    return saved;
   }
 
   function finish(won, answer) {
@@ -120,7 +121,7 @@
     practiceButton.textContent = practiceMode ? "Start another practice run" : "Practice this puzzle again";
     inputHelp.textContent = practiceMode ? "Practice run complete. Start another practice run whenever you want." : "Today's official run is complete. A new puzzle opens tomorrow, or you can practice this puzzle again.";
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    updateScore((saved.guesses || []).length, won);
+    updateScore(saved.solvedAt || (saved.guesses || []).length, won, true);
     const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
     if (stats.lastDate !== puzzleDate) {
       stats.streak = stats.lastDate && isYesterday(stats.lastDate) ? (stats.streak || 0) + 1 : 1;
@@ -141,11 +142,11 @@
     const remaining = Math.max(0, 2 - hintsUsed);
     const nextCost = hintCosts[hintsUsed];
     hintsLeft.textContent = nextCost ? `(${remaining} left · −${nextCost} pts)` : "(0 left)";
-    hintButton.disabled = finished || remaining === 0;
+    hintButton.disabled = finished || solvedAt || remaining === 0;
   }
 
   hintButton.addEventListener("click", async () => {
-    if (finished || hintsUsed >= 2) return;
+    if (finished || solvedAt || hintsUsed >= 2) return;
     const response = await fetch("/api/daily/hint", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -175,11 +176,16 @@
     const result = await response.json();
     if (!result.ok) { setMessage(result.error, true); return; }
     paintResult(result.guess, result.pattern);
-    saveState(result.answer);
-    updateScore(rowIndex + 1, result.won);
+    const saved = saveState(result.answer, result.won);
+    solvedAt = saved.solvedAt || 0;
+    updateScore(solvedAt || rowIndex + 1, Boolean(solvedAt));
+    updateHintButton();
     currentGuess = "";
-    if (result.won || rowIndex === 5) finish(result.won, result.answer || "the daily word");
-    else { rowIndex += 1; setMessage("Keep going. The board is giving you clues."); }
+    if (rowIndex === 5) finish(Boolean(saved.solvedAt), result.answer || "the daily word");
+    else {
+      rowIndex += 1;
+      setMessage(result.won ? `Correct—${currentScore} points locked. Finish all six turns.` : "Keep going. The board is giving you clues.");
+    }
   }
 
   function handleKey(key) {
@@ -194,19 +200,20 @@
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
     const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
     hintsUsed = saved.hintsUsed || 0;
+    solvedAt = saved.solvedAt || 0;
     updateHintButton();
     if (saved.hints && saved.hints.length) {
       hintPanel.hidden = false;
       hintPanel.textContent = saved.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
     }
     streakCount.textContent = stats.streak || 0;
-    updateScore((saved.guesses || []).length, Boolean(saved.answer && saved.guesses?.some((item) => item.guess === saved.answer)));
+    updateScore(saved.solvedAt || (saved.guesses || []).length, Boolean(saved.solvedAt), Boolean(saved.answer));
     (saved.guesses || []).forEach((item) => {
       if (rowIndex > 5) return;
       paintResult(item.guess, item.pattern);
       rowIndex += 1;
     });
-    if (saved.answer) finish(saved.guesses?.some((item) => item.guess === saved.answer), saved.answer);
+    if (saved.answer) finish(Boolean(saved.solvedAt), saved.answer);
     else if (rowIndex) setMessage("Keep going. The board is giving you clues.");
   }
 
