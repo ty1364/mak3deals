@@ -76,6 +76,13 @@ def setup():
         CREATE INDEX IF NOT EXISTS idx_game_scores_month_score
         ON game_scores (game, month, score DESC);""")
     ensure_feed_schema(database)
+    # Never serve an offer past its stated end date, even if the scheduled
+    # source-health refresh has not run yet.
+    database.execute(
+        "UPDATE deals SET verified=0 WHERE verified=1 AND expires_on < ?",
+        (date.today().isoformat(),),
+    )
+    database.commit()
     existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
     for column, definition in {
         "deal_kind": "TEXT DEFAULT 'deal'", "sale_price": "TEXT", "regular_price": "TEXT",
