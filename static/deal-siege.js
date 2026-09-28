@@ -17,7 +17,7 @@
   const monthEl = document.getElementById('leaderboardMonth'); const listEl = document.getElementById('leaderboardList');
   let phase = 'idle'; let lastFrame = 0; let elapsed = 0; let timeLeft = 45; let playerScore = 0; let rivalScore = 0;
   let playerColor = 'teal'; let rivalColor = 'coral'; let playerTargets = []; let rivalTargets = []; let projectiles = []; let particles = [];
-  let aim = { dragging: false, x: 120, y: 520 }; let aiClock = 1.8; let runStartedAt = 0; let lastRun = null;
+  let aim = { dragging: false, x: 120, y: 520 }; let aiClock = 1.8; let runStartedAt = 0; let lastRun = null; let lastLaunchAt = 0;
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -59,7 +59,7 @@
   function screenPoint(event) { const rect = canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * W / rect.width, y: (event.clientY - rect.top) * H / rect.height }; }
   function launchPlayer(point) {
     const origin = { x: 128, y: 520 }; const dx = clamp(point.x - origin.x, 70, 280); const dy = clamp(point.y - origin.y, -260, 120); const power = clamp(Math.hypot(dx, dy), 70, 300);
-    projectiles.push({ x: origin.x, y: origin.y, vx: dx * 2.6, vy: dy * 2.6, owner: 'player', radius: 18, spin: 0 }); aim.dragging = false; burst(origin.x, origin.y, palette[playerColor], 8);
+    projectiles.push({ x: origin.x, y: origin.y, vx: dx * 2.6, vy: dy * 2.6, owner: 'player', radius: 18, spin: 0 }); aim.dragging = false; lastLaunchAt = performance.now(); burst(origin.x, origin.y, palette[playerColor], 8);
   }
 
   function launchAi() {
@@ -139,6 +139,7 @@
   canvas.addEventListener('pointerdown', event => { if (phase !== 'race') return; const point = screenPoint(event); if (point.x < 245 && point.y > 410) { aim.dragging = true; aim.x = point.x; aim.y = point.y; canvas.setPointerCapture(event.pointerId); } });
   canvas.addEventListener('pointermove', event => { if (!aim.dragging) return; const point = screenPoint(event); aim.x = clamp(point.x, 170, 480); aim.y = clamp(point.y, 230, 570); });
   canvas.addEventListener('pointerup', event => { if (!aim.dragging) return; launchPlayer(screenPoint(event)); });
+  canvas.addEventListener('click', event => { if (phase !== 'race' || performance.now() - lastLaunchAt < 250) return; const point = screenPoint(event); if (point.x > 180) launchPlayer(point); });
   window.addEventListener('keydown', event => { if (event.key.toLowerCase() === 'r') start(); });
   document.querySelectorAll('.color-choice').forEach(button => button.addEventListener('click', () => { playerColor = button.dataset.color; document.querySelectorAll('.color-choice').forEach(choice => choice.classList.toggle('selected', choice === button)); }));
   startBtn.addEventListener('click', start); restartBtn.addEventListener('click', start);
