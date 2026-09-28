@@ -4,6 +4,7 @@ import os
 import re
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request
+from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 
 app = Flask(__name__)
@@ -261,7 +262,29 @@ def home():
     cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city") if r[0] not in {"All", "Online"}]
     categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
     sort_options = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
-    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=sort_options, search=search, comparison_counts=comparison_counts)
+    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=sort_options, search=search, comparison_counts=comparison_counts, featured_guides=GUIDES[:3])
+
+@app.route("/guides")
+def guides():
+    return render_template("guides.html", guides=GUIDES)
+
+@app.route("/guides/<slug>")
+def guide_detail(slug):
+    guide = GUIDE_BY_SLUG.get(slug)
+    if not guide:
+        abort(404)
+    return render_template("guide.html", guide=guide)
+
+@app.route("/robots.txt")
+def robots():
+    return "User-agent: *\nAllow: /\nSitemap: https://mak3deals.com/sitemap.xml\n", 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+@app.route("/sitemap.xml")
+def sitemap():
+    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons", "https://mak3deals.com/sources"]
+    urls.extend(f"https://mak3deals.com/guides/{guide['slug']}" for guide in GUIDES)
+    body = "".join(f"<url><loc>{url}</loc></url>" for url in urls)
+    return f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>', 200, {"Content-Type": "application/xml; charset=utf-8"}
 
 @app.route("/compare/<product_key>")
 def compare_product(product_key):

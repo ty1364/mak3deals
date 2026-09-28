@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Savings guides · Mak3Deals</title>
+  <meta name="description" content="Practical savings guides from Mak3Deals: compare final prices, use coupon codes, and shop smarter.">
+  <meta name="google-adsense-account" content="ca-pub-3943554631291586">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}">
+</head>
+<body>
+  <header class="navbar"><a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/guides">Guides</a><a href="/sources">Sources</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
+  <main>
+    <section class="simple-hero guide-hero"><p class="eyebrow">THE MAK3DEALS NOTEBOOK</p><h1>Shop smarter.<br><em>Keep more.</em></h1><p>Practical guides for comparing prices, using coupons, checking store terms, and finding savings that hold up at checkout.</p></section>
+    <section class="guide-grid">
+      {% for guide in guides %}<article class="guide-card"><span class="tag">{{ guide.category }}</span><p class="guide-date">Updated {{ guide.updated }}</p><h2>{{ guide.title }}</h2><p>{{ guide.dek }}</p><a class="deal-btn" href="/guides/{{ guide.slug }}">Read the guide →</a></article>{% endfor %}
+    </section>
+  </main>
+  <footer><strong>Mak3Deals</strong><span><a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/affiliate-disclosure">Affiliate disclosure</a> · <a href="/contact">Contact</a></span></footer>
+</body>
+</html>
