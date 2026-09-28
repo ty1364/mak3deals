@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cart Quest · Mak3Deals</title>
+  <meta name="description" content="Cart Quest is an original free shopping arcade game from Mak3Deals." />
+  <meta name="google-adsense-account" content="ca-pub-3943554631291586" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='cart-quest.css', v='1') }}" />
+</head>
+<body>
+  <main class="cart-shell">
+    <a class="cart-back" href="/games">← Game Room</a>
+    <header class="cart-hero">
+      <p class="eyebrow">ORIGINAL MAK3DEALS ARCADE // FREE TO PLAY</p>
+      <h1>CART <span>QUEST</span></h1>
+      <p>Build the smartest cart in the store. Catch savings, chain a streak, and survive the checkout traps.</p>
+    </header>
+    <section class="cart-game" aria-label="Cart Quest game">
+      <canvas id="cartCanvas" width="1200" height="680" tabindex="0" aria-label="Cart Quest play field"></canvas>
+      <div id="startOverlay" class="cart-overlay">
+        <p class="eyebrow">THE AISLE IS OPEN</p>
+        <h2>HUNT THE<br><span>DROP.</span></h2>
+        <p>Move your cart. Catch green savings and gold jackpots. Dodge red checkout traps.</p>
+        <button id="startBtn" type="button">START QUEST</button>
+        <small>← → / A D · mouse · touch</small>
+      </div>
+      <div id="endOverlay" class="cart-overlay hidden">
+        <p class="eyebrow">CHECKOUT COMPLETE</p>
+        <h2>RUN COMPLETE</h2>
+        <div class="end-score"><small>FINAL SCORE</small><strong id="finalScore">0</strong><span id="runSummary"></span></div>
+        <div class="score-submit">
+          <label for="playerName">Submit this run to the monthly board</label>
+          <div><input id="playerName" maxlength="20" autocomplete="nickname" placeholder="Your name" /><button id="submitScoreBtn" type="button">SUBMIT</button></div>
+          <p id="scoreMessage" role="status"></p>
+        </div>
+        <button id="restartBtn" type="button">RUN IT BACK</button>
+      </div>
+    </section>
+    <aside class="cart-ad" data-ad-player aria-label="Advertising">
+      <div class="ad-label">AD CHANNEL <a href="/affiliate-disclosure">Disclosure</a></div>
+      <div class="ad-player-screen"><p>Loading verified offers…</p></div>
+    </aside>
+    <section class="cart-board" aria-labelledby="boardTitle">
+      <div class="board-heading"><div><p class="eyebrow">MONTHLY SKILL BOARD</p><h2 id="boardTitle">CART QUEST // TOP RUNS</h2></div><span id="leaderboardMonth">Loading…</span></div>
+      <p>Free skill game. Scores are reviewed before any prize promotion is awarded.</p>
+      <ol id="leaderboardList"><li>Loading scores…</li></ol>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='cart-quest.js', v='1') }}"></script>
+  <script src="{{ url_for('static', filename='ad-player.js', v='cart-quest-1') }}" defer></script>
+</body>
+</html>
