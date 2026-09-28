@@ -44,7 +44,7 @@ def close_db(error):
 def add_site_ad_tv(response):
     # Keep the sponsored panel on every normal HTML page, but avoid duplicating
     # the custom arcade TV already rendered by /game and never touch API data.
-    if request.path not in {"/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner"} and response.content_type.startswith("text/html"):
+    if request.path not in {"/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift"} and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
             if '<section class="hero">' in html:
@@ -304,11 +304,15 @@ def cart_quest():
 def vault_runner():
     return render_template("vault-runner.html")
 
+@app.route("/game/dealway-drift")
+def dealway_drift():
+    return render_template("dealway-drift.html")
+
 @app.route("/api/leaderboard")
 def leaderboard():
     month = date.today().strftime("%Y-%m")
     game_name = request.args.get("game", "void-strike").strip().lower()
-    if game_name not in {"void-strike", "deal-dash", "bubble-crush", "cart-quest", "vault-runner"}:
+    if game_name not in {"void-strike", "deal-dash", "bubble-crush", "cart-quest", "vault-runner", "dealway-drift"}:
         game_name = "void-strike"
     rows = db().execute(
         "SELECT player_name, score, wave, submitted_at FROM game_scores "
@@ -321,7 +325,7 @@ def leaderboard():
 def submit_score():
     payload = request.get_json(silent=True) or {}
     game_name = str(payload.get("game", "void-strike")).strip().lower()
-    if game_name not in {"void-strike", "deal-dash", "bubble-crush", "cart-quest", "vault-runner"}:
+    if game_name not in {"void-strike", "deal-dash", "bubble-crush", "cart-quest", "vault-runner", "dealway-drift"}:
         return jsonify({"error": "That game is not available."}), 400
     name = " ".join(str(payload.get("name", "")).split())[:20]
     try:

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dealway Drift · Mak3Deals</title>
+  <meta name="description" content="Dealway Drift is an original free maze kart browser game from Mak3Deals." />
+  <meta name="google-adsense-account" content="ca-pub-3943554631291586" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dealway-drift.css', v='1') }}" />
+</head>
+<body>
+  <main class="drift-shell">
+    <a class="drift-back" href="/games">← Game Room</a>
+    <header class="drift-hero"><p class="eyebrow">MAK3DEALS ORIGINAL // MAZE KART RACING</p><h1>DEALWAY <span>DRIFT</span></h1><p>Race the maze. Chase the drop. Beat the ghost.</p></header>
+    <section class="drift-game" aria-label="Dealway Drift game">
+      <canvas id="driftCanvas" width="1200" height="700" tabindex="0" aria-label="Dealway Drift race track"></canvas>
+      <div id="startOverlay" class="drift-overlay"><p class="eyebrow">NIGHT MARKET CIRCUIT // 3 LAPS</p><h2>FIND THE<br><span>FAST LINE.</span></h2><p>Steer through the savings maze, hit cyan boost pads, and collect deal tokens without losing the ghost.</p><button id="startBtn" type="button">START RACE</button><small>WASD / arrows · touch steering</small></div>
+      <div id="endOverlay" class="drift-overlay hidden"><p class="eyebrow">FINISH LINE</p><h2 id="endTitle">RACE COMPLETE</h2><div class="end-score"><small>RACE SCORE</small><strong id="finalScore">0</strong><span id="runSummary"></span></div><div class="score-submit"><label for="playerName">Submit this run to the monthly board</label><div><input id="playerName" maxlength="20" autocomplete="nickname" placeholder="Your name" /><button id="submitScoreBtn" type="button">SUBMIT</button></div><p id="scoreMessage" role="status"></p></div><button id="restartBtn" type="button">RACE AGAIN</button></div>
+    </section>
+    <aside class="drift-ad" data-ad-player aria-label="Advertising"><div class="ad-label">AD CHANNEL <a href="/affiliate-disclosure">Disclosure</a></div><div class="ad-player-screen"><p>Loading verified offers…</p></div></aside>
+    <section class="drift-board" aria-labelledby="boardTitle"><div class="board-heading"><div><p class="eyebrow">MONTHLY SKILL BOARD</p><h2 id="boardTitle">DEALWAY DRIFT // FASTEST LINES</h2></div><span id="leaderboardMonth">Loading…</span></div><p>Free skill game. Scores are reviewed before any prize promotion is awarded.</p><ol id="leaderboardList"><li>Loading scores…</li></ol></section>
+  </main>
+  <script src="{{ url_for('static', filename='dealway-drift.js', v='1') }}"></script>
+  <script src="{{ url_for('static', filename='ad-player.js', v='dealway-drift-1') }}" defer></script>
+</body>
+</html>

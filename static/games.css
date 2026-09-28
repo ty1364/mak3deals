@@ -16,3 +16,4 @@
 @media(max-width:980px){.game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.game-grid{grid-template-columns:1fr}}
 .vault-art{background:radial-gradient(circle at 62% 18%,#ffb52e,#7d244f 40%,#080b22)}.vault-art strong{color:#ffe8a6;text-shadow:0 0 22px #ff7c2f}.vault-art i{color:#8df7c5;font-size:110px}
+.drift-art{background:radial-gradient(circle at 25% 25%,#f2b43f,#164d74 48%,#070c20)}.drift-art strong{color:#8cecff;text-shadow:0 0 22px #19c7ff}.drift-art i{color:#ffd36f;font-size:100px}
