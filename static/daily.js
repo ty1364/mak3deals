@@ -8,9 +8,11 @@
   const hintsLeft = document.getElementById("hints-left");
   const hintPanel = document.getElementById("daily-hint");
   const inputHelp = document.querySelector(".daily-input-help");
+  const practiceButton = document.getElementById("practice-run");
   const scoreCount = document.getElementById("score-count");
   const streakCount = document.getElementById("streak-count");
-  const storageKey = `mak3deals-dailydrop-${puzzleDate}`;
+  const practiceMode = new URLSearchParams(location.search).get("practice") === "1";
+  const storageKey = `mak3deals-dailydrop-${puzzleDate}-${practiceMode ? "practice" : "official"}`;
   const statsKey = "mak3deals-dailydrop-stats";
   const rows = [];
   const keys = {};
@@ -112,7 +114,9 @@
     shareButton.disabled = false;
     hintButton.disabled = true;
     keyboard.querySelectorAll("button").forEach((button) => { button.disabled = true; });
-    inputHelp.textContent = "Today's run is complete. A new puzzle opens tomorrow.";
+    practiceButton.hidden = false;
+    practiceButton.textContent = practiceMode ? "Start another practice run" : "Practice this puzzle again";
+    inputHelp.textContent = practiceMode ? "Practice run complete. Start another practice run whenever you want." : "Today's official run is complete. A new puzzle opens tomorrow, or you can practice this puzzle again.";
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
     updateScore((saved.guesses || []).length, won);
     const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
@@ -122,7 +126,7 @@
       localStorage.setItem(statsKey, JSON.stringify(stats));
     }
     streakCount.textContent = stats.streak || 1;
-    setMessage(won ? `You found ${answer} and scored ${currentScore} points. New puzzle tomorrow.` : `The word was ${answer}. Final score: ${currentScore}. New puzzle tomorrow.`);
+    setMessage(practiceMode ? `Practice complete: ${won ? `you found ${answer}` : `the word was ${answer}`}. Score: ${currentScore}.` : won ? `You found ${answer} and scored ${currentScore} points. New puzzle tomorrow.` : `The word was ${answer}. Final score: ${currentScore}. New puzzle tomorrow.`);
   }
 
   function isYesterday(previous) {
@@ -210,6 +214,11 @@
     const text = `DealDrop Daily ${puzzleDate} · ${currentScore} points\n${squares}\nPlay: ${location.origin}/daily`;
     try { await navigator.clipboard.writeText(text); setMessage("Result copied. Send it to somebody who thinks they can beat you."); }
     catch (_) { setMessage(text); }
+  });
+
+  practiceButton.addEventListener("click", () => {
+    if (practiceMode) localStorage.removeItem(storageKey);
+    location.href = "/daily?practice=1&v=daily-practice";
   });
 
   document.getElementById("show-how").addEventListener("click", () => {

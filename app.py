@@ -283,7 +283,7 @@ def guide_detail(slug):
 
 @app.route("/daily")
 def daily_game():
-    return render_template("daily.html", puzzle_date=puzzle_date(), daily_clue=daily_clue())
+    return render_template("daily.html", puzzle_date=puzzle_date(), daily_clue=daily_clue(), practice=request.args.get("practice") == "1")
 
 @app.route("/api/daily/guess", methods=["POST"])
 def daily_guess():

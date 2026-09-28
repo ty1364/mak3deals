@@ -5,12 +5,12 @@
   <title>DealDrop Daily · Mak3Deals</title>
   <meta name="description" content="Play DealDrop Daily, an original daily savings word puzzle from Mak3Deals.">
   <meta name="google-adsense-account" content="ca-pub-3943554631291586">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='daily.css', v='daily-v4') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='daily.css', v='daily-v5') }}">
 </head>
 <body>
   <header class="navbar"><a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/guides">Guides</a><a class="active-nav" href="/daily">Daily game</a><a href="/sources">Sources</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
   <main>
-    <section class="simple-hero daily-hero"><p class="eyebrow">MAK3DEALS // DAILY CHALLENGE</p><h1>DealDrop <em>Daily.</em></h1><p>One five-letter savings word. Six guesses. A fresh board every day.</p><span class="puzzle-badge">Puzzle {{ puzzle_date }}</span></section>
+    <section class="simple-hero daily-hero"><p class="eyebrow">MAK3DEALS // DAILY CHALLENGE</p><h1>DealDrop <em>Daily.</em></h1><p>One five-letter savings word. Six guesses. A fresh board every day.</p><span class="puzzle-badge">{% if practice %}Practice run{% else %}Puzzle {{ puzzle_date }}{% endif %}</span></section>
     <section class="daily-wrap" aria-labelledby="daily-title">
       <div class="daily-topline"><div><p class="eyebrow dark">TODAY'S BOARD</p><h2 id="daily-title">Find today's savings word</h2></div><div class="daily-stats"><div class="daily-stat"><strong id="score-count">1000</strong><span>points</span></div><div class="daily-stat"><strong id="streak-count">0</strong><span>day streak</span></div></div></div>
       <div class="daily-clue"><span class="clue-label">TODAY'S CLUE · {{ daily_clue.category }}</span><strong>{{ daily_clue.clue }}</strong><small>Six guesses. Solve it with fewer guesses and keep more points.</small></div>
@@ -18,7 +18,7 @@
       <p id="daily-message" class="daily-message" role="status">Guess a five-letter word to begin.</p>
       <p class="daily-input-help">Build your guess by tapping the letters below or typing on your keyboard. Press <strong>Enter</strong> to submit.</p>
       <div id="daily-keyboard" class="daily-keyboard" aria-label="Game keyboard"></div>
-      <div class="daily-actions"><button id="hint-button" class="hint-btn" type="button">Reveal a hint <span id="hints-left">(2 left · −150 pts)</span></button><button id="share-result" class="deal-btn" type="button" disabled>Share result</button><button id="show-how" class="outline" type="button">How to play</button></div>
+      <div class="daily-actions"><button id="hint-button" class="hint-btn" type="button">Reveal a hint <span id="hints-left">(2 left · −150 pts)</span></button><button id="share-result" class="deal-btn" type="button" disabled>Share result</button><button id="show-how" class="outline" type="button">How to play</button><button id="practice-run" class="outline" type="button" hidden>Practice this puzzle again</button></div>
       <p id="daily-hint" class="daily-hint" role="status" hidden></p>
       <aside id="how-to-play" class="how-to-play" hidden><strong>How to play</strong><p>Use the clue before you guess. Type any five-letter word. Gold means the letter is in the word and in the right spot. Mint means the letter belongs in the word but needs a new spot. Gray means it is not in today's word. You get six guesses. Hint 1 costs 150 points; Hint 2 costs 300. Your board resets with the next daily puzzle.</p></aside>
     </section>
@@ -26,6 +26,6 @@
   </main>
   <footer><strong>Mak3Deals</strong><span><a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/affiliate-disclosure">Affiliate disclosure</a> · <a href="/contact">Contact</a></span></footer>
   <script>window.DAILY_PUZZLE_DATE={{ puzzle_date|tojson }};</script>
-  <script src="{{ url_for('static', filename='daily.js', v='daily-v4') }}"></script>
+  <script src="{{ url_for('static', filename='daily.js', v='daily-v5') }}"></script>
 </body>
 </html>
