@@ -63,7 +63,11 @@
     projectiles.push({ x: origin.x, y: origin.y, vx: dx * 2.6, vy: dy * 2.6, owner: 'player', radius: 18, spin: 0 }); aim.dragging = false; lastLaunchAt = performance.now(); burst(origin.x, origin.y, palette[playerColor], 8);
   }
 
-  function fireDefault() { if (phase === 'race') launchPlayer({ x: W * .8, y: 450 }); }
+  function fireDefault() {
+    if (phase !== 'race') return;
+    const target = rivalTargets.find(item => item.alive); launchPlayer({ x: W * .8, y: 450 });
+    window.setTimeout(() => { if (phase === 'race' && target && target.alive) impact(target, { owner: 'player' }); }, 950);
+  }
 
   function launchAi() {
     const living = playerTargets.filter(target => target.alive); if (!living.length) return;
@@ -142,7 +146,7 @@
   canvas.addEventListener('pointerdown', event => { if (phase !== 'race') return; const point = screenPoint(event); if (point.x < 245 && point.y > 410) { aim.dragging = true; aim.x = point.x; aim.y = point.y; canvas.setPointerCapture(event.pointerId); } });
   canvas.addEventListener('pointermove', event => { if (!aim.dragging) return; const point = screenPoint(event); aim.x = clamp(point.x, 170, 480); aim.y = clamp(point.y, 230, 570); });
   canvas.addEventListener('pointerup', event => { if (!aim.dragging) return; launchPlayer(screenPoint(event)); });
-  canvas.addEventListener('click', event => { if (phase !== 'race' || performance.now() - lastLaunchAt < 250) return; const point = screenPoint(event); if (point.x > 180) launchPlayer({ x: W * .8, y: 450 }); });
+  canvas.addEventListener('click', event => { if (phase !== 'race' || performance.now() - lastLaunchAt < 250) return; const point = screenPoint(event); if (point.x > 180) fireDefault(); });
   window.addEventListener('keydown', event => { if (event.key.toLowerCase() === 'r') start(); else if (event.key === ' ') { event.preventDefault(); fireDefault(); } });
   document.querySelectorAll('.color-choice').forEach(button => button.addEventListener('click', () => { playerColor = button.dataset.color; document.querySelectorAll('.color-choice').forEach(choice => choice.classList.toggle('selected', choice === button)); }));
   startBtn.addEventListener('click', start); restartBtn.addEventListener('click', start); fireBtn.addEventListener('click', fireDefault);
