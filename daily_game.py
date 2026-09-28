@@ -30,6 +30,41 @@ DAILY_HINTS = {
     "DRIVE": "A trip to the store, or motivation to save.",
 }
 
+DAILY_CLUES = {
+    "PRICE": "Today's word is the number you compare before paying for an item.",
+    "SMART": "Today's word describes a shopper who plans before spending.",
+    "SALES": "Today's word describes multiple store events where prices come down.",
+    "SHARE": "Today's word is what you do when you pass a great deal to someone else.",
+    "VALUE": "Today's word is what you receive compared with what you spend.",
+    "STORE": "Today's word is where a shopper goes to buy something.",
+    "DEALS": "Today's word means more than one savings opportunity.",
+    "OFFER": "Today's word is a retailer's promotion or proposal.",
+    "CASHY": "Today's word is a playful description of something connected to money.",
+    "COINS": "Today's word is money you might keep in a jar, purse, or game reward.",
+    "SAVER": "Today's word describes someone who looks for ways to spend less.",
+    "SPEND": "Today's word is what happens when money leaves your wallet.",
+    "STACK": "Today's word describes combining compatible discounts or rewards.",
+    "TERMS": "Today's word means the conditions attached to an offer.",
+    "LOCAL": "Today's word describes a deal from a nearby business.",
+    "LOYAL": "Today's word describes a customer who keeps coming back.",
+    "CARTS": "Today's word describes where online shoppers collect items before checkout.",
+    "SHOPS": "Today's word means places where people buy things.",
+    "CHECK": "Today's word is what you should do before paying or publishing a deal.",
+    "BUYER": "Today's word means the person making a purchase.",
+    "SAVED": "Today's word describes what happened when a discount reduced your cost.",
+    "WATCH": "Today's word is what you do to keep an eye on a price.",
+    "MATCH": "Today's word describes a retailer policy that may meet a competitor's price.",
+    "CLICK": "Today's word is the action that opens a deal or retailer link.",
+    "TODAY": "Today's word points to the day this puzzle was published.",
+    "FLASH": "Today's word describes a short-lived promotion with limited time.",
+    "BONUS": "Today's word means an extra reward added to the main savings.",
+    "POINT": "Today's word is a unit in a loyalty or rewards program.",
+    "ROUND": "Today's word means one cycle of guesses in a game.",
+    "DRIVE": "Today's word can mean a trip to the store or motivation to save.",
+}
+
+HINT_COSTS = (150, 300)
+
 
 def puzzle_date():
     return date.today().isoformat()
@@ -38,6 +73,24 @@ def puzzle_date():
 def answer_for(day=None):
     day = day or date.today()
     return DAILY_WORDS[(day.toordinal() * 7) % len(DAILY_WORDS)]
+
+
+def daily_clue():
+    answer = answer_for()
+    return {"category": "Shopper's vocabulary", "clue": DAILY_CLUES.get(answer, "Today's word is connected to finding a better deal.")}
+
+
+def daily_score(attempts=0, hints_used=0, won=False):
+    """Return the visible game score; the contest backend can make this authoritative later."""
+    try:
+        attempts = max(0, int(attempts or 0))
+        hints_used = max(0, min(len(HINT_COSTS), int(hints_used or 0)))
+    except (TypeError, ValueError):
+        attempts, hints_used = 0, 0
+    score = 1000 - max(0, attempts - 1) * 100 - sum(HINT_COSTS[:hints_used])
+    if not won and attempts >= 6:
+        score = max(0, score - 100)
+    return max(0, score)
 
 
 def score_guess(guess, answer):
@@ -80,7 +133,7 @@ def evaluate_guess(guess, attempts=0):
 def daily_hint(hint_index=0):
     answer = answer_for()
     if hint_index == 0:
-        return {"ok": True, "hint_index": 0, "hint": DAILY_HINTS.get(answer, "This word is connected to finding a better deal.")}
+        return {"ok": True, "hint_index": 0, "hint": DAILY_HINTS.get(answer, "This word is connected to finding a better deal."), "cost": HINT_COSTS[0]}
     if hint_index == 1:
-        return {"ok": True, "hint_index": 1, "hint": f"The word starts with {answer[0]}.", "letter": answer[0]}
+        return {"ok": True, "hint_index": 1, "hint": f"The word starts with {answer[0]}.", "letter": answer[0], "cost": HINT_COSTS[1]}
     return {"ok": False, "error": "No more hints remain for today's puzzle."}

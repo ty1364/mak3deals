@@ -7,6 +7,7 @@
   const hintButton = document.getElementById("hint-button");
   const hintsLeft = document.getElementById("hints-left");
   const hintPanel = document.getElementById("daily-hint");
+  const scoreCount = document.getElementById("score-count");
   const streakCount = document.getElementById("streak-count");
   const storageKey = `mak3deals-dailydrop-${puzzleDate}`;
   const statsKey = "mak3deals-dailydrop-stats";
@@ -16,6 +17,19 @@
   let rowIndex = 0;
   let finished = false;
   let hintsUsed = 0;
+  let currentScore = 1000;
+  const hintCosts = [150, 300];
+
+  function calculateScore(attempts, won) {
+    let score = 1000 - Math.max(0, attempts - 1) * 100 - hintCosts.slice(0, hintsUsed).reduce((total, cost) => total + cost, 0);
+    if (!won && attempts >= 6) score -= 100;
+    return Math.max(0, score);
+  }
+
+  function updateScore(attempts, won) {
+    currentScore = calculateScore(attempts, won);
+    scoreCount.textContent = currentScore;
+  }
 
   function makeBoard() {
     for (let row = 0; row < 6; row += 1) {
@@ -96,6 +110,8 @@
     finished = true;
     shareButton.disabled = false;
     hintButton.disabled = true;
+    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    updateScore((saved.guesses || []).length, won);
     const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
     if (stats.lastDate !== puzzleDate) {
       stats.streak = stats.lastDate && isYesterday(stats.lastDate) ? (stats.streak || 0) + 1 : 1;
@@ -103,7 +119,7 @@
       localStorage.setItem(statsKey, JSON.stringify(stats));
     }
     streakCount.textContent = stats.streak || 1;
-    setMessage(won ? `You found ${answer}. New puzzle tomorrow.` : `The word was ${answer}. New puzzle tomorrow.`);
+    setMessage(won ? `You found ${answer} and scored ${currentScore} points. New puzzle tomorrow.` : `The word was ${answer}. Final score: ${currentScore}. New puzzle tomorrow.`);
   }
 
   function isYesterday(previous) {
@@ -114,7 +130,8 @@
 
   function updateHintButton() {
     const remaining = Math.max(0, 2 - hintsUsed);
-    hintsLeft.textContent = `(${remaining} left)`;
+    const nextCost = hintCosts[hintsUsed];
+    hintsLeft.textContent = nextCost ? `(${remaining} left · −${nextCost} pts)` : "(0 left)";
     hintButton.disabled = finished || remaining === 0;
   }
 
@@ -135,6 +152,7 @@
     localStorage.setItem(storageKey, JSON.stringify(saved));
     hintPanel.hidden = false;
     hintPanel.textContent = saved.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
+    updateScore((saved.guesses || []).length, false);
     updateHintButton();
   });
 
@@ -149,6 +167,7 @@
     if (!result.ok) { setMessage(result.error, true); return; }
     paintResult(result.guess, result.pattern);
     saveState(result.answer);
+    updateScore(rowIndex + 1, result.won);
     currentGuess = "";
     if (result.won || rowIndex === 5) finish(result.won, result.answer || "the daily word");
     else { rowIndex += 1; setMessage("Keep going. The board is giving you clues."); }
@@ -172,6 +191,7 @@
       hintPanel.textContent = saved.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
     }
     streakCount.textContent = stats.streak || 0;
+    updateScore((saved.guesses || []).length, Boolean(saved.answer && saved.guesses?.some((item) => item.guess === saved.answer)));
     (saved.guesses || []).forEach((item) => {
       if (rowIndex > 5) return;
       paintResult(item.guess, item.pattern);
@@ -184,7 +204,7 @@
   shareButton.addEventListener("click", async () => {
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
     const squares = (saved.guesses || []).map((item) => item.pattern.map((state) => state === "correct" ? "🟨" : state === "present" ? "🟩" : "⬜").join("")).join("\n");
-    const text = `DealDrop Daily ${puzzleDate}\n${squares}\nPlay: ${location.origin}/daily`;
+    const text = `DealDrop Daily ${puzzleDate} · ${currentScore} points\n${squares}\nPlay: ${location.origin}/daily`;
     try { await navigator.clipboard.writeText(text); setMessage("Result copied. Send it to somebody who thinks they can beat you."); }
     catch (_) { setMessage(text); }
   });

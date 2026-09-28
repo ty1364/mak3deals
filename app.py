@@ -4,7 +4,7 @@ import os
 import re
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request
-from daily_game import daily_hint, evaluate_guess, puzzle_date
+from daily_game import daily_clue, daily_hint, evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 
@@ -283,7 +283,7 @@ def guide_detail(slug):
 
 @app.route("/daily")
 def daily_game():
-    return render_template("daily.html", puzzle_date=puzzle_date())
+    return render_template("daily.html", puzzle_date=puzzle_date(), daily_clue=daily_clue())
 
 @app.route("/api/daily/guess", methods=["POST"])
 def daily_guess():
