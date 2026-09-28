@@ -29,6 +29,34 @@
   const listEl = document.getElementById('leaderboardList');
 
   const colors = ['#8df7c5', '#ff789f', '#ffd36f', '#8cecff', '#c59cff'];
+  const courseBlueprints = [
+    { name: 'SKYLINE SPRINT', layout: [
+      { at: 1.8, lane: 1, type: 'token' }, { at: 4.4, lane: 1, type: 'gate' },
+      { at: 7.2, lane: 0, type: 'bumper' }, { at: 10.2, lane: 2, type: 'spring' },
+      { at: 13.2, lane: 2, type: 'gate' }, { at: 16.3, lane: 1, type: 'bumper' },
+      { at: 19.5, lane: 0, type: 'token' }, { at: 22.4, lane: 0, type: 'gate' },
+      { at: 26.1, lane: 1, type: 'spring' }, { at: 29.4, lane: 2, type: 'gate' },
+      { at: 33.1, lane: 1, type: 'token' }, { at: 37.2, lane: 1, type: 'gate' }
+    ] },
+    { name: 'BUMPER BOULEVARD', layout: [
+      { at: 1.5, lane: 0, type: 'bumper' }, { at: 3.7, lane: 2, type: 'bumper' },
+      { at: 6.0, lane: 1, type: 'gate' }, { at: 8.6, lane: 0, type: 'spring' },
+      { at: 11.0, lane: 2, type: 'gate' }, { at: 13.4, lane: 1, type: 'bumper' },
+      { at: 15.8, lane: 0, type: 'gate' }, { at: 18.3, lane: 2, type: 'spring' },
+      { at: 21.0, lane: 1, type: 'gate' }, { at: 23.4, lane: 0, type: 'bumper' },
+      { at: 25.7, lane: 2, type: 'bumper' }, { at: 28.2, lane: 1, type: 'token' },
+      { at: 31.0, lane: 1, type: 'gate' }
+    ] },
+    { name: 'FINAL CHECKOUT', layout: [
+      { at: 1.2, lane: 1, type: 'gate' }, { at: 3.0, lane: 0, type: 'gate' },
+      { at: 4.8, lane: 2, type: 'gate' }, { at: 7.0, lane: 1, type: 'spring' },
+      { at: 9.2, lane: 0, type: 'bumper' }, { at: 11.4, lane: 2, type: 'bumper' },
+      { at: 13.6, lane: 1, type: 'gate' }, { at: 15.8, lane: 0, type: 'spring' },
+      { at: 18.0, lane: 2, type: 'gate' }, { at: 20.2, lane: 1, type: 'token' },
+      { at: 22.4, lane: 0, type: 'gate' }, { at: 24.6, lane: 2, type: 'gate' },
+      { at: 26.8, lane: 1, type: 'bumper' }
+    ] }
+  ];
   let phase = 'idle';
   let lastFrame = 0;
   let round = 1;
@@ -46,6 +74,7 @@
   let jumpY = 0;
   let jumpVelocity = 0;
   let hurtCooldown = 0;
+  let courseCursor = 0;
   let objects = [];
   let particles = [];
   let ai = [];
@@ -60,7 +89,7 @@
     phase = 'idle'; round = 1; score = 0; lives = 3; elapsed = 0; roundTime = 42;
     lastRun = null; distance = 0; spawnClock = 0; sceneryClock = 0; runnerLane = 1;
     targetLane = 1; jumpY = 0; jumpVelocity = 0; objects = []; particles = [];
-    hurtCooldown = 0;
+    hurtCooldown = 0; courseCursor = 0;
     ai = makeRivals(10); messageEl.textContent = '';
   }
 
@@ -93,15 +122,8 @@
   function laneX(lane) { return 440 + lane * 160; }
   function currentSpeed() { return 0.29 + round * 0.045 + Math.min(0.16, elapsed * 0.0022); }
 
-  function spawnObject() {
-    const lane = Math.floor(Math.random() * 3);
-    const dangerous = Math.random() < 0.56;
-    const type = dangerous ? (Math.random() < 0.5 ? 'gate' : 'bumper') : (Math.random() < 0.5 ? 'token' : 'spring');
-    objects.push({ type, lane, z: 1.16, spin: Math.random() * Math.PI * 2, hit: false });
-    if (type === 'gate' && Math.random() < 0.55) {
-      const safeLane = (lane + (Math.random() < 0.5 ? 1 : 2)) % 3;
-      objects.push({ type: 'token', lane: safeLane, z: 1.33, spin: 0, hit: false });
-    }
+  function spawnObject(spec) {
+    objects.push({ ...spec, z: 1.16, spin: Math.random() * Math.PI * 2, hit: false });
   }
 
   function finish(won, reason) {
@@ -115,17 +137,17 @@
 
   function clearRound() {
     phase = 'between'; score += 500 * round;
-    roundEyebrow.textContent = `ROUND ${round} CLEARED`;
+    roundEyebrow.textContent = `CHECKPOINT ${round} CLEARED`;
     roundTitle.textContent = 'YOU QUALIFIED.';
-    roundCopy.textContent = 'The track is moving faster. The final round adds double obstacles.';
+    roundCopy.textContent = `You cleared ${courseBlueprints[round - 1].name}. The next section is ready.`;
     roundOverlay.classList.remove('hidden');
   }
 
   function nextRound() {
     round += 1; roundTime = Math.max(28, 42 - round * 5); elapsed = 0; distance = 0;
-    spawnClock = 0; objects = []; ai = makeRivals(Math.max(3, 11 - round * 3));
+    spawnClock = 0; courseCursor = 0; objects = []; ai = makeRivals(Math.max(3, 11 - round * 3));
     runnerLane = 1; targetLane = 1; jumpY = 0; jumpVelocity = 0;
-    hurtCooldown = 0;
+    hurtCooldown = 0; courseCursor = 0;
     roundOverlay.classList.add('hidden'); phase = 'race'; lastFrame = performance.now();
     requestAnimationFrame(loop);
   }
@@ -147,10 +169,9 @@
     if (phase !== 'race') return;
     elapsed += dt; roundTime -= dt; distance += currentSpeed() * dt;
     hurtCooldown = Math.max(0, hurtCooldown - dt);
-    sceneryClock += dt * currentSpeed() * 9; spawnClock -= dt;
-    if (spawnClock <= 0) {
-      spawnObject(); spawnClock = Math.max(0.72, 1.08 - round * 0.08 - elapsed * 0.002);
-    }
+    sceneryClock += dt * currentSpeed() * 9;
+    const blueprint = courseBlueprints[round - 1].layout;
+    while (courseCursor < blueprint.length && elapsed >= blueprint[courseCursor].at) spawnObject(blueprint[courseCursor++]);
     runnerLane += (targetLane - runnerLane) * Math.min(1, dt * 12);
     if (jumpY > 0 || jumpVelocity > 0) {
       jumpY += jumpVelocity * dt; jumpVelocity -= 1700 * dt;
@@ -254,10 +275,13 @@
     drawBackground(); drawTrack(); for (const rival of ai) drawRival(rival); for (const item of objects) drawObject(item); drawRunner(); drawParticles();
     ctx.fillStyle = '#f8fbff'; ctx.font = '900 22px system-ui'; ctx.fillText('DEAL DASH ROYALE', 34, 40);
     ctx.font = '800 13px system-ui'; ctx.fillStyle = '#ffd36f'; ctx.fillText(`ROUND ${round}/3`, 38, 68);
-    ctx.fillStyle = '#8df7c5'; ctx.fillText(`LANE ${laneNames[Math.round(runnerLane)]}`, 145, 68);
-    ctx.fillStyle = '#cce8ee'; ctx.fillText(`SCORE ${Math.floor(score).toLocaleString()}`, 280, 68);
+    ctx.fillStyle = '#8cecff'; ctx.fillText(courseBlueprints[round - 1].name, 145, 68);
+    ctx.fillStyle = '#8df7c5'; ctx.fillText(`LANE ${laneNames[Math.round(runnerLane)]}`, 345, 68);
+    ctx.fillStyle = '#cce8ee'; ctx.fillText(`SCORE ${Math.floor(score).toLocaleString()}`, 485, 68);
     ctx.fillStyle = '#ff9eae'; ctx.fillText(`LIVES ${'♥'.repeat(lives)}${'♡'.repeat(3 - lives)}`, W - 150, 42);
     ctx.fillStyle = '#cce8ee'; ctx.font = '700 12px system-ui'; ctx.fillText(`${Math.max(0, Math.ceil(roundTime))}s · A/D lane shift · SPACE jump`, W - 330, 68);
+    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(38, 82, 360, 5);
+    ctx.fillStyle = '#ffd36f'; ctx.fillRect(38, 82, 360 * clamp(elapsed / roundTime, 0, 1), 5);
   }
 
   function loop(now) {
