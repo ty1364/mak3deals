@@ -4,7 +4,7 @@ import os
 import re
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request
-from daily_game import evaluate_guess, puzzle_date
+from daily_game import daily_hint, evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 
@@ -289,6 +289,16 @@ def daily_game():
 def daily_guess():
     payload = request.get_json(silent=True) or {}
     return jsonify(evaluate_guess(payload.get("guess", ""), payload.get("attempts", 0)))
+
+
+@app.route("/api/daily/hint", methods=["POST"])
+def daily_hint_api():
+    payload = request.get_json(silent=True) or {}
+    try:
+        hint_index = int(payload.get("hint_index", 0))
+    except (TypeError, ValueError):
+        hint_index = 0
+    return jsonify(daily_hint(hint_index))
 
 @app.route("/robots.txt")
 def robots():

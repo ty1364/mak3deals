@@ -16,7 +16,8 @@
       <div id="daily-board" class="daily-board" aria-label="DealDrop Daily guesses"></div>
       <p id="daily-message" class="daily-message" role="status">Guess a five-letter word to begin.</p>
       <div id="daily-keyboard" class="daily-keyboard" aria-label="Game keyboard"></div>
-      <div class="daily-actions"><button id="share-result" class="deal-btn" type="button" disabled>Share result</button><button id="show-how" class="outline" type="button">How to play</button></div>
+      <div class="daily-actions"><button id="hint-button" class="hint-btn" type="button">Reveal a hint <span id="hints-left">(2 left)</span></button><button id="share-result" class="deal-btn" type="button" disabled>Share result</button><button id="show-how" class="outline" type="button">How to play</button></div>
+      <p id="daily-hint" class="daily-hint" role="status" hidden></p>
       <aside id="how-to-play" class="how-to-play" hidden><strong>How to play</strong><p>Type any five-letter word. Gold means the letter is in the word and in the right spot. Mint means the letter belongs in the word but needs a new spot. Gray means it is not in today's word. Your board resets with the next daily puzzle.</p></aside>
     </section>
   </main>

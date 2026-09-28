@@ -4,6 +4,9 @@
   const keyboard = document.getElementById("daily-keyboard");
   const message = document.getElementById("daily-message");
   const shareButton = document.getElementById("share-result");
+  const hintButton = document.getElementById("hint-button");
+  const hintsLeft = document.getElementById("hints-left");
+  const hintPanel = document.getElementById("daily-hint");
   const streakCount = document.getElementById("streak-count");
   const storageKey = `mak3deals-dailydrop-${puzzleDate}`;
   const statsKey = "mak3deals-dailydrop-stats";
@@ -12,6 +15,7 @@
   let currentGuess = "";
   let rowIndex = 0;
   let finished = false;
+  let hintsUsed = 0;
 
   function makeBoard() {
     for (let row = 0; row < 6; row += 1) {
@@ -91,6 +95,7 @@
   function finish(won, answer) {
     finished = true;
     shareButton.disabled = false;
+    hintButton.disabled = true;
     const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
     if (stats.lastDate !== puzzleDate) {
       stats.streak = stats.lastDate && isYesterday(stats.lastDate) ? (stats.streak || 0) + 1 : 1;
@@ -106,6 +111,32 @@
     const now = new Date(`${puzzleDate}T00:00:00`);
     return Math.round((now - then) / 86400000) === 1;
   }
+
+  function updateHintButton() {
+    const remaining = Math.max(0, 2 - hintsUsed);
+    hintsLeft.textContent = `(${remaining} left)`;
+    hintButton.disabled = finished || remaining === 0;
+  }
+
+  hintButton.addEventListener("click", async () => {
+    if (finished || hintsUsed >= 2) return;
+    const response = await fetch("/api/daily/hint", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hint_index: hintsUsed })
+    });
+    const result = await response.json();
+    if (!result.ok) { setMessage(result.error, true); return; }
+    hintsUsed += 1;
+    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    saved.hintsUsed = hintsUsed;
+    saved.hints = saved.hints || [];
+    saved.hints.push(result.hint);
+    localStorage.setItem(storageKey, JSON.stringify(saved));
+    hintPanel.hidden = false;
+    hintPanel.textContent = saved.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
+    updateHintButton();
+  });
 
   async function submitGuess() {
     if (finished || currentGuess.length !== 5) {
@@ -134,6 +165,12 @@
   function restore() {
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
     const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
+    hintsUsed = saved.hintsUsed || 0;
+    updateHintButton();
+    if (saved.hints && saved.hints.length) {
+      hintPanel.hidden = false;
+      hintPanel.textContent = saved.hints.map((hint, index) => `Hint ${index + 1}: ${hint}`).join(" • ");
+    }
     streakCount.textContent = stats.streak || 0;
     (saved.guesses || []).forEach((item) => {
       if (rowIndex > 5) return;
