@@ -3,9 +3,9 @@
   if (!players.length) return;
 
   const housePlacements = [
-    { provider: "Mak3Deals house promo", title: "Take a shopping break.", detail: "Survive Void Strike or crush your way through Bubble Crush.", href: "/games", cta: "Play now →", tone: "pink" },
+    { provider: "Mak3Deals savings desk", title: "Find the deal. Know the source.", detail: "Live retailer pages, checked dates, and clear disclosures.", href: "/", cta: "Browse savings →", tone: "pink" },
     { provider: "Direct sponsor placement", title: "Put your business in front of shoppers.", detail: "Verified local and online offers can appear here.", href: "/submit", cta: "Submit a deal →", tone: "blue" },
-    { provider: "Google AdSense slot", title: "Google ads are coming.", detail: "This placement is ready for AdSense approval and ad-unit setup.", href: "/affiliate-disclosure", cta: "View disclosure →", tone: "gold" }
+    { provider: "Advertising partner placement", title: "Reach shoppers who are ready to save.", detail: "Sponsored placements will be labeled clearly.", href: "/affiliate-disclosure", cta: "View disclosure →", tone: "gold" }
   ];
 
   function escapeHtml(value) {
@@ -13,13 +13,16 @@
   }
 
   function offerPlacement(offer) {
+    const sourceHub = offer.deal_kind === "source-hub";
     return {
-      provider: `${offer.store} verified offer`,
+      provider: sourceHub ? `${offer.store} live source` : `${offer.store} verified offer`,
       title: offer.title,
-      detail: `${offer.sale_price || "See current price"} · ${offer.offer_terms || "Retailer terms apply."}`,
+      detail: sourceHub
+        ? `Open the retailer's live deal page · ${offer.offer_terms || "Retailer terms apply."}`
+        : `${offer.sale_price || "See current price"} · ${offer.offer_terms || "Retailer terms apply."}`,
       image: offer.image_url,
       href: `/click/${encodeURIComponent(offer.id)}`,
-      cta: "See official offer →",
+      cta: sourceHub ? "Open live deals →" : "See official offer →",
       tone: "cyan"
     };
   }

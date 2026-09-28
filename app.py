@@ -302,7 +302,7 @@ def offer_api():
     store = request.args.get("store", "").strip()
     search = " ".join(request.args.get("q", "").lower().split())
     query = ("SELECT id, store, title, description, sale_price, regular_price, offer_terms, "
-             "expires_on, checked_on, link, affiliate_url, product_key, image_url FROM deals "
+             "expires_on, checked_on, link, affiliate_url, product_key, image_url, deal_kind FROM deals "
              "WHERE verified=1 AND expires_on >= ?")
     values = [date.today().isoformat()]
     if store:
