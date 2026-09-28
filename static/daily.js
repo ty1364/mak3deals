@@ -7,6 +7,7 @@
   const hintButton = document.getElementById("hint-button");
   const hintsLeft = document.getElementById("hints-left");
   const hintPanel = document.getElementById("daily-hint");
+  const inputHelp = document.querySelector(".daily-input-help");
   const scoreCount = document.getElementById("score-count");
   const streakCount = document.getElementById("streak-count");
   const storageKey = `mak3deals-dailydrop-${puzzleDate}`;
@@ -110,6 +111,8 @@
     finished = true;
     shareButton.disabled = false;
     hintButton.disabled = true;
+    keyboard.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+    inputHelp.textContent = "Today's run is complete. A new puzzle opens tomorrow.";
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
     updateScore((saved.guesses || []).length, won);
     const stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
