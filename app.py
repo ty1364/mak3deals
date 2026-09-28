@@ -44,7 +44,7 @@ def close_db(error):
 def add_site_ad_tv(response):
     # Keep the sponsored panel on every normal HTML page, but avoid duplicating
     # the custom arcade TV already rendered by /game and never touch API data.
-    if request.path not in {"/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale"} and response.content_type.startswith("text/html"):
+    if request.path not in {"/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege"} and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
             if '<section class="hero">' in html:
@@ -312,11 +312,15 @@ def dealway_drift():
 def deal_dash_royale():
     return render_template("deal-dash-royale.html")
 
+@app.route("/game/deal-siege")
+def deal_siege():
+    return render_template("deal-siege.html")
+
 @app.route("/api/leaderboard")
 def leaderboard():
     month = date.today().strftime("%Y-%m")
     game_name = request.args.get("game", "void-strike").strip().lower()
-    if game_name not in {"void-strike", "deal-dash", "bubble-crush", "cart-quest", "vault-runner", "dealway-drift", "deal-dash-royale"}:
+    if game_name not in {"void-strike", "deal-dash", "bubble-crush", "cart-quest", "vault-runner", "dealway-drift", "deal-dash-royale", "deal-siege"}:
         game_name = "void-strike"
     rows = db().execute(
         "SELECT player_name, score, wave, submitted_at FROM game_scores "
@@ -329,7 +333,7 @@ def leaderboard():
 def submit_score():
     payload = request.get_json(silent=True) or {}
     game_name = str(payload.get("game", "void-strike")).strip().lower()
-    if game_name not in {"void-strike", "deal-dash", "bubble-crush", "cart-quest", "vault-runner", "dealway-drift", "deal-dash-royale"}:
+    if game_name not in {"void-strike", "deal-dash", "bubble-crush", "cart-quest", "vault-runner", "dealway-drift", "deal-dash-royale", "deal-siege"}:
         return jsonify({"error": "That game is not available."}), 400
     name = " ".join(str(payload.get("name", "")).split())[:20]
     try:
