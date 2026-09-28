@@ -7,7 +7,7 @@
   <meta name="description" content="Deal Dash Royale is an original free obstacle royale browser game from Mak3Deals." />
   <meta name="google-adsense-account" content="ca-pub-3943554631291586" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='deal-dash-royale.css', v='2') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='deal-dash-royale.css', v='3') }}" />
 </head>
 <body>
   <main class="royale-shell">
@@ -15,7 +15,7 @@
     <header class="royale-hero">
       <p class="eyebrow">MAK3DEALS ORIGINAL // OBSTACLE ROYALE</p>
       <h1>DEAL DASH <span>ROYALE</span></h1>
-      <p>Three designed sections. Hit every checkpoint, survive the final checkout, and make the finish arch.</p>
+      <p>Three fixed courses. Read the lane cues, race rival runners, and fight for the best finish.</p>
     </header>
 
     <section class="royale-game" aria-label="Deal Dash Royale game">
@@ -23,8 +23,8 @@
 
       <div id="startOverlay" class="royale-overlay">
         <p class="eyebrow">ROUND 1 // THE AISLE GAUNTLET</p>
-        <h2>KEEP<br><span>RUNNING.</span></h2>
-        <p>Skyline Sprint is the opening section. Switch lanes, jump gates, hit spring pads, and collect deal tokens.</p>
+        <h2>RACE<br><span>THE CHECKOUT.</span></h2>
+        <p>Skyline Sprint is the opening section. The course stays put while you and the rival runners fight through every lane.</p>
         <button id="startBtn" type="button">ENTER THE RACE</button>
         <small>A / D or ← / → switch lanes · SPACE / ↑ jump</small>
       </div>
@@ -73,7 +73,7 @@
       <ol id="leaderboardList"><li>Loading scores…</li></ol>
     </section>
   </main>
-  <script src="{{ url_for('static', filename='deal-dash-royale.js', v='3') }}"></script>
+  <script src="{{ url_for('static', filename='deal-dash-royale.js', v='4') }}"></script>
   <script src="{{ url_for('static', filename='ad-player.js', v='deal-dash-royale-1') }}" defer></script>
 </body>
 </html>

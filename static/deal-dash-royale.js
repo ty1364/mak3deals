@@ -97,7 +97,7 @@
 
   function makeRivals(count) {
     return Array.from({ length: count }, (_, index) => ({
-      lane: index % 3, z: 0.03 + (index % 5) * 0.045, color: colors[(index + 1) % colors.length],
+      number: index + 2, lane: index % 3, z: 0.03 + (index % 5) * 0.045, color: colors[(index + 1) % colors.length],
       wobble: Math.random() * Math.PI * 2, pace: 0.8 + Math.random() * 0.35
     }));
   }
@@ -140,7 +140,7 @@
     lastRun = { score: Math.max(1, Math.floor(score)), wave: round, duration: Math.max(10, Math.floor((Date.now() - runStartedAt) / 1000)) };
     scoreEl.textContent = lastRun.score.toLocaleString();
     summaryEl.textContent = `${reason} · ${lives} LIVES LEFT · ROUND ${round}`;
-    document.getElementById('endTitle').textContent = won ? 'CHAMPION' : 'RACE COMPLETE';
+    document.getElementById('endTitle').textContent = won ? 'CHAMPION' : reason.startsWith('OUT') ? 'ELIMINATED' : 'FINISHER';
     endOverlay.classList.remove('hidden'); loadBoard();
   }
 
@@ -247,36 +247,32 @@
 
   function drawRival(rival) {
     if (rival.z < 0 || rival.z > 1.2) return;
-    const point = trackPoint(rival.z); const size = 18 + (1 - rival.z / 1.2) * 32; const x = W / 2 + (rival.lane - 1) * point.laneGap; const y = point.y - size + Math.sin(rival.wobble) * 3;
-    ctx.save(); ctx.fillStyle = rival.color; ctx.shadowColor = rival.color; ctx.shadowBlur = 12; ctx.beginPath(); ctx.ellipse(x, y, size * 0.68, size, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0; ctx.fillStyle = '#101a35'; ctx.fillRect(x - size * 0.34, y - size * 0.2, size * 0.68, size * 0.2);
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x - size * 0.2, y - size * 0.1, Math.max(2, size * 0.07), 0, Math.PI * 2); ctx.arc(x + size * 0.2, y - size * 0.1, Math.max(2, size * 0.07), 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    const point = trackPoint(rival.z); const size = 18 + (1 - rival.z / 1.2) * 32;
+    const x = W / 2 + (rival.lane - 1) * point.laneGap; const y = point.y - size + Math.sin(rival.wobble) * 2;
+    ctx.save(); ctx.translate(x, y); ctx.globalAlpha = .96; ctx.shadowColor = rival.color; ctx.shadowBlur = 12;
+    ctx.fillStyle = rival.color; ctx.beginPath(); ctx.roundRect(-size * .45, -size * .52, size * .9, size * 1.05, size * .22); ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = '#f8fbff'; ctx.beginPath(); ctx.arc(0, -size * .63, size * .34, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#122033'; ctx.beginPath(); ctx.roundRect(-size * .22, -size * .68, size * .44, size * .14, size * .05); ctx.fill();
+    ctx.strokeStyle = '#122033'; ctx.lineWidth = Math.max(2, size * .08); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-size * .2, size * .52); ctx.lineTo(-size * .34, size * .75); ctx.moveTo(size * .2, size * .52); ctx.lineTo(size * .34, size * .75); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = `900 ${Math.max(8, size * .28)}px system-ui`; ctx.textAlign = 'center'; ctx.fillText(String(rival.number), 0, size * .22); ctx.restore();
   }
 
-  function drawObject(item) {
-    if (item.z < 0 || item.z > 1.2) return;
-    const point = trackPoint(item.z); const x = W / 2 + (item.lane - 1) * point.laneGap; const scale = 0.28 + (1 - item.z / 1.2) * 1.05; const y = point.y - 12 * scale;
-    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-    if (item.type === 'token') {
-      ctx.rotate(item.spin); ctx.fillStyle = '#ffd36f'; ctx.shadowColor = '#ffd36f'; ctx.shadowBlur = 24; ctx.fillRect(-18, -18, 36, 36);
-      ctx.rotate(-item.spin); ctx.fillStyle = '#7d4c19'; ctx.font = '900 26px system-ui'; ctx.textAlign = 'center'; ctx.fillText('%', 0, 9);
-    } else if (item.type === 'spring') {
-      ctx.fillStyle = '#18b9bf'; ctx.fillRect(-37, -12, 74, 24); ctx.fillStyle = '#ffd36f'; ctx.fillRect(-31, -7, 62, 8);
-      ctx.strokeStyle = '#eefcff'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, 12, 25, Math.PI, Math.PI * 2); ctx.stroke();
-    } else if (item.type === 'gate') {
-      ctx.fillStyle = '#ef5d63'; ctx.fillRect(-10, -52, 20, 104); ctx.save(); ctx.rotate(item.spin); ctx.fillStyle = '#f7fbf5'; ctx.fillRect(-76, -11, 152, 22); ctx.fillStyle = '#ef5d63';
-      for (let index = -3; index < 4; index += 2) ctx.fillRect(index * 22, -11, 22, 22); ctx.restore();
-    } else {
-      ctx.fillStyle = '#ff8b39'; ctx.beginPath(); ctx.roundRect(-29, -44, 58, 88, 18); ctx.fill(); ctx.fillStyle = '#ffd36f'; ctx.beginPath(); ctx.arc(0, -26, 8, 0, Math.PI * 2); ctx.fill();
-    }
+  function drawCourseCue(item) {
+    if (item.hit || item.z <= playerZ || item.z - playerZ > .16) return;
+    const point = trackPoint(item.z); const x = W / 2 + (item.lane - 1) * point.laneGap;
+    const intensity = clamp(1 - (item.z - playerZ) / .16, .2, 1); const color = item.type === 'token' ? '#ffd36f' : item.type === 'spring' ? '#8cecff' : '#ff789f';
+    ctx.save(); ctx.globalAlpha = .18 + intensity * .52; ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.setLineDash([7, 7]);
+    ctx.beginPath(); ctx.arc(x, point.y - 18, 18 + (1 - item.z / 1.2) * 14, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = color; ctx.font = '900 10px system-ui'; ctx.textAlign = 'center'; ctx.fillText(item.type === 'spring' ? 'BOOST' : item.type === 'token' ? 'BONUS' : 'JUMP', x, point.y - 42);
     ctx.restore();
   }
 
   function drawRunner() {
-    const point = trackPoint(playerZ); const scale = 0.55 + (1 - playerZ / 1.15) * 0.55;
-    const size = 78 + (1 - playerZ / 1.15) * 72; const x = W / 2 + (runnerLane - 1) * point.laneGap;
+    const point = trackPoint(playerZ); const size = 78 + (1 - playerZ / 1.15) * 72; const x = W / 2 + (runnerLane - 1) * point.laneGap;
     const bob = Math.sin(elapsed * 15) * 3; const tilt = Math.sin(elapsed * 15) * 0.035; const y = point.y - jumpY * 0.45 + bob;
     ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.globalAlpha = 0.25; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 6 + jumpY * 0.05, size * 0.42, size * 0.09, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.globalAlpha = .85; ctx.strokeStyle = '#8df7c5'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -size * .5, size * .58, Math.PI * .15, Math.PI * .85); ctx.stroke(); ctx.globalAlpha = 1;
     if (runnerImage.complete && runnerImage.naturalWidth) ctx.drawImage(runnerImage, -size / 2, -size, size, size);
     else { ctx.fillStyle = '#8df7c5'; ctx.beginPath(); ctx.ellipse(0, -size * 0.5, size * 0.35, size * 0.48, 0, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
@@ -288,7 +284,7 @@
   }
 
   function draw() {
-    drawBackground(); drawTrack(); for (const rival of ai) drawRival(rival); for (const item of objects) drawObject(item); drawRunner(); drawParticles();
+    drawBackground(); drawTrack(); for (const item of objects) drawCourseCue(item); for (const rival of ai) drawRival(rival); drawRunner(); drawParticles();
     ctx.fillStyle = '#f8fbff'; ctx.font = '900 22px system-ui'; ctx.fillText('DEAL DASH ROYALE', 34, 40);
     ctx.font = '800 13px system-ui'; ctx.fillStyle = '#ffd36f'; ctx.fillText(`ROUND ${round}/3`, 38, 68);
     ctx.fillStyle = '#8cecff'; ctx.fillText(courseBlueprints[round - 1].name, 145, 68);
