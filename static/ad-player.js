@@ -41,7 +41,9 @@
 
   Promise.all(verifiedStoreFeeds)
     .then((feeds) => {
-      const verifiedOffers = feeds.flatMap((data) => data.offers || []);
+      // Source hubs are shopping links, not advertising inventory. Only a
+      // future authorized offer/feed row may appear as a retailer ad here.
+      const verifiedOffers = feeds.flatMap((data) => data.offers || []).filter((offer) => offer.deal_kind !== "source-hub");
       const placements = [...verifiedOffers.slice(0, 4).map(offerPlacement), ...housePlacements];
       players.forEach((player) => {
         let index = 0;
