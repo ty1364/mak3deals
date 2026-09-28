@@ -9,7 +9,7 @@
   const runnerImage = new Image();
   const courseImage = new Image();
   runnerImage.src = '/static/assets/games/deal-dash-royale/runner-cutout-v1.png';
-  courseImage.src = '/static/assets/games/deal-dash-royale/skyline-course-v1.png';
+  courseImage.src = '/static/assets/games/deal-dash-royale/runner-course-v2.png';
 
   const startOverlay = document.getElementById('startOverlay');
   const roundOverlay = document.getElementById('roundOverlay');
@@ -179,8 +179,8 @@
     const gradient = ctx.createLinearGradient(0, 0, 0, H);
     gradient.addColorStop(0, '#0b5f73'); gradient.addColorStop(0.58, '#123b58'); gradient.addColorStop(1, '#081728');
     ctx.fillStyle = gradient; ctx.fillRect(0, 0, W, H);
-    if (courseImage.complete && courseImage.naturalWidth) { ctx.save(); ctx.globalAlpha = 0.38; ctx.drawImage(courseImage, 0, 34, W, 430); ctx.restore(); }
-    ctx.fillStyle = 'rgba(5, 14, 30, .42)'; ctx.fillRect(0, 0, W, 250);
+    if (courseImage.complete && courseImage.naturalWidth) { ctx.save(); ctx.globalAlpha = 0.92; ctx.drawImage(courseImage, 0, 0, W, H); ctx.restore(); }
+    ctx.fillStyle = 'rgba(3, 19, 30, .12)'; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#9ef8ff';
     for (let index = 0; index < 18; index += 1) {
       const x = (index * 91 + sceneryClock * 28) % (W + 80) - 40; const y = 92 + (index % 4) * 28;
@@ -196,19 +196,18 @@
 
   function drawTrack() {
     const horizon = trackPoint(1.15); const near = trackPoint(0);
-    ctx.fillStyle = '#073045'; ctx.beginPath();
-    ctx.moveTo(W / 2 - horizon.width / 2, horizon.y); ctx.lineTo(W / 2 + horizon.width / 2, horizon.y);
-    ctx.lineTo(W / 2 + near.width / 2, near.y + 60); ctx.lineTo(W / 2 - near.width / 2, near.y + 60); ctx.closePath(); ctx.fill();
+    ctx.save();
     for (let index = 0; index < 14; index += 1) {
       const z = ((index / 14) + sceneryClock * 0.42) % 1.15; const point = trackPoint(z); const next = trackPoint(Math.min(1.15, z + 0.045));
-      ctx.fillStyle = index % 2 ? 'rgba(32, 111, 120, .92)' : 'rgba(18, 79, 100, .92)'; ctx.beginPath();
-      ctx.moveTo(W / 2 - point.width / 2, point.y); ctx.lineTo(W / 2 + point.width / 2, point.y);
-      ctx.lineTo(W / 2 + next.width / 2, next.y); ctx.lineTo(W / 2 - next.width / 2, next.y); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = index % 2 ? 'rgba(230, 255, 247, .2)' : 'rgba(255, 211, 111, .14)';
+      ctx.lineWidth = Math.max(1, 4 * (1 - z / 1.15)); ctx.beginPath();
+      ctx.moveTo(W / 2 - point.width / 2, point.y); ctx.lineTo(W / 2 + point.width / 2, point.y); ctx.stroke();
     }
     for (const offset of [-1, 1]) {
       ctx.strokeStyle = 'rgba(255, 211, 111, .72)'; ctx.lineWidth = 4; ctx.beginPath();
       ctx.moveTo(W / 2 + offset * horizon.laneGap / 2, horizon.y); ctx.lineTo(W / 2 + offset * near.laneGap * 1.55, near.y + 60); ctx.stroke();
     }
+    ctx.restore();
   }
 
   function drawRival(rival) {
