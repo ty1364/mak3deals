@@ -40,9 +40,13 @@ SQLite staging creates the schema automatically. PostgreSQL preparation is in
 `migrations/002_retailer_editorial_deals.sql`. Candidates hold the merchant,
 source URL, retailer destination, checked date, promotion type, known terms,
 expiration or mandatory recheck date, location restrictions, membership
-restrictions, dedupe key, and review history. Source and retailer URLs must use
-the registered merchant's official domain. Broad deals pages remain editorial
-link-outs and cannot be labeled individual offers.
+restrictions, reviewed evidence reference and evidence scope, dedupe key, and
+review history. Source, retailer, and evidence URLs must use the registered
+merchant's official domain. Broad deals pages remain editorial link-outs and
+cannot be labeled individual offers or used to substantiate item-level numeric
+price claims. A landing-page candidate with a title or summary that claims a
+specific price, comparison price, percentage, or discount is blocked from
+publication until stronger evidence is supplied.
 
 The protected operator page is `/retailer-deal-admin`. It exposes the counts
 and source health to an authenticated local operator or a request carrying the
@@ -61,7 +65,7 @@ configured `MAK3DEALS_ADMIN_TOKEN`. The API routes are:
 - `POST /internal/discover-retailer-deals` — protected daily pass, using
   `X-Mak3Deals-Refresh-Token`.
 
-Only explicitly published, unexpired rows appear at `/retailer-picks` or in the homepage
+Only explicitly published, unexpired rows whose source is still enabled appear at `/retailer-picks` or in the homepage
 Retailer Deal Picks section. Customer cards link to the retailer and carry a
 clear statement that no affiliate commission is claimed for these editorial
 picks. This does not make a numerical discount claim unless separate reliable
@@ -87,7 +91,9 @@ python scripts/discover_retailer_deals.py
 Use `--no-url-check` only for an offline staging smoke test. A failed feed
 refresh is atomic: it records the error and leaves existing candidate or
 published records intact. Expired candidates are retired automatically before
-each status read and daily run; a missed mandatory recheck removes a published
-row until it is reviewed again. Dedupe uses merchant/source, normalized title,
-and retailer destination, so changing an expiration date refreshes the
-existing row instead of creating another listing.
+each status read and daily run; a missed mandatory recheck resets the record to
+a review candidate even when an expiration date is also overdue. Dedupe uses
+merchant/source, normalized title, and retailer destination, so changing an
+expiration date refreshes the existing row instead of creating another listing.
+The stable-identity migration is recorded by the `stable_dedupe_v1` schema
+marker and runs only once; later requests do not rewrite reviewed dedupe keys.

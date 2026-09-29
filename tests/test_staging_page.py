@@ -188,6 +188,8 @@ class StagingPageTests(unittest.TestCase):
             "location_restrictions": "Select stores; choose a preferred store.",
             "membership_restrictions": "A free Fred Meyer account may be required for digital coupons.",
             "link_scope": "weekly-ad",
+            "evidence_reference": "https://www.fredmeyer.com/savingsoverview/weekly-ad-info",
+            "evidence_scope": "weekly-ad",
         }
         candidate = self.client.post("/api/retailer-deals/candidates", json=payload)
         self.assertEqual(candidate.status_code, 201)
@@ -224,6 +226,8 @@ class StagingPageTests(unittest.TestCase):
             "location_restrictions": "Store-specific.",
             "membership_restrictions": "Target Circle status pending.",
             "link_scope": "editorial",
+            "evidence_reference": "https://www.target.com/c/top-deals/-/N-4xw74",
+            "evidence_scope": "landing-page",
         }
         held = self.client.post("/api/retailer-deals/candidates", json=target_payload)
         self.assertEqual(held.status_code, 409)

@@ -446,7 +446,8 @@ def retailer_deal_export_api():
     """Read-only sanitized operator export; never includes credentials or feed URLs."""
     rows = db().execute(
         """SELECT c.id, c.merchant, c.title, c.summary, c.source_url, c.retailer_url,
-                  c.checked_on, c.expires_on, c.recheck_on, c.promotion_type,
+                  c.checked_on, c.expires_on, c.recheck_on, c.evidence_reference,
+                  c.evidence_scope, c.promotion_type,
                   c.promotion_terms, c.location_restrictions, c.membership_restrictions,
                   c.link_scope, c.status, c.affiliate_claimed,
                   s.status AS source_status, s.http_status AS source_http_status,

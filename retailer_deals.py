@@ -10,6 +10,7 @@ from datetime import date, datetime, timezone
 import hashlib
 import json
 import os
+import re
 import sqlite3
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -90,6 +91,11 @@ def ensure_retailer_deal_schema(connection):
             last_feed_attempt_at TEXT,
             last_feed_success_at TEXT
         );
+        CREATE TABLE IF NOT EXISTS retailer_schema_meta (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS retailer_discovery_runs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             started_at TEXT NOT NULL,
@@ -117,6 +123,8 @@ def ensure_retailer_deal_schema(connection):
             promotion_terms TEXT,
             expires_on TEXT,
             recheck_on TEXT,
+            evidence_reference TEXT,
+            evidence_scope TEXT NOT NULL DEFAULT 'landing-page',
             location_restrictions TEXT,
             membership_restrictions TEXT,
             link_scope TEXT NOT NULL DEFAULT 'editorial',
@@ -155,8 +163,13 @@ def ensure_retailer_deal_schema(connection):
         if column not in run_columns:
             connection.execute(f"ALTER TABLE retailer_discovery_runs ADD COLUMN {column} {definition}")
     candidate_columns = {row[1] for row in connection.execute("PRAGMA table_info(retailer_deal_candidates)").fetchall()}
-    if "recheck_on" not in candidate_columns:
-        connection.execute("ALTER TABLE retailer_deal_candidates ADD COLUMN recheck_on TEXT")
+    for column, definition in {
+        "recheck_on": "TEXT",
+        "evidence_reference": "TEXT",
+        "evidence_scope": "TEXT NOT NULL DEFAULT 'landing-page'",
+    }.items():
+        if column not in candidate_columns:
+            connection.execute(f"ALTER TABLE retailer_deal_candidates ADD COLUMN {column} {definition}")
     for source in RETAILER_SOURCE_DEFINITIONS:
         connection.execute(
             """
@@ -171,25 +184,33 @@ def ensure_retailer_deal_schema(connection):
             """,
             (source["key"], source["merchant"], source["official_source_url"], source["source_type"], source["enabled"], source["hold_reason"]),
         )
-    # Migrate the old expiration-sensitive key to a stable source/title/url
-    # identity without deleting rows. Duplicate legacy rows are retained but
-    # rejected so their history remains inspectable.
-    rows = connection.execute(
-        "SELECT id, source_key, title, retailer_url FROM retailer_deal_candidates ORDER BY id"
-    ).fetchall()
-    for row in rows:
-        connection.execute("UPDATE retailer_deal_candidates SET dedupe_key=? WHERE id=?", (f"migrating:{row['id']}", row["id"]))
-    seen = set()
-    for row in rows:
-        stable_key = _dedupe_key(row["source_key"], row["title"], row["retailer_url"])
-        if stable_key in seen:
-            connection.execute(
-                "UPDATE retailer_deal_candidates SET status='rejected', review_note='Superseded duplicate retained during stable-identity migration.', dedupe_key=? WHERE id=?",
-                (f"superseded:{row['id']}", row["id"]),
-            )
-        else:
-            seen.add(stable_key)
-            connection.execute("UPDATE retailer_deal_candidates SET dedupe_key=? WHERE id=?", (stable_key, row["id"]))
+    migration = connection.execute(
+        "SELECT value FROM retailer_schema_meta WHERE key='stable_dedupe_v1'"
+    ).fetchone()
+    if not migration:
+        # Migrate the old expiration-sensitive key to a stable source/title/url
+        # identity without deleting any data. Duplicate legacy rows are
+        # retained but rejected so their history remains inspectable.
+        rows = connection.execute(
+            "SELECT id, source_key, title, retailer_url FROM retailer_deal_candidates ORDER BY id"
+        ).fetchall()
+        for row in rows:
+            connection.execute("UPDATE retailer_deal_candidates SET dedupe_key=? WHERE id=?", (f"migrating:{row['id']}", row["id"]))
+        seen = set()
+        for row in rows:
+            stable_key = _dedupe_key(row["source_key"], row["title"], row["retailer_url"])
+            if stable_key in seen:
+                connection.execute(
+                    "UPDATE retailer_deal_candidates SET status='rejected', review_note='Superseded duplicate retained during stable-identity migration.', dedupe_key=? WHERE id=?",
+                    (f"superseded:{row['id']}", row["id"]),
+                )
+            else:
+                seen.add(stable_key)
+                connection.execute("UPDATE retailer_deal_candidates SET dedupe_key=? WHERE id=?", (stable_key, row["id"]))
+        connection.execute(
+            "INSERT INTO retailer_schema_meta (key, value, updated_at) VALUES ('stable_dedupe_v1', 'complete', ?)",
+            (utc_now(),),
+        )
     connection.execute(
         "UPDATE retailer_sources SET enabled=0, hold_reason=? WHERE source_key='target'",
         (SOURCE_BY_KEY["target"]["hold_reason"],),
@@ -238,6 +259,10 @@ def publication_issues(candidate):
         issues.append("location restrictions or applicability must be stated")
     if not candidate["membership_restrictions"]:
         issues.append("membership or coupon requirements must be stated")
+    if not candidate["evidence_reference"]:
+        issues.append("a reviewed evidence reference is required")
+    if candidate["evidence_scope"] not in {"landing-page", "individual-offer", "weekly-ad", "digital-promotion"}:
+        issues.append("evidence scope is invalid")
     if not candidate["expires_on"] and not candidate["recheck_on"]:
         issues.append("an expiration or mandatory recheck date is required")
     if candidate["expires_on"] and candidate["expires_on"] < date.today().isoformat():
@@ -246,6 +271,10 @@ def publication_issues(candidate):
         issues.append("the mandatory recheck date has passed")
     if candidate["link_scope"] == "individual-offer" and candidate["retailer_url"].rstrip("/") == candidate["source_url"].rstrip("/"):
         issues.append("an individual offer needs a distinct retailer destination")
+    if candidate["evidence_scope"] == "landing-page" and re.search(r"(?:\$\s?\d|\b\d+(?:\.\d+)?\s?%|\b(?:was|off|discount|price)\b)", f"{candidate['title']} {candidate['summary']}", re.IGNORECASE):
+        issues.append("landing-page evidence cannot support an individual numeric price or discount claim")
+    if candidate["link_scope"] == "individual-offer" and candidate["evidence_scope"] != "individual-offer":
+        issues.append("individual offers require individual-offer evidence scope")
     return issues
 
 
@@ -269,6 +298,12 @@ def normalize_candidate(payload, checked_on=None):
     link_scope = str(payload.get("link_scope") or "editorial").strip().lower()
     if link_scope not in {"editorial", "individual-offer", "weekly-ad", "digital-promotion"}:
         raise ValueError("link_scope must be editorial, individual-offer, weekly-ad, or digital-promotion")
+    evidence_reference = payload.get("evidence_reference")
+    if evidence_reference:
+        evidence_reference = _validate_official_destination(source_key, evidence_reference, "evidence_reference")
+    evidence_scope = str(payload.get("evidence_scope") or ("individual-offer" if link_scope == "individual-offer" else link_scope if link_scope in {"weekly-ad", "digital-promotion"} else "landing-page")).strip().lower()
+    if evidence_scope not in {"landing-page", "individual-offer", "weekly-ad", "digital-promotion"}:
+        raise ValueError("evidence_scope must be landing-page, individual-offer, weekly-ad, or digital-promotion")
     # Editorial picks do not inherit affiliate claims from arbitrary input.
     affiliate_claimed = 0
     return {
@@ -283,6 +318,8 @@ def normalize_candidate(payload, checked_on=None):
         "promotion_terms": " ".join(str(payload.get("promotion_terms") or "").split())[:500] or None,
         "expires_on": expires,
         "recheck_on": recheck_on,
+        "evidence_reference": evidence_reference,
+        "evidence_scope": evidence_scope,
         "location_restrictions": " ".join(str(payload.get("location_restrictions") or "").split())[:300] or None,
         "membership_restrictions": " ".join(str(payload.get("membership_restrictions") or "").split())[:300] or None,
         "link_scope": link_scope,
@@ -298,7 +335,7 @@ def upsert_candidate(connection, payload, checked_on=None):
     dedupe_key = _dedupe_key(candidate["source_key"], candidate["title"], candidate["retailer_url"])
     existing = connection.execute("SELECT * FROM retailer_deal_candidates WHERE dedupe_key=?", (dedupe_key,)).fetchone()
     if existing:
-        tracked_fields = ("summary", "source_url", "retailer_url", "checked_on", "promotion_type", "promotion_terms", "expires_on", "recheck_on", "location_restrictions", "membership_restrictions", "link_scope")
+        tracked_fields = ("summary", "source_url", "retailer_url", "checked_on", "promotion_type", "promotion_terms", "expires_on", "recheck_on", "evidence_reference", "evidence_scope", "location_restrictions", "membership_restrictions", "link_scope")
         changed = any(existing[field] != candidate[field] for field in tracked_fields)
         next_status = existing["status"]
         review_note = existing["review_note"]
@@ -315,26 +352,26 @@ def upsert_candidate(connection, payload, checked_on=None):
         connection.execute(
             """UPDATE retailer_deal_candidates SET summary=?, source_url=?, checked_on=?,
                promotion_type=?, promotion_terms=?, expires_on=?, location_restrictions=?,
-               membership_restrictions=?, link_scope=?, recheck_on=?, last_seen_at=?,
+               membership_restrictions=?, link_scope=?, recheck_on=?, evidence_reference=?, evidence_scope=?, last_seen_at=?,
                status=?, reviewed_at=?, review_note=?, published_at=?, affiliate_claimed=0
                WHERE id=?""",
             (candidate["summary"], candidate["source_url"], candidate["checked_on"], candidate["promotion_type"],
              candidate["promotion_terms"], candidate["expires_on"], candidate["location_restrictions"],
-             candidate["membership_restrictions"], candidate["link_scope"], candidate["recheck_on"], now,
+             candidate["membership_restrictions"], candidate["link_scope"], candidate["recheck_on"], candidate["evidence_reference"], candidate["evidence_scope"], now,
              next_status, reviewed_at, review_note, published_at, existing["id"]),
         )
         return existing["id"], False
     cursor = connection.execute(
         """INSERT INTO retailer_deal_candidates
            (source_key, merchant, title, summary, source_url, retailer_url, checked_on,
-            promotion_type, promotion_terms, expires_on, recheck_on, location_restrictions,
+            promotion_type, promotion_terms, expires_on, recheck_on, evidence_reference, evidence_scope, location_restrictions,
             membership_restrictions, link_scope, status, dedupe_key, created_at,
             last_seen_at, affiliate_claimed)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate', ?, ?, ?, 0)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate', ?, ?, ?, 0)""",
         (candidate["source_key"], candidate["merchant"], candidate["title"], candidate["summary"],
         candidate["source_url"], candidate["retailer_url"], candidate["checked_on"], candidate["promotion_type"],
-        candidate["promotion_terms"], candidate["expires_on"], candidate["recheck_on"], candidate["location_restrictions"],
-        candidate["membership_restrictions"], candidate["link_scope"], dedupe_key, now, now),
+        candidate["promotion_terms"], candidate["expires_on"], candidate["recheck_on"], candidate["evidence_reference"],
+        candidate["evidence_scope"], candidate["location_restrictions"], candidate["membership_restrictions"], candidate["link_scope"], dedupe_key, now, now),
     )
     return cursor.lastrowid, True
 
@@ -345,11 +382,14 @@ def expire_candidates(connection, today=None):
         "UPDATE retailer_deal_candidates SET status='expired', published_at=NULL WHERE status IN ('candidate','approved','published') AND expires_on IS NOT NULL AND expires_on < ?",
         (today,),
     )
+    # A required recheck is a review reset, even when an old expiration date
+    # is also overdue. Include the expired result so it remains visible to
+    # editors as a fresh candidate instead of staying silently expired.
     connection.execute(
         """UPDATE retailer_deal_candidates
            SET status='candidate', reviewed_at=NULL, published_at=NULL,
                review_note='Mandatory recheck date passed; requires fresh review.'
-           WHERE status IN ('approved','published') AND expires_on IS NULL
+           WHERE status IN ('approved','published','expired')
              AND recheck_on IS NOT NULL AND recheck_on < ?""",
         (today,),
     )
@@ -489,10 +529,11 @@ def discover_retailer_deals(connection, check_urls=True, now=None):
 
 
 def published_picks(connection, limit=None):
-    query = """SELECT * FROM retailer_deal_candidates
-               WHERE status='published' AND (expires_on IS NULL OR expires_on >= ?)
-                 AND (recheck_on IS NULL OR recheck_on >= ?)
-               ORDER BY expires_on IS NULL, expires_on ASC, published_at DESC, id DESC"""
+    query = """SELECT c.* FROM retailer_deal_candidates c
+               JOIN retailer_sources s ON s.source_key=c.source_key AND s.enabled=1
+               WHERE c.status='published' AND (c.expires_on IS NULL OR c.expires_on >= ?)
+                 AND (c.recheck_on IS NULL OR c.recheck_on >= ?)
+               ORDER BY c.expires_on IS NULL, c.expires_on ASC, c.published_at DESC, c.id DESC"""
     values = [date.today().isoformat(), date.today().isoformat()]
     if limit:
         query += " LIMIT ?"

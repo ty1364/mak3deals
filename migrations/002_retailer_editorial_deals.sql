@@ -21,6 +21,12 @@ CREATE TABLE IF NOT EXISTS retailer_sources (
     last_feed_success_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS retailer_schema_meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS retailer_discovery_runs (
     id BIGSERIAL PRIMARY KEY,
     started_at TIMESTAMPTZ NOT NULL,
@@ -49,6 +55,8 @@ CREATE TABLE IF NOT EXISTS retailer_deal_candidates (
     promotion_terms TEXT,
     expires_on DATE,
     recheck_on DATE,
+    evidence_reference TEXT,
+    evidence_scope TEXT NOT NULL DEFAULT 'landing-page',
     location_restrictions TEXT,
     membership_restrictions TEXT,
     link_scope TEXT NOT NULL DEFAULT 'editorial',
@@ -78,3 +86,5 @@ ALTER TABLE retailer_discovery_runs ADD COLUMN IF NOT EXISTS source_check_failur
 ALTER TABLE retailer_discovery_runs ADD COLUMN IF NOT EXISTS feed_error_count INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE retailer_discovery_runs ADD COLUMN IF NOT EXISTS held_count INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE retailer_deal_candidates ADD COLUMN IF NOT EXISTS recheck_on DATE;
+ALTER TABLE retailer_deal_candidates ADD COLUMN IF NOT EXISTS evidence_reference TEXT;
+ALTER TABLE retailer_deal_candidates ADD COLUMN IF NOT EXISTS evidence_scope TEXT NOT NULL DEFAULT 'landing-page';
