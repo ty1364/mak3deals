@@ -237,6 +237,36 @@ class StagingPageTests(unittest.TestCase):
         self.assertIn("candidates", export.get_json())
         self.assertNotIn("MAK3DEALS_RETAILER_FEED", export.get_data(as_text=True))
 
+        connection = sqlite3.connect(self.database_path)
+        connection.execute(
+            "UPDATE retailer_sources SET last_error=?, feed_last_error=? WHERE source_key='walmart'",
+            ("urlopen error https://user:secret-token@example.invalid/feed", "feed failed at https://feeds.example/?token=secret-token"),
+        )
+        connection.commit()
+        connection.close()
+        self.client.post(
+            "/api/retailer-deals/candidates",
+            json={
+                "source_key": "walmart",
+                "title": "Walmart editorial pointer",
+                "summary": "A general editorial pointer to the current Walmart Rollbacks page.",
+                "source_url": "https://www.walmart.com/shop/deals/announce",
+                "retailer_url": "https://www.walmart.com/shop/deals/announce",
+                "checked_on": "2026-09-29",
+                "promotion_terms": "Verify current terms at Walmart.",
+                "expires_on": "2026-10-05",
+                "location_restrictions": "Availability varies by location.",
+                "membership_restrictions": "Confirm account requirements at Walmart.",
+                "link_scope": "editorial",
+                "evidence_scope": "landing-page",
+            },
+        )
+        sanitized = self.client.get("/api/retailer-deals/export")
+        body = sanitized.get_data(as_text=True)
+        self.assertNotIn("secret-token", body)
+        self.assertIn('"source_error":"network_error"', body)
+        self.assertIn('"feed_last_error":"source_or_feed_error"', body)
+
 
 if __name__ == "__main__":
     unittest.main()

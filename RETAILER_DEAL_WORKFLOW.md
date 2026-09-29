@@ -61,7 +61,9 @@ configured `MAK3DEALS_ADMIN_TOKEN`. The API routes are:
   restrictions, evidence, and expiry/recheck date pass validation.
 - `GET /api/retailer-deal-status` — protected counts and source health.
 - `GET /api/retailer-deals/export` — protected, read-only sanitized review
-  export without feed URLs or credentials.
+  export without feed URLs or credentials. Error fields are reduced to safe
+  categories; raw network exception text, feed URLs, and tokens are never
+  returned.
 - `POST /internal/discover-retailer-deals` — protected daily pass, using
   `X-Mak3Deals-Refresh-Token`.
 

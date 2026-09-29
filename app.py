@@ -457,7 +457,27 @@ def retailer_deal_export_api():
            LEFT JOIN retailer_sources s ON s.source_key=c.source_key
            ORDER BY c.id"""
     ).fetchall()
-    return jsonify({"candidates": [dict(row) for row in rows]})
+    def safe_error_category(value):
+        if not value:
+            return None
+        text = str(value).lower()
+        if "hold" in text:
+            return "source_held"
+        if "http error" in text or "status" in text:
+            return "http_error"
+        if "timeout" in text or "urlopen" in text or "network" in text:
+            return "network_error"
+        if "json" in text or "payload" in text:
+            return "feed_payload_error"
+        return "source_or_feed_error"
+
+    candidates = []
+    for row in rows:
+        item = dict(row)
+        item["source_error"] = safe_error_category(item["source_error"])
+        item["feed_last_error"] = safe_error_category(item["feed_last_error"])
+        candidates.append(item)
+    return jsonify({"candidates": candidates})
 
 @app.route("/feed-status")
 @app.route("/sources")
