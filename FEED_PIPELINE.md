@@ -38,6 +38,22 @@ The per-source fallback names are `MAK3DEALS_FEED_URL_WALMART`,
 
 ## Scheduler and storage
 
+## Isolated staging fixtures
+
+The review branch includes four clearly labeled fixture products so the page
+can be tested before an advertiser feed is approved. They use `example.invalid`
+product links and are never real offers. Load them into a separate database:
+
+```powershell
+$env:MAK3DEALS_DATABASE = "staging-deals.db"
+$env:MAK3DEALS_STAGING_ORIGIN = "http://127.0.0.1:5001"
+python scripts/load_staging_fixture.py
+flask --app app:app run --port 5001
+```
+
+Every fixture card is labeled `TEST FIXTURE · NOT A REAL DEAL`. Do not point
+`MAK3DEALS_DATABASE` at the production file when running this loader.
+
 `POST /internal/refresh-offers` runs the importer and requires
 `MAK3DEALS_REFRESH_TOKEN`. GitHub Actions calls it every 30 minutes from
 `.github/workflows/refresh-offers.yml` after that secret is configured.

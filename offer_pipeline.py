@@ -214,7 +214,7 @@ def normalize_product(row, config, checked_at=None):
     checked_at = checked_at or utc_now()
     title = _first(row, "title", "product_name", "name")
     product_url = _first(row, "product_url", "merchant_deep_link", "direct_url", "link", "url")
-    image_url = _first(row, "image_url", "merchant_image_url", "large_image", "image", "aw_image_url")
+    image_url = _first(row, "image_url", "image_link", "merchant_image_url", "large_image", "image", "aw_image_url")
     current = _money(_first(row, "sale_price", "current_price", "price", "search_price", "store_price"))
     reference = _money(_first(row, "reference_price", "regular_price", "compare_at", "rrp_price", "product_price_old", "original_price", "list_price"))
     if not title or not product_url or not image_url:
@@ -228,7 +228,7 @@ def normalize_product(row, config, checked_at=None):
     gtin = _first(row, "gtin", "product_gtin", "upc", "ean", "isbn")
     brand = _first(row, "brand", "brand_name")
     product_key = f"gtin:{gtin}" if gtin else f"title:{_slug((brand + ' ' + title).strip())}"
-    expires_on = _date_only(_first(row, "expires_on", "valid_to", "expiration", "end_date", "sale_end"))
+    expires_on = _date_only(_first(row, "expires_on", "valid_to", "expiration", "expiration_date", "end_date", "sale_end"))
     if expires_on and expires_on < date.today().isoformat():
         return None, "feed row is expired"
     availability = _available(row)
@@ -273,7 +273,13 @@ def normalize_awin_product(row, config, checked_at=None):
     aw_deep_link. The common normalizer maps those fields and still applies
     Mak3Deals' strict direct-link/image/discount checks.
     """
-    return normalize_product(row, {**config, "provider": "awin"}, checked_at)
+    # Awin's newer Google/Retail format uses `price` as the reference price
+    # and `sale_price` as the current price. The older Awin format exposes
+    # `search_price` and `rrp_price`; preserve support for both.
+    mapped = dict(row)
+    if _first(row, "sale_price") and not _first(row, "reference_price", "regular_price", "compare_at", "rrp_price", "product_price_old", "original_price", "list_price"):
+        mapped["reference_price"] = _first(row, "price")
+    return normalize_product(mapped, {**config, "provider": "awin"}, checked_at)
 
 
 def _upsert_product(connection, product):

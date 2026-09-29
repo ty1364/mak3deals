@@ -9,7 +9,9 @@ from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 
 app = Flask(__name__)
-DATABASE = "deals.db"
+# Staging can point at an isolated SQLite file without changing production's
+# default database path. Render production keeps using its configured path.
+DATABASE = os.environ.get("MAK3DEALS_DATABASE", "deals.db")
 
 SITE_AD_TV = """
 <style>

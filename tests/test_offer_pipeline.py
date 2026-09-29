@@ -74,6 +74,30 @@ class ProductFeedTests(unittest.TestCase):
         self.assertEqual(product["regular_price"], "$30.00")
         self.assertEqual(product["affiliate_url"], "https://track.example/kettle")
 
+    def test_awin_google_retail_sale_price_mapping(self):
+        product, reason = offer_pipeline.normalize_awin_product(
+            {"id": "google-1", "title": "UPPER sale bag", "price": "100.00 USD",
+             "sale_price": "75.00 USD", "link": "https://shop.example/bag",
+             "image_link": "https://img.example/bag.jpg", "availability": "in_stock"},
+            {"source_key": "upper", "store": "UPPER Brand"},
+            "2026-09-29T00:00:00Z",
+        )
+        self.assertIsNone(reason)
+        self.assertEqual(product["sale_price"], "$75.00")
+        self.assertEqual(product["regular_price"], "$100.00")
+        self.assertEqual(product["discount_percent"], 25.0)
+
+    def test_awin_catalog_without_sale_price_is_rejected(self):
+        product, reason = offer_pipeline.normalize_awin_product(
+            {"id": "catalog-1", "title": "UPPER catalog bag", "price": "100.00 USD",
+             "link": "https://shop.example/bag", "image_link": "https://img.example/bag.jpg",
+             "availability": "in_stock"},
+            {"source_key": "upper", "store": "UPPER Brand"},
+            "2026-09-29T00:00:00Z",
+        )
+        self.assertIsNone(product)
+        self.assertIn("reference price", reason)
+
     @patch("offer_pipeline._fetch_feed", return_value=(FEED, "text/csv", 200))
     def test_refresh_upserts_and_retires_missing_products(self, _fetch):
         first = offer_pipeline.refresh_sources(self.connection)
@@ -88,6 +112,24 @@ class ProductFeedTests(unittest.TestCase):
         self.assertEqual(retired, "retired")
         updated_price = self.connection.execute("SELECT sale_price FROM deals WHERE merchant_product_id='sku-1'").fetchone()[0]
         self.assertEqual(updated_price, "$17.99")
+
+    @patch("offer_pipeline._fetch_feed", return_value=(FEED, "text/csv", 200))
+    def test_failed_refresh_preserves_existing_products(self, _fetch):
+        first = offer_pipeline.refresh_sources(self.connection)
+        self.assertEqual(first["published_count"], 2)
+
+        _fetch.side_effect = RuntimeError("temporary upstream outage")
+        failed = offer_pipeline.refresh_sources(self.connection)
+
+        self.assertEqual(failed["error_count"], 1)
+        active = self.connection.execute(
+            "SELECT COUNT(*) FROM deals WHERE verified=1 AND status='active'"
+        ).fetchone()[0]
+        self.assertEqual(active, 2)
+        status = self.connection.execute(
+            "SELECT status FROM deals WHERE merchant_product_id='sku-1'"
+        ).fetchone()[0]
+        self.assertEqual(status, "active")
 
 
 if __name__ == "__main__":

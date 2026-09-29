@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 deals.db
+staging-deals.db
 clicks.log
 submissions.log
 test_output.txt
