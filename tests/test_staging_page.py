@@ -34,6 +34,18 @@ class StagingPageTests(unittest.TestCase):
                 "category": "Baby & Family",
             },
             {
+                "id": "upper-regular-1",
+                "title": "UPPER Everyday Tote",
+                "description": "Authorized UPPER catalog product without a claimed discount.",
+                "price": "79.00",
+                "merchant_deep_link": "https://example.invalid/upper-everyday-tote",
+                "merchant_image_url": "https://example.invalid/upper-everyday-tote.jpg",
+                "brand": "UPPER Brand",
+                "gtin": "upper-regular-1",
+                "in_stock": "1",
+                "category": "Luggage & Bags",
+            },
+            {
                 "id": "fixture-bully-beds",
                 "title": "Bully Beds Fixture",
                 "description": "Staging-only pet-care example.",
@@ -98,12 +110,34 @@ class StagingPageTests(unittest.TestCase):
                 self.assertIn('class="site-header"', body)
                 self.assertIn('class="site-footer"', body)
                 self.assertNotIn('>Sources<', body)
+                self.assertEqual(body.count("<main"), 1)
 
     def test_feed_diagnostics_are_not_public(self):
         external = {"REMOTE_ADDR": "203.0.113.1", "HTTP_HOST": "mak3deals.com"}
         self.assertEqual(self.client.get("/api/feed-status", environ_overrides=external).status_code, 404)
         self.assertEqual(self.client.get("/feed-status", environ_overrides=external).status_code, 404)
         self.assertEqual(self.client.get("/sources", environ_overrides=external).status_code, 404)
+
+    def test_catalog_cards_show_shopping_essentials_and_tracked_action(self):
+        response = self.client.get("/")
+        body = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("UPPER Everyday Tote", body)
+        self.assertIn('aria-label="Save UPPER Everyday Tote to your watchlist"', body)
+        self.assertIn('href="/click/', body)
+        self.assertNotIn("No discount is claimed", body)
+        self.assertNotIn("Checked 2026", body)
+        self.assertNotIn(">awin<", body)
+        self.assertEqual(body.count("<main"), 1)
+
+        connection = sqlite3.connect(self.database_path)
+        product_id = connection.execute(
+            "SELECT id FROM deals WHERE merchant_product_id='upper-regular-1'"
+        ).fetchone()[0]
+        connection.close()
+        tracked = self.client.get(f"/click/{product_id}", follow_redirects=False)
+        self.assertEqual(tracked.status_code, 302)
+        self.assertEqual(tracked.headers["Location"], "https://example.invalid/upper-everyday-tote")
 
 
 if __name__ == "__main__":

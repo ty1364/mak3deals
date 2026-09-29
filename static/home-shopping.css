@@ -26,3 +26,20 @@
 .shopping-section{padding-top:22px}
 @media(max-width:900px){.shopping-hero{padding:30px 6% 26px}.shopping-hero .hero-right{margin-top:20px}.shopping-hero .hero-right .site-ad-tv{min-height:190px}}
 @media(max-width:700px){.shopping-search{display:grid;grid-template-columns:1fr;gap:8px}.shopping-search input,.shopping-search button{width:100%;min-width:0;margin:0;border-radius:8px}.shopping-search button{height:48px}}
+
+/* Catalog cards: shopper-facing essentials only. Technical provenance remains in the record/detail views. */
+.shopping-card{min-height:0;height:100%;padding:0}
+.shopping-card .product-media{height:156px;flex:0 0 156px}
+.shopping-card .deal-photo img{padding:12px;object-fit:contain}
+.shopping-card .product-card-body{padding:14px;gap:0}
+.shopping-card .store{margin:0 0 4px;color:#536174;font-size:.78rem;font-weight:800;line-height:1.2}
+.shopping-card h3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;min-height:3.75em;margin:0 0 9px;font-size:1rem;line-height:1.25}
+.shopping-card .price-row{min-height:32px;margin:0 0 12px;align-items:center}
+.shopping-card .price-row strong{font-size:1.28rem}
+.shopping-card .price-row del{font-size:.88rem}
+.shopping-card .discount-badge{padding:3px 6px;border-radius:999px;background:#fff0d8;color:#9a4d00;font-size:.7rem;font-weight:900}
+.shopping-card .card-bottom{display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:8px;align-items:center;margin-top:auto}
+.shopping-card .deal-btn{display:block;padding:10px 9px;text-align:center;font-size:.82rem;white-space:nowrap}
+.shopping-card .watch-btn{width:40px;height:40px;padding:0;border-radius:50%;display:grid;place-items:center;font-size:1.35rem;line-height:1}
+.shopping-card .watch-btn span{display:block;transform:translateY(-1px)}
+.shopping-card .watch-btn.saved span{color:#157c72}

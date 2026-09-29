@@ -1,4 +1,4 @@
 {% extends "base.html" %}
 {% block title %}Watchlist · Mak3Deals{% endblock %}
-{% block content %}<main class="watchlist-page"><section class="simple-hero"><p class="eyebrow">YOUR SAVINGS LIST</p><h1>Watchlist</h1><p>Save offers in this browser while you compare them. Email price alerts will come after we connect a verified price feed and notification service.</p></section><section id="watchlist-items" class="deals"></section></main>{% endblock %}
+{% block content %}<section class="watchlist-page"><section class="simple-hero"><p class="eyebrow">YOUR SAVINGS LIST</p><h1>Watchlist</h1><p>Save offers in this browser while you compare them. Email price alerts will come after we connect a verified price feed and notification service.</p></section><section id="watchlist-items" class="deals"></section></section>{% endblock %}
 {% block page_scripts %}<script src="{{ url_for('static', filename='watchlist.js') }}"></script><script>window.renderWatchlistPage && window.renderWatchlistPage();</script>{% endblock %}
