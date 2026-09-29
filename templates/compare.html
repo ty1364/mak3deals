@@ -1,35 +1,3 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Compare prices · Mak3Deals</title>
-  <meta name="google-adsense-account" content="ca-pub-3943554631291586">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}">
-</head>
-<body>
-<header class="navbar"><a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/guides">Guides</a><a href="/daily">Daily game</a><a href="/sources">Sources</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
-<main>
-  <section class="simple-hero compare-hero"><p class="eyebrow">VERIFIED PRICE CHECK</p><h1>{{ product.title }}</h1><p>We only place listings together when they have the same verified product key. Prices, stock, delivery, and memberships can change at the retailer.</p></section>
-  <section class="comparison-wrap">
-    <div class="product-overview">
-      <div class="product-overview-photo {% if not product.image_url %}photo-fallback{% endif %}">{% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.title }}" loading="lazy">{% else %}<span>{{ product.category }}</span>{% endif %}</div>
-      <div><p class="compare-count">{{ offers|length }} verified retailer {% if offers|length == 1 %}listing{% else %}listings{% endif %}</p><h2>Pick the store that works best for you.</h2><p>Same verified product, current prices side by side. We show a tie when prices are the same.</p></div>
-    </div>
-    <div class="comparison-grid">
-      {% for offer in offers %}
-      <article class="comparison-card {% if offer.id in best_ids %}best-price{% endif %}">
-        {% if offer.id in best_ids %}<span class="best-badge">Lowest verified price</span>{% endif %}
-        <p class="store">{{ offer.store }} · {{ offer.city }}</p><h2>{{ offer.title }}</h2>
-        {% if offer.sale_price %}<div class="price-row"><strong>{{ offer.sale_price }}</strong>{% if offer.regular_price %}<del>{{ offer.regular_price }}</del>{% endif %}</div>{% endif %}
-        <p>{{ offer.description }}</p><p class="terms"><strong>Terms:</strong> {{ offer.offer_terms or 'See retailer for details.' }}</p>
-        <div class="source-row"><span>Checked {{ offer.checked_on or 'recently' }}</span><span>Ends {{ offer.expires_on }}</span></div>
-        <a class="deal-btn" href="/click/{{ offer.id }}">Visit {{ offer.store }} →</a>
-      </article>
-      {% endfor %}
-    </div>
-    <p class="comparison-note">No match is shown until we can confirm the item and price from a retailer source. Similar products are not treated as the same deal.</p>
-  </section>
-</main>
-<footer><strong>Mak3Deals</strong><span><a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/affiliate-disclosure">Affiliate disclosure</a> · <a href="/contact">Contact</a></span></footer>
-</body></html>
+{% extends "base.html" %}
+{% block title %}Compare prices · Mak3Deals{% endblock %}
+{% block content %}<section class="simple-hero compare-hero"><p class="eyebrow">VERIFIED PRICE CHECK</p><h1>{{ product.title }}</h1><p>We only place listings together when they have the same verified product key. Prices, stock, delivery, and memberships can change at the retailer.</p></section><section class="comparison-wrap"><div class="product-overview"><div class="product-overview-photo {% if not product.image_url %}photo-fallback{% endif %}">{% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.title }}" loading="lazy">{% else %}<span>{{ product.category }}</span>{% endif %}</div><div><p class="compare-count">{{ offers|length }} verified retailer {% if offers|length == 1 %}listing{% else %}listings{% endif %}</p><h2>Pick the store that works best for you.</h2><p>Same verified product, current prices side by side.</p></div></div><div class="comparison-grid">{% for offer in offers %}<article class="comparison-card {% if offer.id in best_ids %}best-price{% endif %}">{% if offer.id in best_ids %}<span class="best-badge">Lowest verified price</span>{% endif %}<p class="store">{{ offer.store }} · {{ offer.city }}</p><h2>{{ offer.title }}</h2>{% if offer.sale_price %}<div class="price-row"><strong>{{ offer.sale_price }}</strong>{% if offer.regular_price %}<del>{{ offer.regular_price }}</del>{% endif %}</div>{% endif %}<p>{{ offer.description }}</p><p class="terms"><strong>Terms:</strong> {{ offer.offer_terms or 'See retailer for details.' }}</p><div class="source-row"><span>Checked {{ offer.checked_on or 'recently' }}</span><span>Ends {{ offer.expires_on }}</span></div><a class="deal-btn" href="/click/{{ offer.id }}">Visit {{ offer.store }} →</a></article>{% endfor %}</div><p class="comparison-note">No match is shown until we can confirm the item and price from a retailer source.</p></section>{% endblock %}

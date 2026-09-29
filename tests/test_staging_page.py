@@ -88,6 +88,23 @@ class StagingPageTests(unittest.TestCase):
         self.assertEqual(offers[0]["discount_percent"], 33.3)
         self.assertEqual(offers[0]["source_provider"], "staging-fixture")
 
+    def test_customer_routes_share_shell_and_hide_sources(self):
+        routes = ["/", "/coupons", "/guides", "/daily", "/watchlist", "/submit", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact"]
+        for route in routes:
+            with self.subTest(route=route):
+                response = self.client.get(route)
+                body = response.get_data(as_text=True)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn('class="site-header"', body)
+                self.assertIn('class="site-footer"', body)
+                self.assertNotIn('>Sources<', body)
+
+    def test_feed_diagnostics_are_not_public(self):
+        external = {"REMOTE_ADDR": "203.0.113.1", "HTTP_HOST": "mak3deals.com"}
+        self.assertEqual(self.client.get("/api/feed-status", environ_overrides=external).status_code, 404)
+        self.assertEqual(self.client.get("/feed-status", environ_overrides=external).status_code, 404)
+        self.assertEqual(self.client.get("/sources", environ_overrides=external).status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()

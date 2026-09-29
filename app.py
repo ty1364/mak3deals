@@ -84,6 +84,25 @@ def add_site_ad_tv(response):
             response.set_data(html)
     return response
 
+def _admin_request_allowed():
+    """Allow feed diagnostics only to local operators or a server-side token."""
+    configured = os.environ.get("MAK3DEALS_ADMIN_TOKEN", "").strip()
+    supplied = request.headers.get("X-Mak3Deals-Admin", "").strip()
+    authorization = request.headers.get("Authorization", "")
+    if authorization.lower().startswith("bearer "):
+        supplied = authorization[7:].strip()
+    if configured:
+        return bool(supplied) and hmac.compare_digest(configured, supplied)
+    host = (request.host or "").split(":", 1)[0].lower()
+    return request.remote_addr in {"127.0.0.1", "::1"} and host in {"127.0.0.1", "localhost"}
+
+@app.before_request
+def protect_feed_diagnostics():
+    if request.path in {"/feed-status", "/sources", "/api/feed-status"} and not _admin_request_allowed():
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Not found"}), 404
+        return "Not found", 404
+
 @app.before_request
 def setup():
     database = db()
@@ -226,7 +245,7 @@ def robots():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons", "https://mak3deals.com/sources"]
+    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons"]
     urls.extend(f"https://mak3deals.com/guides/{guide['slug']}" for guide in GUIDES)
     body = "".join(f"<url><loc>{url}</loc></url>" for url in urls)
     return f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>', 200, {"Content-Type": "application/xml; charset=utf-8"}

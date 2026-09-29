@@ -1,40 +1,10 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>DealDrop Daily · Mak3Deals</title>
-  <meta name="description" content="Play DealDrop Daily, an original daily savings word puzzle from Mak3Deals.">
-  <meta name="google-adsense-account" content="ca-pub-3943554631291586">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='daily.css', v='daily-side-rail-v1') }}"><link rel="stylesheet" href="{{ url_for('static', filename='ad-player.css', v='daily-side-rail-v1') }}">
-</head>
-<body>
-  <header class="navbar"><a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/guides">Guides</a><a class="active-nav" href="/daily">Daily game</a><a href="/sources">Sources</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
-  <main>
-    <section class="simple-hero daily-hero"><p class="eyebrow">MAK3DEALS // DAILY CHALLENGE</p><h1>DealDrop <em>Daily.</em></h1><p>Six separate five-letter puzzles. Up to six guesses on every puzzle.</p><span class="puzzle-badge">{% if practice %}Practice session{% else %}Session {{ puzzle_date }}{% endif %}</span></section>
-    <div class="daily-game-layout">
-    <section class="daily-wrap" aria-labelledby="daily-title">
-      <div class="daily-topline"><div><p class="eyebrow dark">SIX-PUZZLE SESSION</p><h2 id="daily-title">Find the savings word</h2></div><div class="daily-stats"><div class="daily-stat"><strong id="score-count">0</strong><span>session points</span></div><div class="daily-stat"><strong id="streak-count">0</strong><span>day streak</span></div></div></div>
-      <div class="puzzle-progress" aria-label="Session progress"><strong id="puzzle-count">Puzzle 1 of 6</strong><div id="puzzle-dots" class="puzzle-dots" aria-hidden="true"></div></div>
-      <div class="daily-clue"><span id="clue-label" class="clue-label">TODAY'S CLUE · Shopper's vocabulary</span><strong id="clue-text">{{ daily_session.clues[0].clue }}</strong><small>Each puzzle allows up to six guesses. Solve it to advance immediately.</small></div>
-      <div id="daily-board" class="daily-board" aria-label="DealDrop Daily guesses"></div>
-      <p id="daily-message" class="daily-message" role="status">Guess a five-letter word to begin.</p>
-      <p class="daily-input-help">Build your guess by tapping the letters below or typing on your keyboard. Press <strong>Enter</strong> to submit.</p>
-      <div id="daily-keyboard" class="daily-keyboard" aria-label="Game keyboard"></div>
-      <div class="daily-actions"><button id="hint-button" class="hint-btn" type="button">Reveal a hint <span id="hints-left">(2 left · −150 pts)</span></button><button id="share-result" class="deal-btn" type="button" disabled>Share result</button><button id="show-how" class="outline" type="button">How to play</button><button id="practice-run" class="outline" type="button" hidden>Start a practice session</button></div>
-      <p id="daily-hint" class="daily-hint" role="status" hidden></p>
-      <aside id="how-to-play" class="how-to-play" hidden><strong>How to play</strong><p>Play six separate Wordle-style puzzles per session. Each puzzle has its own five-letter word and up to six guesses. Solve one and the next puzzle opens immediately. After six missed guesses, its answer is revealed and the next puzzle opens. Hint 1 costs 150 points; Hint 2 costs 300. Your session score is the sum of solved-puzzle scores.</p></aside>
-    </section>
-    <aside class="daily-ad-rail" data-ad-player aria-label="Mak3Deals advertising channel">
-      <div class="daily-ad-top"><span>AD CHANNEL</span><span class="daily-ad-live">● LIVE</span></div>
-      <div class="daily-ad-screen ad-player-screen"><div class="ad-player-copy"><strong>MAK3<br><em>DEALS</em></strong><span class="ad-player-detail">Loading verified placements…</span></div></div>
-      <div class="daily-ad-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div>
-    </aside>
-    </div>
-    <section class="contest-card" aria-labelledby="contest-title"><div><p class="eyebrow dark">FREE ENTRY DRAWING · COMING SOON</p><h2 id="contest-title">Play free. Earn entries. Get picked at random.</h2><p>Complete puzzle sessions to build points today. Verified accounts, official rules, entry limits, and the random drawing launch before any prize entries open.</p></div><div class="contest-status"><strong>NO PURCHASE NECESSARY</strong><span>A purchase, affiliate click, or ad view will not increase anyone’s chance of winning.</span></div></section>
-  </main>
-  <footer><strong>Mak3Deals</strong><span><a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/affiliate-disclosure">Affiliate disclosure</a> · <a href="/contact">Contact</a></span></footer>
-  <script>window.DAILY_PUZZLE_DATE={{ puzzle_date|tojson }};window.DAILY_SESSION={{ daily_session|tojson }};</script>
-  <script src="{{ url_for('static', filename='daily.js', v='daily-submit-v2') }}"></script>
-  <script src="{{ url_for('static', filename='ad-player.js', v='daily-side-rail-v1') }}" defer></script>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}DealDrop Daily · Mak3Deals{% endblock %}
+{% block meta %}<meta name="description" content="Play DealDrop Daily, an original daily savings word puzzle from Mak3Deals.">{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='daily.css', v='daily-side-rail-v1') }}"><link rel="stylesheet" href="{{ url_for('static', filename='ad-player.css', v='daily-side-rail-v1') }}">{% endblock %}
+{% block content %}
+<main><section class="simple-hero daily-hero"><p class="eyebrow">MAK3DEALS // DAILY CHALLENGE</p><h1>DealDrop <em>Daily.</em></h1><p>Six separate five-letter puzzles. Up to six guesses on every puzzle.</p><span class="puzzle-badge">{% if practice %}Practice session{% else %}Session {{ puzzle_date }}{% endif %}</span></section>
+<div class="daily-game-layout"><section class="daily-wrap" aria-labelledby="daily-title"><div class="daily-topline"><div><p class="eyebrow dark">SIX-PUZZLE SESSION</p><h2 id="daily-title">Find the savings word</h2></div><div class="daily-stats"><div class="daily-stat"><strong id="score-count">0</strong><span>session points</span></div><div class="daily-stat"><strong id="streak-count">0</strong><span>day streak</span></div></div></div><div class="puzzle-progress" aria-label="Session progress"><strong id="puzzle-count">Puzzle 1 of 6</strong><div id="puzzle-dots" class="puzzle-dots" aria-hidden="true"></div></div><div class="daily-clue"><span id="clue-label" class="clue-label">TODAY'S CLUE · Shopper's vocabulary</span><strong id="clue-text">{{ daily_session.clues[0].clue }}</strong><small>Each puzzle allows up to six guesses. Solve it to advance immediately.</small></div><div id="daily-board" class="daily-board" aria-label="DealDrop Daily guesses"></div><p id="daily-message" class="daily-message" role="status">Guess a five-letter word to begin.</p><p class="daily-input-help">Build your guess by tapping the letters below or typing on your keyboard. Press <strong>Enter</strong> to submit.</p><div id="daily-keyboard" class="daily-keyboard" aria-label="Game keyboard"></div><div class="daily-actions"><button id="hint-button" class="hint-btn" type="button">Reveal a hint <span id="hints-left">(2 left · −150 pts)</span></button><button id="share-result" class="deal-btn" type="button" disabled>Share result</button><button id="show-how" class="outline" type="button">How to play</button><button id="practice-run" class="outline" type="button" hidden>Start a practice session</button></div><p id="daily-hint" class="daily-hint" role="status" hidden></p><aside id="how-to-play" class="how-to-play" hidden><strong>How to play</strong><p>Play six separate Wordle-style puzzles per session. Each puzzle has its own five-letter word and up to six guesses. Solve one and the next puzzle opens immediately. After six missed guesses, its answer is revealed and the next puzzle opens. Hint 1 costs 150 points; Hint 2 costs 300. Your session score is the sum of solved-puzzle scores.</p></aside></section><aside class="daily-ad-rail" data-ad-player aria-label="Mak3Deals advertising channel"><div class="daily-ad-top"><span>AD CHANNEL</span><span class="daily-ad-live">● PLACEMENT</span></div><div class="daily-ad-screen ad-player-screen"><div class="ad-player-copy"><strong>MAK3<br><em>DEALS</em></strong><span class="ad-player-detail">Loading verified placements…</span></div></div><div class="daily-ad-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div></aside></div>
+<section class="contest-card" aria-labelledby="contest-title"><div><p class="eyebrow dark">FREE ENTRY DRAWING · COMING SOON</p><h2 id="contest-title">Play free. Earn entries. Get picked at random.</h2><p>Complete the daily six-puzzle session to qualify for the drawing system. Winning all six puzzles earns bonus entries. Verified accounts, official rules, entry limits, and final prize details will be published before entries open.</p></div><div class="contest-status"><strong>NO PURCHASE NECESSARY</strong><span>A purchase, affiliate click, or ad view will not increase anyone’s chance of winning.</span></div></section></main>
+{% endblock %}
+{% block page_scripts %}<script>window.DAILY_PUZZLE_DATE={{ puzzle_date|tojson }};window.DAILY_SESSION={{ daily_session|tojson }};</script><script src="{{ url_for('static', filename='daily.js', v='daily-submit-v2') }}"></script><script src="{{ url_for('static', filename='ad-player.js', v='daily-side-rail-v1') }}" defer></script>{% endblock %}

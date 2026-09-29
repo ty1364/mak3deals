@@ -1,60 +1,7 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game Room · Mak3Deals</title>
-  <meta name="description" content="Free Mak3Deals browser games and monthly skill boards." />
-  <meta name="google-adsense-account" content="ca-pub-3943554631291586" />
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='games.css') }}" />
-  <style>.siege-art{background:radial-gradient(circle at 75% 20%,#ffd36f,#1a9c9a 38%,#092234)}.siege-art span{font-size:clamp(42px,7vw,78px);line-height:.82;letter-spacing:-.08em;font-style:italic;color:#fff;text-shadow:0 0 22px #0a5e6a}</style>
-</head>
-<body>
-  <a class="games-back" href="/">← Back to Mak3Deals</a>
-  <main class="games-shell">
-    <header class="games-hero">
-      <p class="eyebrow">FREE TO PLAY // MONTHLY SKILL BOARDS</p>
-      <h1>THE GAME <span>ROOM</span></h1>
-      <p>Take a shopping break, beat your best run, and submit your score. No purchase is required to play.</p>
-    </header>
-    <aside class="games-ad-slot" data-ad-player aria-label="Mak3Deals advertising channel">
-      <div class="ad-tv-top"><span>AD CHANNEL</span><span class="ad-live">● LIVE</span></div>
-      <div class="ad-tv-screen ad-player-screen">
-        <div class="ad-player-copy"><strong>MAK3 DEALS</strong><span class="ad-player-detail">Loading verified placements…</span></div>
-      </div>
-      <div class="ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div>
-    </aside>
-    <section class="game-grid" aria-label="Mak3Deals games">
-      <article class="game-card featured-card">
-        <div class="game-card-art strike-art"><span>VOID</span><strong>STRIKE</strong><i>✦</i></div>
-        <div class="game-card-copy"><p class="eyebrow">ARCADE SHOOTER</p><h2>Void Strike</h2><p>Survive waves of neon enemies, grab power-ups, and push your score as long as you can.</p><div class="game-card-foot"><span>Mouse + keyboard</span><a href="/game">Play now →</a></div></div>
-      </article>
-      <article class="game-card">
-        <div class="game-card-art dash-art"><span>MATCH</span><strong>CRUSH</strong><i>●</i></div>
-        <div class="game-card-copy"><p class="eyebrow">MATCH-3 CAMPAIGN</p><h2>Bubble Crush</h2><p>Match colorful bubbles, trigger combo bonuses, crack frozen bubbles, and climb through 1,000 increasingly difficult levels.</p><div class="game-card-foot"><span>Mouse or touch · Progress saved</span><a href="/game/bubble-crush">Play now →</a></div></div>
-      </article>
-      <article class="game-card cart-card">
-        <div class="game-card-art cart-art"><span>ORIGINAL GAME</span><strong>CART<br>QUEST</strong><i>🛒</i></div>
-        <div class="game-card-copy"><p class="eyebrow">ARCADE SHOPPING RUN</p><h2>Cart Quest</h2><p>Catch real-looking savings, build a streak, and dodge checkout traps as the aisle gets faster every wave.</p><div class="game-card-foot"><span>Keyboard, mouse, or touch</span><a href="/game/cart-quest">Play now →</a></div></div>
-      </article>
-      <article class="game-card vault-card">
-        <div class="game-card-art vault-art"><span>NEW ORIGINAL</span><strong>VAULT<br>RUNNER</strong><i>◇</i></div>
-        <div class="game-card-copy"><p class="eyebrow">ROGUELITE DEAL HUNT</p><h2>Vault Runner</h2><p>Steal the best savings, dodge scam bots, and choose a new power-up after every round. No two runs have to play the same.</p><div class="game-card-foot"><span>WASD, arrows, mouse, or touch</span><a href="/game/vault-runner">Play now →</a></div></div>
-      </article>
-      <article class="game-card drift-card">
-        <div class="game-card-art drift-art"><span>NEW ORIGINAL</span><strong>DEALWAY<br>DRIFT</strong><i>↗</i></div>
-        <div class="game-card-copy"><p class="eyebrow">MAZE KART RACER</p><h2>Dealway Drift</h2><p>Race a neon maze, hit boost pads, collect savings, and beat the rival ghost across three laps.</p><div class="game-card-foot"><span>Keyboard or touch steering</span><a href="/game/dealway-drift">Play now →</a></div></div>
-      </article>
-      <article class="game-card royale-card">
-        <div class="game-card-art royale-art"><span>FLAGSHIP GAME</span><strong>DEAL DASH<br>ROYALE</strong><i>★</i></div>
-        <div class="game-card-copy"><p class="eyebrow">OBSTACLE ROYALE</p><h2>Deal Dash Royale</h2><p>Race a crowd of competitors through wild obstacle courses. Survive each round and make the final.</p><div class="game-card-foot"><span>Jump · dodge · survive</span><a href="/game/deal-dash-royale">Play now →</a></div></div>
-      </article>
-      <article class="game-card featured-game"><div class="game-card-art siege-art"><span>DEAL<br>SIEGE</span></div><div class="game-card-copy"><p class="eyebrow">TIMED KNOCKDOWN BATTLE</p><h2>Deal Siege</h2><p>Choose your racer color, blast target lines, trigger chain bombs, and outscore the rival before 45 seconds run out.</p><div class="game-card-foot"><span>Mouse or touch · 1v1 score battle</span><a href="/game/deal-siege">Play now →</a></div></div></article>
-    </section>
-    <aside class="games-rules"><strong>Scoreboards are reviewed.</strong><span>Free skill games only. Any monthly prize promotion will be posted with official rules, eligibility, and the active prize before it begins.</span></aside>
-  </main>
-  <link rel="stylesheet" href="{{ url_for('static', filename='ad-player.css', v='games-flow-1') }}" />
-  <script src="{{ url_for('static', filename='ad-player.js', v='b028b3b') }}" defer></script>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Game Room · Mak3Deals{% endblock %}
+{% block meta %}<meta name="description" content="Free Mak3Deals browser games and monthly skill boards.">{% endblock %}
+{% block body_class %}page-gaming{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='games.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='ad-player.css', v='games-flow-1') }}"><style>.siege-art{background:radial-gradient(circle at 75% 20%,#ffd36f,#1a9c9a 38%,#092234)}.siege-art span{font-size:clamp(42px,7vw,78px);line-height:.82;letter-spacing:-.08em;font-style:italic;color:#fff;text-shadow:0 0 22px #0a5e6a}</style>{% endblock %}
+{% block page_content %}<main class="games-shell"><a class="games-back" href="/">← Back to Mak3Deals</a><header class="games-hero"><p class="eyebrow">FREE TO PLAY // MONTHLY SKILL BOARDS</p><h1>THE GAME <span>ROOM</span></h1><p>Take a shopping break, beat your best run, and submit your score. No purchase is required to play.</p></header><aside class="games-ad-slot" data-ad-player aria-label="Mak3Deals advertising channel"><div class="ad-tv-top"><span>AD CHANNEL</span><span class="ad-live">● PLACEMENT</span></div><div class="ad-tv-screen ad-player-screen"><div class="ad-player-copy"><strong>MAK3 DEALS</strong><span class="ad-player-detail">Loading verified placements…</span></div></div><div class="ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div></aside><section class="game-grid" aria-label="Mak3Deals games"><article class="game-card featured-card"><div class="game-card-art strike-art"><span>VOID</span><strong>STRIKE</strong><i>✦</i></div><div class="game-card-copy"><p class="eyebrow">ARCADE SHOOTER</p><h2>Void Strike</h2><p>Survive waves of neon enemies, grab power-ups, and push your score as long as you can.</p><div class="game-card-foot"><span>Mouse + keyboard</span><a href="/game">Play now →</a></div></div></article><article class="game-card"><div class="game-card-art dash-art"><span>MATCH</span><strong>CRUSH</strong><i>●</i></div><div class="game-card-copy"><p class="eyebrow">MATCH-3 CAMPAIGN</p><h2>Bubble Crush</h2><p>Match colorful bubbles, trigger combo bonuses, crack frozen bubbles, and climb through 1,000 increasingly difficult levels.</p><div class="game-card-foot"><span>Mouse or touch · Progress saved</span><a href="/game/bubble-crush">Play now →</a></div></div></article><article class="game-card cart-card"><div class="game-card-art cart-art"><span>ORIGINAL GAME</span><strong>CART<br>QUEST</strong><i>🛒</i></div><div class="game-card-copy"><p class="eyebrow">ARCADE SHOPPING RUN</p><h2>Cart Quest</h2><p>Catch savings, build a streak, and dodge checkout traps as the aisle gets faster every wave.</p><div class="game-card-foot"><span>Keyboard, mouse, or touch</span><a href="/game/cart-quest">Play now →</a></div></div></article><article class="game-card vault-card"><div class="game-card-art vault-art"><span>NEW ORIGINAL</span><strong>VAULT<br>RUNNER</strong><i>◇</i></div><div class="game-card-copy"><p class="eyebrow">ROGUELITE DEAL HUNT</p><h2>Vault Runner</h2><p>Steal the best savings, dodge scam bots, and choose a new power-up after every round.</p><div class="game-card-foot"><span>WASD, arrows, mouse, or touch</span><a href="/game/vault-runner">Play now →</a></div></div></article><article class="game-card drift-card"><div class="game-card-art drift-art"><span>NEW ORIGINAL</span><strong>DEALWAY<br>DRIFT</strong><i>↗</i></div><div class="game-card-copy"><p class="eyebrow">MAZE KART RACER</p><h2>Dealway Drift</h2><p>Race a neon maze, hit boost pads, collect savings, and beat the rival ghost across three laps.</p><div class="game-card-foot"><span>Keyboard or touch steering</span><a href="/game/dealway-drift">Play now →</a></div></div></article><article class="game-card royale-card"><div class="game-card-art royale-art"><span>FLAGSHIP GAME</span><strong>DEAL DASH<br>ROYALE</strong><i>★</i></div><div class="game-card-copy"><p class="eyebrow">OBSTACLE ROYALE</p><h2>Deal Dash Royale</h2><p>Race a crowd of competitors through wild obstacle courses. Survive each round and make the final.</p><div class="game-card-foot"><span>Jump · dodge · survive</span><a href="/game/deal-dash-royale">Play now →</a></div></div></article><article class="game-card featured-game"><div class="game-card-art siege-art"><span>DEAL<br>SIEGE</span></div><div class="game-card-copy"><p class="eyebrow">TIMED KNOCKDOWN BATTLE</p><h2>Deal Siege</h2><p>Choose your racer color, blast target lines, trigger chain bombs, and outscore the rival before 45 seconds run out.</p><div class="game-card-foot"><span>Mouse or touch · 1v1 score battle</span><a href="/game/deal-siege">Play now →</a></div></div></article></section><aside class="games-rules"><strong>Scoreboards are reviewed.</strong><span>Free skill games only. Any monthly prize promotion will be posted with official rules, eligibility, and the active prize before it begins.</span></aside></main>{% endblock %}
+{% block page_scripts %}<script src="{{ url_for('static', filename='ad-player.js', v='b028b3b') }}" defer></script>{% endblock %}
