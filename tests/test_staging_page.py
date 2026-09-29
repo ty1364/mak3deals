@@ -139,6 +139,28 @@ class StagingPageTests(unittest.TestCase):
         self.assertEqual(tracked.status_code, 302)
         self.assertEqual(tracked.headers["Location"], "https://example.invalid/upper-everyday-tote")
 
+    def test_products_catalog_has_real_filterable_listing_and_two_channels(self):
+        home = self.client.get("/")
+        home_body = home.get_data(as_text=True)
+        self.assertIn('href="/products"', home_body)
+        self.assertIn('data-ad-channel="01"', home_body)
+        self.assertIn('data-ad-channel-02', home_body)
+        self.assertIn("ad-channel-02.js", home_body)
+        self.assertNotIn("● LIVE", home_body)
+
+        catalog = self.client.get("/products?q=UPPER&category=Luggage%20%26%20Bags&sort=name_asc")
+        catalog_body = catalog.get_data(as_text=True)
+        self.assertEqual(catalog.status_code, 200)
+        self.assertIn("UPPER Everyday Tote", catalog_body)
+        self.assertIn("Page 1 of 1", catalog_body)
+        self.assertIn('id="catalog-search"', catalog_body)
+        self.assertEqual(catalog_body.count("<main"), 1)
+        self.assertNotIn("No discount is claimed", catalog_body)
+
+        out_of_range = self.client.get("/products?page=99")
+        self.assertEqual(out_of_range.status_code, 200)
+        self.assertIn("Page 1 of 1", out_of_range.get_data(as_text=True))
+
 
 if __name__ == "__main__":
     unittest.main()

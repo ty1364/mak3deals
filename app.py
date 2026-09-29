@@ -17,8 +17,8 @@ SITE_AD_TV = """
 <style>
 .site-ad-slot{max-width:1180px;margin:0 auto;padding:24px 8% 10px}.site-ad-tv{display:flex;flex-direction:column;width:100%;min-height:150px;padding:12px;border:1px solid rgba(255,211,111,.78);border-radius:16px;background:linear-gradient(135deg,#0d1730,#102a3d 62%,#133f4b);color:#f7f7ff;box-shadow:0 14px 30px rgba(6,25,44,.18);font:800 10px/1.3 system-ui,sans-serif;letter-spacing:.12em}.site-ad-tv-top,.site-ad-tv-foot{display:flex;justify-content:space-between;color:#bde0dd}.site-ad-live{color:#ffd36f}.site-ad-tv-screen{display:flex;align-items:center;min-height:98px;margin:8px 0;padding:16px 20px;border:1px solid rgba(92,238,255,.55);border-radius:9px;background:radial-gradient(circle at 65% 45%,#1d5571,#0b1b31 70%)}.site-ad-tv-screen strong{font-size:clamp(20px,2.5vw,32px);line-height:.9;color:#fff}.site-ad-tv-screen em{color:#ffd36f;font-style:normal}.ad-player-screen{gap:16px}.ad-player-copy{display:grid;gap:7px;min-width:0;letter-spacing:.02em}.ad-player-copy strong{font-size:clamp(18px,2.4vw,30px);line-height:1.02;letter-spacing:-.04em}.ad-player-copy.pink strong{color:#ffd36f}.ad-player-copy.blue strong{color:#8cecff}.ad-player-copy.gold strong{color:#ffd36f}.ad-player-copy.cyan strong{color:#a7f7ff}.ad-player-provider,.ad-player-detail{font-size:10px;line-height:1.35;letter-spacing:.04em;color:#bdefff}.ad-player-provider{color:#ffd36f;text-transform:uppercase}.ad-player-detail{color:#e1e6ff}.ad-player-image{width:82px;height:82px;flex:0 0 82px;object-fit:contain;border-radius:10px;border:1px solid rgba(115,244,255,.5);background:#fff}.ad-player-cta,.ad-player-disclosure{color:#8cecff;text-decoration:none;letter-spacing:.04em}.ad-player-cta{justify-self:start;padding:7px 10px;border:1px solid rgba(115,244,255,.55);border-radius:999px;font-size:10px}.ad-player-cta:hover,.ad-player-disclosure:hover{color:#fff;background:rgba(115,244,255,.12)}.ad-player-disclosure{font-size:9px}@media(max-width:700px){.site-ad-slot{padding:18px 6% 4px}.site-ad-tv-screen{min-height:112px;padding:14px}.ad-player-image{width:62px;height:62px;flex-basis:62px}}
 </style>
-<div class="site-ad-slot"><aside class="site-ad-tv" data-ad-player aria-label="Mak3Deals advertising channel"><div class="site-ad-tv-top"><span>AD CHANNEL</span><span class="site-ad-live">● PLACEMENT</span></div><div class="site-ad-tv-screen ad-player-screen"><div class="ad-player-copy"><strong>MAK3<br><em>DEALS</em></strong><span class="ad-player-detail">Loading verified placements…</span></div></div><div class="site-ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div></aside></div>
-<script src="/static/ad-player.js?v=b028b3b" defer></script>
+<div class="site-ad-slot"><aside class="site-ad-tv" data-ad-player data-ad-channel="01" aria-label="Mak3Deals advertising channel 01"><div class="site-ad-tv-top"><span>AD CHANNEL 01</span><span class="site-ad-live">● PLACEMENT</span></div><div class="site-ad-tv-screen ad-player-screen"><div class="ad-player-copy"><strong>MAK3<br><em>DEALS</em></strong><span class="ad-player-detail">Loading verified placements…</span></div></div><div class="site-ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div></aside></div>
+<script src="/static/ad-player.js?v=b0283b4" defer></script>
 """
 
 # The homepage uses the same player inside the hero's dedicated right column.
@@ -155,22 +155,23 @@ def setup():
     database.execute("DELETE FROM deals WHERE COALESCE(deal_kind, 'deal') IN ('deal', 'source-hub', 'price-check', 'submission')")
     database.commit()
 
-@app.route("/")
-def home():
+SORT_OPTIONS = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
+SORT_ORDER = {
+    "featured": "verified DESC, expires_on ASC, id DESC",
+    "price_asc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) ASC, verified DESC",
+    "price_desc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) DESC, verified DESC",
+    "name_asc": "LOWER(title) ASC, verified DESC",
+    "name_desc": "LOWER(title) DESC, verified DESC",
+    "newest": "created_at DESC, verified DESC",
+    "oldest": "created_at ASC, verified DESC",
+}
+
+def _product_listing_filters():
     city = request.args.get("city", "All")
     category = request.args.get("category", "All")
     search = request.args.get("q", "").strip()
     sort = request.args.get("sort", "featured")
-    sort_order = {
-        "featured": "verified DESC, expires_on ASC, id DESC",
-        "price_asc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) ASC, verified DESC",
-        "price_desc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) DESC, verified DESC",
-        "name_asc": "LOWER(title) ASC, verified DESC",
-        "name_desc": "LOWER(title) DESC, verified DESC",
-        "newest": "created_at DESC, verified DESC",
-        "oldest": "created_at ASC, verified DESC",
-    }
-    if sort not in sort_order:
+    if sort not in SORT_ORDER:
         sort = "featured"
     query, values = "SELECT * FROM deals WHERE verified=1 AND deal_kind='product' AND status='active' AND (expires_on IS NULL OR expires_on >= ?)", [date.today().isoformat()]
     if city != "All": query += " AND city = ?"; values.append(city)
@@ -178,7 +179,14 @@ def home():
     if search:
         query += " AND (store LIKE ? OR title LIKE ? OR description LIKE ? OR city LIKE ?)"
         values.extend([f"%{search}%"] * 4)
-    raw_products = db().execute(query + " ORDER BY " + sort_order[sort], values).fetchall()
+    raw_products = db().execute(query + " ORDER BY " + SORT_ORDER[sort], values).fetchall()
+    cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals WHERE deal_kind='product' ORDER BY city") if r[0] not in {"All", "Online"}]
+    categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals WHERE deal_kind='product' ORDER BY category")]
+    return raw_products, cities, categories, city, category, search, sort
+
+@app.route("/")
+def home():
+    raw_products, cities, categories, city, category, search, sort = _product_listing_filters()
     discounted_products = [row for row in raw_products if (row["discount_percent"] or 0) > 0]
     regular_products = [row for row in raw_products if (row["discount_percent"] or 0) <= 0][:8]
     comparison_counts = {}
@@ -199,10 +207,26 @@ def home():
         "AND (expires_on IS NULL OR expires_on >= ?) ORDER BY expires_on ASC LIMIT 4",
         (date.today().isoformat(),),
     ).fetchall()
-    cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals WHERE deal_kind='product' ORDER BY city") if r[0] not in {"All", "Online"}]
-    categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals WHERE deal_kind='product' ORDER BY category")]
-    sort_options = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
-    return render_template("index.html", deals=deals, regular_products=regular_products, homepage_coupons=homepage_coupons, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=sort_options, search=search, comparison_counts=comparison_counts)
+    return render_template("index.html", deals=deals, regular_products=regular_products, homepage_coupons=homepage_coupons, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=SORT_OPTIONS, search=search, comparison_counts=comparison_counts)
+
+@app.route("/products")
+def products():
+    raw_products, cities, categories, city, category, search, sort = _product_listing_filters()
+    per_page = 24
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    total_count = len(raw_products)
+    page_count = max(1, (total_count + per_page - 1) // per_page)
+    page = min(page, page_count)
+    start = (page - 1) * per_page
+    return render_template(
+        "products.html", products=raw_products[start:start + per_page], total_count=total_count,
+        page=page, page_count=page_count, cities=cities, categories=categories,
+        selected_city=city, selected_category=category, selected_sort=sort,
+        sort_options=SORT_OPTIONS, search=search,
+    )
 
 @app.route("/guides")
 def guides():

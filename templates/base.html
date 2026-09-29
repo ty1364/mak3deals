@@ -20,6 +20,7 @@
       <button class="site-menu-toggle" type="button" aria-expanded="false" aria-controls="site-primary-nav"><span class="site-menu-icon" aria-hidden="true">☰</span><span class="site-menu-label">Menu</span></button>
       <nav id="site-primary-nav" class="site-nav" aria-label="Primary navigation">
         <a class="{% if request.path == '/' %}is-active{% endif %}" href="/">Deals</a>
+        <a class="{% if request.path == '/products' %}is-active{% endif %}" href="/products">Shop Products</a>
         <a class="{% if request.path == '/coupons' %}is-active{% endif %}" href="/coupons">Coupons</a>
         <a class="{% if request.path.startswith('/guides') %}is-active{% endif %}" href="/guides">Guides</a>
         <a class="{% if request.path == '/daily' %}is-active{% endif %}" href="/daily">Daily challenge</a>
@@ -33,7 +34,7 @@
     <div><strong>Mak3Deals</strong><span>Shopping research with direct links and clear disclosures.</span></div>
     <nav aria-label="Footer navigation"><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/affiliate-disclosure">Affiliate disclosure</a></nav>
   </footer>
-  <script src="{{ url_for('static', filename='site-shell.js', v='site-wide-v1') }}" defer></script>
+  <script src="{{ url_for('static', filename='site-shell.js', v='site-wide-v2') }}" defer></script>
   {% block page_scripts %}{% endblock %}
 </body>
 </html>

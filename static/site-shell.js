@@ -1,5 +1,6 @@
 (function(){
   function init(){
+    document.querySelectorAll('.product-grid-regular img[loading="lazy"]').forEach(function(image){image.loading='eager';});
     var button=document.querySelector('.site-menu-toggle');
     var nav=document.getElementById('site-primary-nav');
     if(!button||!nav)return;
