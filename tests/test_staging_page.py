@@ -101,7 +101,7 @@ class StagingPageTests(unittest.TestCase):
         self.assertEqual(offers[0]["source_provider"], "staging-fixture")
 
     def test_customer_routes_share_shell_and_hide_sources(self):
-        routes = ["/", "/coupons", "/guides", "/daily", "/watchlist", "/submit", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact"]
+        routes = ["/", "/coupons", "/guides", "/daily", "/watchlist", "/submit", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/retailer-picks"]
         for route in routes:
             with self.subTest(route=route):
                 response = self.client.get(route)
@@ -117,6 +117,9 @@ class StagingPageTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/feed-status", environ_overrides=external).status_code, 404)
         self.assertEqual(self.client.get("/feed-status", environ_overrides=external).status_code, 404)
         self.assertEqual(self.client.get("/sources", environ_overrides=external).status_code, 404)
+        self.assertEqual(self.client.get("/retailer-deal-admin", environ_overrides=external).status_code, 404)
+        self.assertEqual(self.client.get("/api/retailer-deal-status", environ_overrides=external).status_code, 404)
+        self.assertEqual(self.client.post("/api/retailer-deals/candidates", environ_overrides=external).status_code, 404)
 
     def test_catalog_cards_show_shopping_essentials_and_tracked_action(self):
         response = self.client.get("/")
@@ -170,6 +173,37 @@ class StagingPageTests(unittest.TestCase):
         self.assertIn('data-ad-channel-02', body)
         self.assertLess(body.index("UPPER Everyday Tote"), body.index('data-ad-channel-02'))
         self.assertNotIn("Authorized affiliate promotion", body)
+
+    def test_retailer_candidate_requires_review_before_customer_publication(self):
+        payload = {
+            "source_key": "fred-meyer",
+            "title": "Fred Meyer weekly savings preview",
+            "summary": "A concise original preview of the current weekly ad and digital promotions.",
+            "source_url": "https://www.fredmeyer.com/savingsoverview/weekly-ad-info",
+            "retailer_url": "https://www.fredmeyer.com/",
+            "checked_on": "2026-09-28",
+            "promotion_type": "weekly ad",
+            "promotion_terms": "Clip digital coupons where required.",
+            "expires_on": "2026-10-05",
+            "location_restrictions": "Select stores; choose a preferred store.",
+            "membership_restrictions": "A free Fred Meyer account may be required for digital coupons.",
+            "link_scope": "weekly-ad",
+        }
+        candidate = self.client.post("/api/retailer-deals/candidates", json=payload)
+        self.assertEqual(candidate.status_code, 201)
+        candidate_id = candidate.get_json()["id"]
+        self.assertNotIn("Fred Meyer weekly savings preview", self.client.get("/retailer-picks").get_data(as_text=True))
+
+        reviewed = self.client.post(
+            f"/api/retailer-deals/{candidate_id}/review",
+            json={"action": "approve", "note": "Official source checked by editor."},
+        )
+        self.assertEqual(reviewed.status_code, 200)
+        picks = self.client.get("/retailer-picks").get_data(as_text=True)
+        self.assertIn("Fred Meyer weekly savings preview", picks)
+        self.assertIn("Clip digital coupons where required.", picks)
+        self.assertIn("No affiliate commission claimed", picks)
+        self.assertIn("Fred Meyer weekly savings preview", self.client.get("/").get_data(as_text=True))
 
 
 if __name__ == "__main__":

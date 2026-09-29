@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 import hmac
 import os
 import re
@@ -7,6 +7,14 @@ from flask import Flask, abort, g, jsonify, redirect, render_template, request
 from daily_game import daily_session, daily_hint, evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
+from retailer_deals import (
+    ensure_retailer_deal_schema,
+    discover_retailer_deals,
+    expire_candidates,
+    published_picks,
+    status_snapshot,
+    upsert_candidate,
+)
 
 app = Flask(__name__)
 # Staging can point at an isolated SQLite file without changing production's
@@ -49,7 +57,7 @@ def add_site_ad_tv(response):
     # Submit is a utility form and should stay distraction-free. Game routes
     # have their own dedicated placements. Normal savings pages get one
     # clearly labeled channel, and the homepage puts it in the hero column.
-    excluded_paths = {"/submit", "/daily", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status"}
+    excluded_paths = {"/submit", "/daily", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status", "/retailer-deal-admin"}
     if request.path not in excluded_paths and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
@@ -98,7 +106,8 @@ def _admin_request_allowed():
 
 @app.before_request
 def protect_feed_diagnostics():
-    if request.path in {"/feed-status", "/sources", "/api/feed-status"} and not _admin_request_allowed():
+    admin_paths = {"/feed-status", "/sources", "/api/feed-status", "/retailer-deal-admin", "/api/retailer-deal-status", "/api/retailer-deals/candidates"}
+    if (request.path in admin_paths or request.path.startswith("/api/retailer-deals/")) and not _admin_request_allowed():
         if request.path.startswith("/api/"):
             return jsonify({"error": "Not found"}), 404
         return "Not found", 404
@@ -123,6 +132,7 @@ def setup():
         CREATE INDEX IF NOT EXISTS idx_game_scores_month_score
         ON game_scores (game, month, score DESC);""")
     ensure_feed_schema(database)
+    ensure_retailer_deal_schema(database)
     # Feed expiry is enforced on every request even if the scheduled importer
     # has not run yet.
     database.execute(
@@ -207,7 +217,7 @@ def home():
         "AND (expires_on IS NULL OR expires_on >= ?) ORDER BY expires_on ASC LIMIT 4",
         (date.today().isoformat(),),
     ).fetchall()
-    return render_template("index.html", deals=deals, regular_products=regular_products, homepage_coupons=homepage_coupons, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=SORT_OPTIONS, search=search, comparison_counts=comparison_counts)
+    return render_template("index.html", deals=deals, regular_products=regular_products, homepage_coupons=homepage_coupons, retailer_picks=published_picks(db(), limit=4), cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=SORT_OPTIONS, search=search, comparison_counts=comparison_counts)
 
 @app.route("/products")
 def products():
@@ -269,7 +279,7 @@ def robots():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons"]
+    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons", "https://mak3deals.com/retailer-picks"]
     urls.extend(f"https://mak3deals.com/guides/{guide['slug']}" for guide in GUIDES)
     body = "".join(f"<url><loc>{url}</loc></url>" for url in urls)
     return f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>', 200, {"Content-Type": "application/xml; charset=utf-8"}
@@ -292,6 +302,10 @@ def compare_product(product_key):
 def coupons():
     deals = db().execute("SELECT * FROM deals WHERE verified=1 AND deal_kind='coupon' AND status='active' AND (expires_on IS NULL OR expires_on >= ?) ORDER BY expires_on ASC", (date.today().isoformat(),)).fetchall()
     return render_template("coupons.html", deals=deals)
+
+@app.route("/retailer-picks")
+def retailer_picks_page():
+    return render_template("retailer-picks.html", picks=published_picks(db()))
 
 @app.route("/api/coupons")
 def coupon_api():
@@ -365,6 +379,49 @@ def internal_refresh_offers():
         return jsonify({"error": "Not authorized."}), 403
     return jsonify(refresh_sources(db()))
 
+@app.route("/internal/discover-retailer-deals", methods=["POST"])
+def internal_discover_retailer_deals():
+    """Protected daily pass for official source checks and permitted feeds."""
+    expected = os.environ.get("MAK3DEALS_REFRESH_TOKEN", "").strip()
+    provided = request.headers.get("X-Mak3Deals-Refresh-Token", "").strip()
+    if not expected or not provided or not hmac.compare_digest(expected, provided):
+        return jsonify({"error": "Not authorized."}), 403
+    return jsonify(discover_retailer_deals(db(), check_urls=True))
+
+@app.route("/api/retailer-deal-status")
+def retailer_deal_status_api():
+    return jsonify(status_snapshot(db()))
+
+@app.route("/api/retailer-deals/candidates", methods=["POST"])
+def retailer_deal_candidate_api():
+    payload = request.get_json(silent=True) or {}
+    try:
+        candidate_id, created = upsert_candidate(db(), payload)
+        db().commit()
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"id": candidate_id, "created": created, "status": "candidate", "affiliate_claimed": False}), 201 if created else 200
+
+@app.route("/api/retailer-deals/<int:candidate_id>/review", methods=["POST"])
+def retailer_deal_review_api(candidate_id):
+    payload = request.get_json(silent=True) or {}
+    action = str(payload.get("action") or "").strip().lower()
+    if action not in {"approve", "reject"}:
+        return jsonify({"error": "action must be approve or reject"}), 400
+    candidate = db().execute("SELECT * FROM retailer_deal_candidates WHERE id=?", (candidate_id,)).fetchone()
+    if not candidate:
+        return jsonify({"error": "Candidate not found"}), 404
+    if action == "approve" and candidate["expires_on"] and candidate["expires_on"] < date.today().isoformat():
+        return jsonify({"error": "Expired candidates cannot be approved"}), 409
+    status = "approved" if action == "approve" else "rejected"
+    reviewed_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    db().execute(
+        "UPDATE retailer_deal_candidates SET status=?, reviewed_at=?, review_note=?, published_at=?, affiliate_claimed=0 WHERE id=?",
+        (status, reviewed_at, str(payload.get("note") or "").strip()[:500] or None, reviewed_at if status == "approved" else None, candidate_id),
+    )
+    db().commit()
+    return jsonify({"id": candidate_id, "status": status, "affiliate_claimed": False})
+
 @app.route("/feed-status")
 @app.route("/sources")
 def feed_status_page():
@@ -375,6 +432,14 @@ def feed_status_page():
     ).fetchone()
     sources = db().execute("SELECT * FROM feed_sources ORDER BY store").fetchall()
     return render_template("feed-status.html", latest=latest, sources=sources)
+
+@app.route("/retailer-deal-admin")
+def retailer_deal_admin_page():
+    snapshot = status_snapshot(db())
+    candidates = db().execute(
+        "SELECT * FROM retailer_deal_candidates ORDER BY CASE status WHEN 'candidate' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, expires_on IS NULL, expires_on ASC, id DESC"
+    ).fetchall()
+    return render_template("retailer-deal-admin.html", snapshot=snapshot, candidates=candidates)
 
 @app.route("/watchlist")
 def watchlist():

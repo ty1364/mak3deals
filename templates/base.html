@@ -21,6 +21,7 @@
       <nav id="site-primary-nav" class="site-nav" aria-label="Primary navigation">
         <a class="{% if request.path == '/' %}is-active{% endif %}" href="/">Deals</a>
         <a class="{% if request.path == '/products' %}is-active{% endif %}" href="/products">Shop Products</a>
+        <a class="{% if request.path == '/retailer-picks' %}is-active{% endif %}" href="/retailer-picks">Retailer Picks</a>
         <a class="{% if request.path == '/coupons' %}is-active{% endif %}" href="/coupons">Coupons</a>
         <a class="{% if request.path.startswith('/guides') %}is-active{% endif %}" href="/guides">Guides</a>
         <a class="{% if request.path == '/daily' %}is-active{% endif %}" href="/daily">Daily challenge</a>
