@@ -3,7 +3,7 @@
   if (!players.length) return;
 
   const housePlacements = [
-    { provider: "Mak3Deals savings desk", title: "Find the deal. Know the source.", detail: "Live retailer pages, checked dates, and clear disclosures.", href: "/", cta: "Browse savings →", tone: "pink" },
+    { provider: "Mak3Deals house placement", title: "Shop the verified deal desk.", detail: "Individual products, checked prices, and direct retailer links.", href: "/", cta: "Browse verified deals →", tone: "pink" },
     { provider: "Direct sponsor placement", title: "Put your business in front of shoppers.", detail: "Verified local and online offers can appear here.", href: "/submit", cta: "Submit a deal →", tone: "blue" },
     { provider: "Advertising partner placement", title: "Reach shoppers who are ready to save.", detail: "Sponsored placements will be labeled clearly.", href: "/affiliate-disclosure", cta: "View disclosure →", tone: "gold" }
   ];

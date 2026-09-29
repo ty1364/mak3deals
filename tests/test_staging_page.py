@@ -76,6 +76,8 @@ class StagingPageTests(unittest.TestCase):
         self.assertIn('class="hero-right"', body)
         self.assertLess(body.index('class="hero-right"'), body.index("SHOP BY CATEGORY"))
         self.assertIn('class="site-ad-tv"', body)
+        self.assertIn("PLACEMENT", body)
+        self.assertNotIn("● LIVE", body)
 
     def test_offer_api_returns_product_details(self):
         response = self.client.get("/api/offers?store=Bully%20Beds")
