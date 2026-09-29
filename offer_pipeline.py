@@ -243,12 +243,15 @@ def normalize_product(row, config, checked_at=None):
     verified_reference = f"${reference:.2f}" if discount and discount > 0 else None
     affiliate_url = _first(row, "affiliate_url", "aw_deep_link", "tracking_url", "tracking_link", "basket_link")
     payload_hash = hashlib.sha256(json.dumps(row, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+    category = _first(row, "category", "merchant_category", "category_name", "product_type", "google_product_category") or "Other"
+    if ">" in category:
+        category = category.split(">", 1)[0].strip() or "Other"
     return {
         "merchant_product_id": merchant_product_id or _slug(title),
         "store": config.get("store") or config.get("merchant") or config["source_key"],
         "title": title[:240],
         "description": _first(row, "description", "product_short_description", "promotional_text")[:2000],
-        "category": _first(row, "category", "merchant_category", "category_name", "product_type", "google_product_category") or "Other",
+        "category": category[:120],
         "link": product_url[:2000],
         "affiliate_url": affiliate_url[:2000] if affiliate_url else None,
         "image_url": image_url[:2000],
