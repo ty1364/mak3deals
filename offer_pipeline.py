@@ -25,7 +25,7 @@ SOURCE_DEFINITIONS = [
     {"key": "best-buy", "store": "Best Buy", "url": "https://www.bestbuy.com/top-deals-b"},
     {"key": "amazon", "store": "Amazon", "url": "https://www.amazon.com/gp/goldbox"},
     {"key": "target", "store": "Target", "url": "https://www.target.com/c/deals/-/N-4xw74"},
-    {"key": "home-depot", "store": "Home Depot", "url": "https://www.homedepot.com/SpecialBuy"},
+    {"key": "home-depot", "store": "Home Depot", "url": "https://www.homedepot.com/daily-deals"},
 ]
 
 DEAL_COLUMNS = {
