@@ -161,6 +161,16 @@ class StagingPageTests(unittest.TestCase):
         self.assertEqual(out_of_range.status_code, 200)
         self.assertIn("Page 1 of 1", out_of_range.get_data(as_text=True))
 
+    def test_homepage_preserves_filters_and_places_channel_two_after_shop_row(self):
+        response = self.client.get("/?q=UPPER&category=Luggage%20%26%20Bags&sort=name_desc")
+        body = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('href="/products?city=All&amp;category=Luggage+%26+Bags&amp;sort=name_desc&amp;q=UPPER"', body)
+        self.assertIn("UPPER Everyday Tote", body)
+        self.assertIn('data-ad-channel-02', body)
+        self.assertLess(body.index("UPPER Everyday Tote"), body.index('data-ad-channel-02'))
+        self.assertNotIn("Authorized affiliate promotion", body)
+
 
 if __name__ == "__main__":
     unittest.main()
