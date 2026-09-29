@@ -199,11 +199,39 @@ class StagingPageTests(unittest.TestCase):
             json={"action": "approve", "note": "Official source checked by editor."},
         )
         self.assertEqual(reviewed.status_code, 200)
+        self.assertNotIn("Fred Meyer weekly savings preview", self.client.get("/retailer-picks").get_data(as_text=True))
+        published = self.client.post(
+            f"/api/retailer-deals/{candidate_id}/review",
+            json={"action": "publish", "note": "Explicit publication after approval."},
+        )
+        self.assertEqual(published.status_code, 200)
         picks = self.client.get("/retailer-picks").get_data(as_text=True)
         self.assertIn("Fred Meyer weekly savings preview", picks)
         self.assertIn("Clip digital coupons where required.", picks)
         self.assertIn("No affiliate commission claimed", picks)
         self.assertIn("Fred Meyer weekly savings preview", self.client.get("/").get_data(as_text=True))
+
+    def test_retailer_export_is_sanitized_and_target_is_held(self):
+        target_payload = {
+            "source_key": "target",
+            "title": "Target held candidate",
+            "summary": "This should never enter the active review queue while Target is held.",
+            "source_url": "https://www.target.com/c/top-deals/-/N-4xw74",
+            "retailer_url": "https://www.target.com/c/top-deals/-/N-4xw74",
+            "checked_on": "2026-09-29",
+            "promotion_terms": "Terms pending verification.",
+            "expires_on": "2026-10-05",
+            "location_restrictions": "Store-specific.",
+            "membership_restrictions": "Target Circle status pending.",
+            "link_scope": "editorial",
+        }
+        held = self.client.post("/api/retailer-deals/candidates", json=target_payload)
+        self.assertEqual(held.status_code, 409)
+
+        export = self.client.get("/api/retailer-deals/export")
+        self.assertEqual(export.status_code, 200)
+        self.assertIn("candidates", export.get_json())
+        self.assertNotIn("MAK3DEALS_RETAILER_FEED", export.get_data(as_text=True))
 
 
 if __name__ == "__main__":

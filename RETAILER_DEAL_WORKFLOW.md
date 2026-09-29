@@ -16,8 +16,11 @@ The registered official starting points are:
 | Target | `https://www.target.com/c/top-deals/-/N-4xw74` | top-deal and digital-promotion review |
 | Fred Meyer | `https://www.fredmeyer.com/savingsoverview/weekly-ad-info` | weekly-ad and digital-promotion review |
 
-The daily pass checks those URLs for reachability and records the result. It
-creates a candidate only from one of these two controlled inputs:
+Target is intentionally held until its item-level promotion evidence can be
+verified cleanly. The daily pass does not check or ingest a held source. For
+the other sources, a reachability result is only a source-health signal, never
+proof that an individual deal was inspected. The pass creates a candidate only
+from one of these two controlled inputs:
 
 1. An editor submits a candidate through the protected review API after
    checking the official source; or
@@ -36,8 +39,10 @@ date. The normalized record always has `affiliate_claimed = 0`.
 SQLite staging creates the schema automatically. PostgreSQL preparation is in
 `migrations/002_retailer_editorial_deals.sql`. Candidates hold the merchant,
 source URL, retailer destination, checked date, promotion type, known terms,
-expiration, location restrictions, membership restrictions, dedupe key, and
-review history.
+expiration or mandatory recheck date, location restrictions, membership
+restrictions, dedupe key, and review history. Source and retailer URLs must use
+the registered merchant's official domain. Broad deals pages remain editorial
+link-outs and cannot be labeled individual offers.
 
 The protected operator page is `/retailer-deal-admin`. It exposes the counts
 and source health to an authenticated local operator or a request carrying the
@@ -45,12 +50,18 @@ configured `MAK3DEALS_ADMIN_TOKEN`. The API routes are:
 
 - `POST /api/retailer-deals/candidates` — create or refresh a candidate.
 - `POST /api/retailer-deals/<id>/review` with `{"action":"approve"}` or
-  `{"action":"reject"}` — manual editorial decision.
+  `{"action":"reject"}` — manual editorial decision. Approval does not
+  make a candidate public.
+- The same route with `{"action":"publish"}` is the separate explicit
+  publication step and only accepts an approved candidate whose terms,
+  restrictions, evidence, and expiry/recheck date pass validation.
 - `GET /api/retailer-deal-status` — protected counts and source health.
+- `GET /api/retailer-deals/export` — protected, read-only sanitized review
+  export without feed URLs or credentials.
 - `POST /internal/discover-retailer-deals` — protected daily pass, using
   `X-Mak3Deals-Refresh-Token`.
 
-Only approved, unexpired rows appear at `/retailer-picks` or in the homepage
+Only explicitly published, unexpired rows appear at `/retailer-picks` or in the homepage
 Retailer Deal Picks section. Customer cards link to the retailer and carry a
 clear statement that no affiliate commission is claimed for these editorial
 picks. This does not make a numerical discount claim unless separate reliable
@@ -74,8 +85,9 @@ python scripts/discover_retailer_deals.py
 ```
 
 Use `--no-url-check` only for an offline staging smoke test. A failed feed
-refresh records the error and leaves existing approved candidates intact.
-Expired candidates are retired automatically before each status read and daily
-run. Dedupe uses merchant/source, normalized title, retailer destination, and
-expiration, so a repeated discovery refreshes the existing row instead of
-creating another listing.
+refresh is atomic: it records the error and leaves existing candidate or
+published records intact. Expired candidates are retired automatically before
+each status read and daily run; a missed mandatory recheck removes a published
+row until it is reviewed again. Dedupe uses merchant/source, normalized title,
+and retailer destination, so changing an expiration date refreshes the
+existing row instead of creating another listing.

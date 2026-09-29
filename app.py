@@ -11,6 +11,8 @@ from retailer_deals import (
     ensure_retailer_deal_schema,
     discover_retailer_deals,
     expire_candidates,
+    SourceHoldError,
+    publication_issues,
     published_picks,
     status_snapshot,
     upsert_candidate,
@@ -398,6 +400,8 @@ def retailer_deal_candidate_api():
     try:
         candidate_id, created = upsert_candidate(db(), payload)
         db().commit()
+    except SourceHoldError as exc:
+        return jsonify({"error": str(exc)}), 409
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     return jsonify({"id": candidate_id, "created": created, "status": "candidate", "affiliate_claimed": False}), 201 if created else 200
@@ -406,21 +410,53 @@ def retailer_deal_candidate_api():
 def retailer_deal_review_api(candidate_id):
     payload = request.get_json(silent=True) or {}
     action = str(payload.get("action") or "").strip().lower()
-    if action not in {"approve", "reject"}:
-        return jsonify({"error": "action must be approve or reject"}), 400
+    if action not in {"approve", "reject", "publish"}:
+        return jsonify({"error": "action must be approve, reject, or publish"}), 400
     candidate = db().execute("SELECT * FROM retailer_deal_candidates WHERE id=?", (candidate_id,)).fetchone()
     if not candidate:
         return jsonify({"error": "Candidate not found"}), 404
-    if action == "approve" and candidate["expires_on"] and candidate["expires_on"] < date.today().isoformat():
-        return jsonify({"error": "Expired candidates cannot be approved"}), 409
-    status = "approved" if action == "approve" else "rejected"
+    source_row = db().execute("SELECT enabled FROM retailer_sources WHERE source_key=?", (candidate["source_key"],)).fetchone()
+    if action in {"approve", "publish"} and (not source_row or not source_row["enabled"]):
+        return jsonify({"error": "This merchant source is currently on hold."}), 409
+    if action == "approve":
+        issues = publication_issues(candidate)
+        if issues:
+            return jsonify({"error": "Candidate is not ready for approval.", "issues": issues}), 409
+        status = "approved"
+    elif action == "publish":
+        if candidate["status"] != "approved":
+            return jsonify({"error": "Only an approved candidate can be explicitly published."}), 409
+        issues = publication_issues(candidate)
+        if issues:
+            return jsonify({"error": "Candidate is not ready for publication.", "issues": issues}), 409
+        status = "published"
+    else:
+        status = "rejected"
     reviewed_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     db().execute(
         "UPDATE retailer_deal_candidates SET status=?, reviewed_at=?, review_note=?, published_at=?, affiliate_claimed=0 WHERE id=?",
-        (status, reviewed_at, str(payload.get("note") or "").strip()[:500] or None, reviewed_at if status == "approved" else None, candidate_id),
+        (status, reviewed_at, str(payload.get("note") or "").strip()[:500] or None, reviewed_at if status == "published" else None, candidate_id),
     )
     db().commit()
     return jsonify({"id": candidate_id, "status": status, "affiliate_claimed": False})
+
+
+@app.route("/api/retailer-deals/export")
+def retailer_deal_export_api():
+    """Read-only sanitized operator export; never includes credentials or feed URLs."""
+    rows = db().execute(
+        """SELECT c.id, c.merchant, c.title, c.summary, c.source_url, c.retailer_url,
+                  c.checked_on, c.expires_on, c.recheck_on, c.promotion_type,
+                  c.promotion_terms, c.location_restrictions, c.membership_restrictions,
+                  c.link_scope, c.status, c.affiliate_claimed,
+                  s.status AS source_status, s.http_status AS source_http_status,
+                  s.source_check_state, s.feed_state, s.last_error AS source_error,
+                  s.feed_last_error, s.last_checked_at AS source_checked_at
+           FROM retailer_deal_candidates c
+           LEFT JOIN retailer_sources s ON s.source_key=c.source_key
+           ORDER BY c.id"""
+    ).fetchall()
+    return jsonify({"candidates": [dict(row) for row in rows]})
 
 @app.route("/feed-status")
 @app.route("/sources")

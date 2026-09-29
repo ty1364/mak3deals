@@ -12,7 +12,13 @@ CREATE TABLE IF NOT EXISTS retailer_sources (
     http_status INTEGER,
     status TEXT NOT NULL DEFAULT 'registered',
     last_error TEXT,
-    last_candidate_count INTEGER NOT NULL DEFAULT 0
+    last_candidate_count INTEGER NOT NULL DEFAULT 0,
+    hold_reason TEXT,
+    source_check_state TEXT NOT NULL DEFAULT 'not_checked',
+    feed_state TEXT NOT NULL DEFAULT 'unconfigured',
+    feed_last_error TEXT,
+    last_feed_attempt_at TIMESTAMPTZ,
+    last_feed_success_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS retailer_discovery_runs (
@@ -24,6 +30,9 @@ CREATE TABLE IF NOT EXISTS retailer_discovery_runs (
     rejected_count INTEGER NOT NULL DEFAULT 0,
     expired_count INTEGER NOT NULL DEFAULT 0,
     error_count INTEGER NOT NULL DEFAULT 0,
+    source_check_failure_count INTEGER NOT NULL DEFAULT 0,
+    feed_error_count INTEGER NOT NULL DEFAULT 0,
+    held_count INTEGER NOT NULL DEFAULT 0,
     message TEXT
 );
 
@@ -39,6 +48,7 @@ CREATE TABLE IF NOT EXISTS retailer_deal_candidates (
     promotion_type TEXT NOT NULL DEFAULT 'editorial link-out',
     promotion_terms TEXT,
     expires_on DATE,
+    recheck_on DATE,
     location_restrictions TEXT,
     membership_restrictions TEXT,
     link_scope TEXT NOT NULL DEFAULT 'editorial',
@@ -56,3 +66,15 @@ CREATE INDEX IF NOT EXISTS idx_retailer_candidates_status_expiry
     ON retailer_deal_candidates (status, expires_on, merchant);
 CREATE INDEX IF NOT EXISTS idx_retailer_candidates_source
     ON retailer_deal_candidates (source_key, last_seen_at);
+
+-- Additive upgrades for databases created by the earlier workflow revision.
+ALTER TABLE retailer_sources ADD COLUMN IF NOT EXISTS hold_reason TEXT;
+ALTER TABLE retailer_sources ADD COLUMN IF NOT EXISTS source_check_state TEXT NOT NULL DEFAULT 'not_checked';
+ALTER TABLE retailer_sources ADD COLUMN IF NOT EXISTS feed_state TEXT NOT NULL DEFAULT 'unconfigured';
+ALTER TABLE retailer_sources ADD COLUMN IF NOT EXISTS feed_last_error TEXT;
+ALTER TABLE retailer_sources ADD COLUMN IF NOT EXISTS last_feed_attempt_at TIMESTAMPTZ;
+ALTER TABLE retailer_sources ADD COLUMN IF NOT EXISTS last_feed_success_at TIMESTAMPTZ;
+ALTER TABLE retailer_discovery_runs ADD COLUMN IF NOT EXISTS source_check_failure_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE retailer_discovery_runs ADD COLUMN IF NOT EXISTS feed_error_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE retailer_discovery_runs ADD COLUMN IF NOT EXISTS held_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE retailer_deal_candidates ADD COLUMN IF NOT EXISTS recheck_on DATE;
