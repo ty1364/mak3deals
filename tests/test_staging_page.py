@@ -70,6 +70,12 @@ class StagingPageTests(unittest.TestCase):
         self.assertIn("TEST FIXTURE", body)
         self.assertIn("Bully Beds Fixture", body)
         self.assertNotIn("Busy Baby Fixture", body)
+        self.assertIn("Verified Deals", body)
+        self.assertIn("Shop Products", body)
+        self.assertIn("Daily Word Challenge", body)
+        self.assertIn('class="hero-right"', body)
+        self.assertLess(body.index('class="hero-right"'), body.index("SHOP BY CATEGORY"))
+        self.assertIn('class="site-ad-tv"', body)
 
     def test_offer_api_returns_product_details(self):
         response = self.client.get("/api/offers?store=Bully%20Beds")

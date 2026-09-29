@@ -2,22 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Mak3Deals · Verified savings</title>
+  <title>Mak3Deals · Shop verified savings</title>
+  <meta name="description" content="Search individual products, verified deals, and current coupon offers on Mak3Deals.">
   <meta name="google-adsense-account" content="ca-pub-3943554631291586">
   <meta name="impact-site-verification" content="b2f54a01-2fd5-4e42-a72c-2b130d5c7469">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='home-shopping.css', v='shopping-first-v1') }}">
 </head>
 <body>
-<header class="navbar"><a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a><nav><a href="/">Deals</a><a href="/coupons">Coupons</a><a href="/guides">Guides</a><a href="/daily">Daily game</a><a href="/sources">Sources</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav></header>
-<main>
-  <section class="hero"><div><p class="eyebrow">THE SAVINGS DESK</p><h1>Find the deal.<br><em>Know the source.</em></h1><p>Mak3Deals brings live retailer savings, verified coupon entries, and price checks into one clean shopping guide. We never invent a code or hide where an offer came from.</p><form class="search"><input name="q" value="{{ search }}" placeholder="Search stores, products, coupons..."><button>Search deals</button></form><div class="hero-proof"><span>✓ Official source links</span><span>✓ Checked dates</span><span>✓ Clear disclosures</span></div></div><div class="hero-note"><strong>Live deal sources.</strong><span>Open the retailer's current page.</span><span>Confirm the final price at checkout.</span></div></section>
-  <div class="city-row"><span>Browse by location</span>{% for value in ['All', 'Online'] + cities %}<a class="city-chip {% if value == selected_city %}active{% endif %}" href="{{ url_for('home', city=value, category=selected_category, sort=selected_sort, q=search) }}">{{ value }}</a>{% endfor %}</div>
-  <form class="filters" action="/" method="get" aria-label="Filter deals"><input type="hidden" name="city" value="{{ selected_city }}"><input type="hidden" name="q" value="{{ search }}"><label for="category-select"><span>Category</span><select id="category-select" name="category"><option value="All" {% if selected_category == 'All' %}selected{% endif %}>All categories</option>{% for value in categories %}<option value="{{ value }}" {% if value == selected_category %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label><label for="sort-select"><span>Sort by</span><select id="sort-select" name="sort">{% for value, label in sort_options %}<option value="{{ value }}" {% if value == selected_sort %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><button type="submit">Filter results</button></form>
-  <div class="section-heading"><div><p class="eyebrow dark">CHECKED SAVINGS</p><h2>Current offers</h2></div><a class="outline" href="/coupons">Browse all coupons →</a></div>
-  <section class="deals">{% for deal in deals %}{% set store_count = comparison_counts.get(deal.product_key, 0) %}<article class="deal-card" data-deal-id="{{ deal.id }}"><div class="deal-photo {% if not deal.image_url %}photo-fallback{% endif %}"><img src="{{ deal.image_url }}" alt="{{ deal.title }}" loading="lazy"></div><div class="card-top"><span class="tag">{{ deal.category }}</span><span class="verified">✓ Feed checked</span>{% if deal.source_provider == 'staging-fixture' %}<span class="fixture-badge">TEST FIXTURE · NOT A REAL DEAL</span>{% endif %}</div><p class="store">{{ deal.store }} <span>·</span> {{ deal.city }}</p><h3>{{ deal.title }}</h3><div class="price-row"><strong>{{ deal.sale_price }}</strong><del>{{ deal.regular_price }}</del>{% if deal.discount_percent %}<span class="discount-badge">{{ deal.discount_percent }}% off</span>{% endif %}</div><p>{{ deal.description }}</p><p class="terms"><strong>Availability:</strong> {{ deal.availability_status or 'Unknown' }} · <strong>Source:</strong> {{ deal.source_provider }}</p><div class="source-row"><span>Checked {{ deal.last_checked_at or deal.checked_on }}</span><span>{% if deal.expires_on %}Ends {{ deal.expires_on }}{% else %}No feed end date{% endif %}</span></div><div class="card-bottom">{% if store_count > 1 %}<a class="deal-btn" href="/compare/{{ deal.product_key }}">See price options →</a>{% else %}<a class="deal-btn" href="/click/{{ deal.id }}">See product →</a>{% endif %}<button class="watch-btn" type="button" data-title="{{ deal.title|e }}">☆ Watch</button></div>{% if deal.product_key and store_count == 1 %}<a class="compare-link" href="/compare/{{ deal.product_key }}">Price-check this product →</a>{% endif %}</article>{% else %}<div class="empty-results"><h3>No connected product-feed deals yet.</h3><p>Mak3Deals only publishes individual products with a current price, reference price, image, direct product link, and feed timestamp.</p></div>{% endfor %}</section>
-  <section class="guides-strip"><div><p class="eyebrow dark">THE SAVINGS NOTEBOOK</p><h2>Make the deal work harder.</h2><p>Quick guides for comparing final prices, using coupon codes, and spotting the terms that change a bargain.</p></div><div class="guide-mini-grid">{% for guide in featured_guides %}<a class="guide-mini" href="/guides/{{ guide.slug }}"><span>{{ guide.category }}</span><strong>{{ guide.title }}</strong><em>Read →</em></a>{% endfor %}</div><a class="outline" href="/guides">Read all guides →</a></section>
-</main>
-<footer><strong>Mak3Deals</strong><span><a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/affiliate-disclosure">Affiliate disclosure</a> · <a href="/contact">Contact</a></span></footer>
-<script src="{{ url_for('static', filename='watchlist.js') }}"></script>
-</body></html>
+  <header class="navbar shopping-nav">
+    <a href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" class="logo" alt="Mak3Deals"></a>
+    <nav><a class="active-nav" href="/">Deals</a><a href="/coupons">Coupons</a><a href="/daily">Daily challenge</a><a href="/watchlist">Watchlist</a><a href="/submit">Submit a Deal</a></nav>
+  </header>
+
+  <main class="shopping-home">
+    <section class="hero shopping-hero">
+      <div class="shopping-hero-copy">
+        <p class="eyebrow">MAK3DEALS SHOPPING DESK</p>
+        <h1>Search smarter.<br><em>Save with proof.</em></h1>
+        <p class="hero-lede">Find individual products with current prices, verified discounts, images, direct retailer links, and the date each offer was checked.</p>
+        <form class="search shopping-search" action="/" method="get" role="search">
+          <label class="sr-only" for="home-search">Search products and stores</label>
+          <input id="home-search" name="q" value="{{ search }}" placeholder="Search products, stores, or categories…" autocomplete="off">
+          <button type="submit">Search deals</button>
+        </form>
+        <div class="hero-proof"><span>✓ Individual products</span><span>✓ Direct retailer links</span><span>✓ Checked timestamps</span></div>
+      </div>
+      <div class="hero-note"><strong>Shopping ad placement.</strong><span>Sponsored placements stay clearly labeled.</span><span>Confirm final price and availability at checkout.</span></div>
+    </section>
+
+    <section class="category-bar" aria-labelledby="category-heading">
+      <div class="section-kicker-row"><p class="eyebrow dark" id="category-heading">SHOP BY CATEGORY</p><a class="text-link" href="/?category=All">View all products →</a></div>
+      <div class="category-list">
+        {% if categories %}
+          {% for value in categories %}<a class="category-pill {% if value == selected_category %}active{% endif %}" href="{{ url_for('home', city=selected_city, category=value, sort=selected_sort, q=search) }}">{{ value }}</a>{% endfor %}
+        {% else %}<span class="category-empty">Categories will appear as authorized product feeds become active.</span>{% endif %}
+      </div>
+    </section>
+
+    <form class="filters shopping-filters" action="/" method="get" aria-label="Filter products">
+      <input type="hidden" name="city" value="{{ selected_city }}"><input type="hidden" name="q" value="{{ search }}">
+      <label for="category-select"><span>Category</span><select id="category-select" name="category"><option value="All" {% if selected_category == 'All' %}selected{% endif %}>All categories</option>{% for value in categories %}<option value="{{ value }}" {% if value == selected_category %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+      <label for="sort-select"><span>Sort by</span><select id="sort-select" name="sort">{% for value, label in sort_options %}<option value="{{ value }}" {% if value == selected_sort %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <button type="submit">Apply filters</button>
+    </form>
+
+    <section class="shopping-section" aria-labelledby="verified-deals-title">
+      <div class="section-heading shopping-heading"><div><p class="eyebrow dark">REAL-TIME SAVINGS</p><h2 id="verified-deals-title">Verified Deals</h2><p>Discounted individual products from connected, authorized sources.</p></div><span class="section-count">{{ deals|length }} shown</span></div>
+      <div class="product-grid">
+        {% for deal in deals %}
+        <article class="shopping-card deal-card" data-deal-id="{{ deal.id }}">
+          <a class="product-media deal-photo" href="/click/{{ deal.id }}" aria-label="View {{ deal.title }}"><img src="{{ deal.image_url }}" alt="{{ deal.title }}" loading="lazy"></a>
+          <div class="product-card-body"><div class="card-top"><span class="tag">{{ deal.category }}</span><span class="verified">✓ Checked</span>{% if deal.source_provider == 'staging-fixture' %}<span class="fixture-badge">TEST FIXTURE · NOT A REAL DEAL</span>{% endif %}</div><p class="store">{{ deal.store }}</p><h3>{{ deal.title }}</h3><div class="price-row"><strong>{{ deal.sale_price }}</strong><del>{{ deal.regular_price }}</del>{% if deal.discount_percent %}<span class="discount-badge">{{ deal.discount_percent }}% off</span>{% endif %}</div><p class="product-description">{{ deal.description }}</p><div class="source-row"><span>{{ deal.source_provider }}</span><span>Checked {{ deal.last_checked_at or deal.checked_on }}</span></div><div class="card-bottom"><a class="deal-btn" href="/click/{{ deal.id }}">See product →</a><button class="watch-btn" type="button" data-title="{{ deal.title|e }}">☆ Watch</button></div></div>
+        </article>
+        {% else %}<div class="shopping-empty"><h3>No verified product discounts are active yet.</h3><p>We only publish a deal when an authorized source supplies an individual product, current price, reference price, image, availability, and direct product link.</p><a class="outline" href="/coupons">Browse verified coupons →</a></div>{% endfor %}
+      </div>
+    </section>
+
+    <section class="shopping-section" aria-labelledby="shop-products-title">
+      <div class="section-heading shopping-heading"><div><p class="eyebrow dark">COMPARE BEFORE YOU BUY</p><h2 id="shop-products-title">Shop Products</h2><p>Regular-price products are kept separate from discounts.</p></div></div>
+      <div class="product-grid product-grid-regular">
+        {% for product in regular_products %}
+        <article class="shopping-card deal-card"><a class="product-media deal-photo" href="/click/{{ product.id }}" aria-label="View {{ product.title }}"><img src="{{ product.image_url }}" alt="{{ product.title }}" loading="lazy"></a><div class="product-card-body"><div class="card-top"><span class="tag">{{ product.category }}</span><span class="product-kind">Regular price</span></div><p class="store">{{ product.store }}</p><h3>{{ product.title }}</h3><div class="price-row"><strong>{{ product.sale_price or product.regular_price }}</strong></div><p class="product-description">No discount is claimed for this product. Confirm price and availability with the retailer.</p><div class="source-row"><span>{{ product.source_provider }}</span><span>Checked {{ product.last_checked_at or product.checked_on }}</span></div><div class="card-bottom"><a class="deal-btn" href="/click/{{ product.id }}">Shop product →</a><button class="watch-btn" type="button" data-title="{{ product.title|e }}">☆ Watch</button></div></div></article>
+        {% else %}<div class="shopping-empty"><h3>Regular-price products are not connected yet.</h3><p>When an authorized merchant feed provides catalog products without a discount, they will appear here separately from Verified Deals.</p></div>{% endfor %}
+      </div>
+    </section>
+
+    <section class="shopping-lower-grid">
+      <section class="lower-panel" aria-labelledby="coupons-title"><div class="section-heading shopping-heading"><div><p class="eyebrow dark">CODES AND OFFERS</p><h2 id="coupons-title">Coupons</h2></div><a class="text-link" href="/coupons">See all →</a></div><div class="coupon-list">{% for coupon in homepage_coupons %}<article class="coupon-mini"><div><span class="tag">{{ coupon.store }}</span><h3>{{ coupon.title }}</h3><p>{{ coupon.offer_terms or 'Retailer terms apply.' }}</p></div><a class="deal-btn" href="/click/{{ coupon.id }}">{% if coupon.coupon_code %}Use code{% else %}View offer{% endif %} →</a></article>{% else %}<div class="compact-empty">No verified coupon codes are published yet. We will show them only after a permitted source confirms them.</div>{% endfor %}</div></section>
+      <section class="lower-panel daily-promo" aria-labelledby="daily-title"><p class="eyebrow dark">FREE DAILY CHALLENGE</p><h2 id="daily-title">Six puzzles. One repeatable habit.</h2><p>Play the existing six-puzzle word challenge, track your session score, and return for the next daily run.</p><a class="deal-btn" href="/daily">Play Daily Word Challenge →</a></section>
+    </section>
+  </main>
+
+  <footer><strong>Mak3Deals</strong><span><a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/affiliate-disclosure">Affiliate disclosure</a> · <a href="/contact">Contact</a></span></footer>
+  <script src="{{ url_for('static', filename='watchlist.js') }}"></script>
+</body>
+</html>

@@ -53,8 +53,9 @@ def add_site_ad_tv(response):
     if request.path not in excluded_paths and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
-            if request.path == "/" and '<section class="hero">' in html:
-                hero_start = html.find('<section class="hero">')
+            hero_match = re.search(r'<section class="hero(?:\s[^\"]*)?">', html)
+            if request.path == "/" and hero_match:
+                hero_start = hero_match.start()
                 hero_end = html.find("</section>", hero_start)
                 note = re.search(r'<div class="hero-note">.*?</div>', html[hero_start:hero_end], flags=re.S)
                 if note:
@@ -64,8 +65,8 @@ def add_site_ad_tv(response):
                     html = html[:note_start] + hero_right + html[note_end:]
                 else:
                     html = html[:hero_end + len("</section>")] + SITE_AD_TV + html[hero_end + len("</section>"):]
-            elif '<section class="hero">' in html:
-                hero_start = html.find('<section class="hero">')
+            elif hero_match:
+                hero_start = hero_match.start()
                 hero_end = html.find("</section>", hero_start)
                 html = html[:hero_end + len("</section>")] + SITE_AD_TV + html[hero_end + len("</section>"):]
             elif re.search(r'<section class="simple-hero[^\"]*">', html):
@@ -158,24 +159,31 @@ def home():
     if search:
         query += " AND (store LIKE ? OR title LIKE ? OR description LIKE ? OR city LIKE ?)"
         values.extend([f"%{search}%"] * 4)
-    raw_deals = db().execute(query + " ORDER BY " + sort_order[sort], values).fetchall()
+    raw_products = db().execute(query + " ORDER BY " + sort_order[sort], values).fetchall()
+    discounted_products = [row for row in raw_products if (row["discount_percent"] or 0) > 0]
+    regular_products = [row for row in raw_products if (row["discount_percent"] or 0) <= 0][:8]
     comparison_counts = {}
-    for deal in raw_deals:
+    for deal in raw_products:
         if deal["product_key"]:
             comparison_counts[deal["product_key"]] = comparison_counts.get(deal["product_key"], 0) + 1
     # Matched retailer listings are one shopping opportunity, not duplicate cards.
     deals, shown_product_keys = [], set()
-    for deal in raw_deals:
+    for deal in discounted_products:
         product_key = deal["product_key"]
         if product_key and comparison_counts.get(product_key, 0) > 1:
             if product_key in shown_product_keys:
                 continue
             shown_product_keys.add(product_key)
         deals.append(deal)
-    cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city") if r[0] not in {"All", "Online"}]
-    categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
+    homepage_coupons = db().execute(
+        "SELECT * FROM deals WHERE verified=1 AND deal_kind='coupon' AND status='active' "
+        "AND (expires_on IS NULL OR expires_on >= ?) ORDER BY expires_on ASC LIMIT 4",
+        (date.today().isoformat(),),
+    ).fetchall()
+    cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals WHERE deal_kind='product' ORDER BY city") if r[0] not in {"All", "Online"}]
+    categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals WHERE deal_kind='product' ORDER BY category")]
     sort_options = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
-    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=sort_options, search=search, comparison_counts=comparison_counts, featured_guides=GUIDES[:3])
+    return render_template("index.html", deals=deals, regular_products=regular_products, homepage_coupons=homepage_coupons, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=sort_options, search=search, comparison_counts=comparison_counts)
 
 @app.route("/guides")
 def guides():
