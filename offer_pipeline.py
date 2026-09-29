@@ -48,7 +48,7 @@ SOURCE_DEFINITIONS = [
     {
         "key": "home-depot",
         "store": "Home Depot",
-        "url": "https://www.homedepot.com/SpecialBuy",
+        "url": "https://www.homedepot.com/daily-deals",
         "mode": "affiliate-pending",
         "enabled": False,
         "note": "Enable after an approved partner/feed is connected.",
