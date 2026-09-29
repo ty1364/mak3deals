@@ -49,10 +49,10 @@ SOURCE_HUBS = [
     },
     {
         "store": "Home Depot",
-        "title": "Home Depot Special Buy savings",
-        "description": "Explore Home Depot's current Special Buy offers for tools, appliances, outdoor, hardware, and home improvement.",
+        "title": "Home Depot Daily Deals",
+        "description": "Explore Home Depot's current daily deals for tools, appliances, outdoor, hardware, and home improvement.",
         "category": "Home improvement",
-        "link": "https://www.homedepot.com/SpecialBuy",
+        "link": "https://www.homedepot.com/daily-deals",
         "product_key": "source-hub-home-depot",
     },
     {
