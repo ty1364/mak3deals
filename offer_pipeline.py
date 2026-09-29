@@ -20,6 +20,7 @@ from urllib.request import Request, urlopen
 
 
 SOURCE_DEFINITIONS = [
+    {"key": "upper", "store": "UPPER Brand", "url": "https://upperbags.com/"},
     {"key": "walmart", "store": "Walmart", "url": "https://www.walmart.com/shop/deals/shop-advertised-deals"},
     {"key": "best-buy", "store": "Best Buy", "url": "https://www.bestbuy.com/top-deals-b"},
     {"key": "amazon", "store": "Amazon", "url": "https://www.amazon.com/gp/goldbox"},
@@ -221,8 +222,8 @@ def normalize_product(row, config, checked_at=None):
         return None, "missing title, direct product URL, or image URL"
     if not product_url.startswith(("https://", "http://")) or not image_url.startswith(("https://", "http://")):
         return None, "product and image URLs must be absolute HTTP(S) URLs"
-    if current is None or reference is None or reference <= current:
-        return None, "missing verifiable reference price or product is not discounted"
+    if current is None:
+        return None, "missing current price"
 
     merchant_product_id = _first(row, "merchant_product_id", "product_id", "aw_product_id", "sku", "id", "gtin", "upc", "ean")
     gtin = _first(row, "gtin", "product_gtin", "upc", "ean", "isbn")
@@ -232,11 +233,14 @@ def normalize_product(row, config, checked_at=None):
     if expires_on and expires_on < date.today().isoformat():
         return None, "feed row is expired"
     availability = _available(row)
+    if availability == "unknown":
+        return None, "missing availability status"
     if availability == "unavailable":
         return None, "feed row is unavailable"
-    discount = round((reference - current) / reference * 100, 1)
-    if discount <= 0:
-        return None, "calculated discount is not positive"
+    if reference is not None and reference < current:
+        return None, "reference price is lower than current price"
+    discount = round((reference - current) / reference * 100, 1) if reference and reference > current else None
+    verified_reference = f"${reference:.2f}" if discount and discount > 0 else None
     affiliate_url = _first(row, "affiliate_url", "aw_deep_link", "tracking_url", "tracking_link", "basket_link")
     payload_hash = hashlib.sha256(json.dumps(row, sort_keys=True, default=str).encode("utf-8")).hexdigest()
     return {
@@ -244,13 +248,13 @@ def normalize_product(row, config, checked_at=None):
         "store": config.get("store") or config.get("merchant") or config["source_key"],
         "title": title[:240],
         "description": _first(row, "description", "product_short_description", "promotional_text")[:2000],
-        "category": _first(row, "category", "merchant_category", "category_name", "product_type") or "Other",
+        "category": _first(row, "category", "merchant_category", "category_name", "product_type", "google_product_category") or "Other",
         "link": product_url[:2000],
         "affiliate_url": affiliate_url[:2000] if affiliate_url else None,
         "image_url": image_url[:2000],
         "image_source": config.get("provider", "authorized product feed"),
         "sale_price": f"${current:.2f}",
-        "regular_price": f"${reference:.2f}",
+        "regular_price": verified_reference,
         "currency": _first(row, "currency") or "USD",
         "discount_percent": discount,
         "expires_on": expires_on,
@@ -270,8 +274,9 @@ def normalize_awin_product(row, config, checked_at=None):
 
     Awin's standard columns include product_name, search_price, rrp_price,
     merchant_deep_link, merchant_image_url, merchant_product_id, and
-    aw_deep_link. The common normalizer maps those fields and still applies
-    Mak3Deals' strict direct-link/image/discount checks.
+    aw_deep_link. The common normalizer maps those fields. A row with no
+    sale_price is still a valid Shop Product when it has a current price,
+    direct tracked link, image, and availability; it simply has no discount.
     """
     # Awin's newer Google/Retail format uses `price` as the reference price
     # and `sale_price` as the current price. The older Awin format exposes

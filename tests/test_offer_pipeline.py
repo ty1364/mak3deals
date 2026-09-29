@@ -44,7 +44,7 @@ class ProductFeedTests(unittest.TestCase):
     def test_normalize_requires_real_discount_and_direct_assets(self):
         product, reason = offer_pipeline.normalize_product(
             {"id": "1", "title": "Kettle", "price": "20", "rrp_price": "40",
-             "merchant_deep_link": "https://shop.example/kettle", "merchant_image_url": "https://img.example/kettle.jpg"},
+             "merchant_deep_link": "https://shop.example/kettle", "merchant_image_url": "https://img.example/kettle.jpg", "in_stock": "1"},
             {"source_key": "walmart", "store": "Walmart", "provider": "test"},
             "2026-09-29T00:00:00Z",
         )
@@ -52,13 +52,14 @@ class ProductFeedTests(unittest.TestCase):
         self.assertEqual(product["discount_percent"], 50.0)
         self.assertEqual(product["link"], "https://shop.example/kettle")
 
-        rejected, reason = offer_pipeline.normalize_product(
+        regular, reason = offer_pipeline.normalize_product(
             {"id": "2", "title": "Not a sale", "price": "20", "rrp_price": "20",
-             "merchant_deep_link": "https://shop.example/item", "merchant_image_url": "https://img.example/item.jpg"},
+             "merchant_deep_link": "https://shop.example/item", "merchant_image_url": "https://img.example/item.jpg", "in_stock": "1"},
             {"source_key": "walmart", "store": "Walmart"},
         )
-        self.assertIsNone(rejected)
-        self.assertIn("discount", reason)
+        self.assertIsNone(reason)
+        self.assertIsNone(regular["regular_price"])
+        self.assertIsNone(regular["discount_percent"])
 
     def test_awin_column_mapping(self):
         product, reason = offer_pipeline.normalize_awin_product(
@@ -87,7 +88,7 @@ class ProductFeedTests(unittest.TestCase):
         self.assertEqual(product["regular_price"], "$100.00")
         self.assertEqual(product["discount_percent"], 25.0)
 
-    def test_awin_catalog_without_sale_price_is_rejected(self):
+    def test_awin_catalog_without_sale_price_is_shop_product(self):
         product, reason = offer_pipeline.normalize_awin_product(
             {"id": "catalog-1", "title": "UPPER catalog bag", "price": "100.00 USD",
              "link": "https://shop.example/bag", "image_link": "https://img.example/bag.jpg",
@@ -95,8 +96,22 @@ class ProductFeedTests(unittest.TestCase):
             {"source_key": "upper", "store": "UPPER Brand"},
             "2026-09-29T00:00:00Z",
         )
-        self.assertIsNone(product)
-        self.assertIn("reference price", reason)
+        self.assertIsNone(reason)
+        self.assertEqual(product["sale_price"], "$100.00")
+        self.assertIsNone(product["regular_price"])
+        self.assertIsNone(product["discount_percent"])
+
+    def test_awin_catalog_never_fabricates_reference_price(self):
+        product, reason = offer_pipeline.normalize_awin_product(
+            {"id": "catalog-2", "title": "UPPER regular bag", "price": "100.00 USD",
+             "rrp_price": "100.00 USD", "link": "https://shop.example/bag-2",
+             "image_link": "https://img.example/bag-2.jpg", "availability": "in_stock"},
+            {"source_key": "upper", "store": "UPPER Brand"},
+            "2026-09-29T00:00:00Z",
+        )
+        self.assertIsNone(reason)
+        self.assertIsNone(product["regular_price"])
+        self.assertIsNone(product["discount_percent"])
 
     @patch("offer_pipeline._fetch_feed", return_value=(FEED, "text/csv", 200))
     def test_refresh_upserts_and_retires_missing_products(self, _fetch):

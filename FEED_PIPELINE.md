@@ -4,13 +4,16 @@ Mak3Deals now publishes only individual `product` records from an authorized
 merchant or affiliate-network feed. Retailer homepages, sale-page links,
 hand-entered prices, and guessed coupon codes are not product records.
 
-The importer accepts CSV, JSON, JSONL, and gzip-compressed feeds. It requires a
-title, image URL, direct product URL, current price, verifiable reference
-price, and a positive calculated discount. It stores the source provider,
-merchant product ID, affiliate URL when supplied, availability, feed expiry,
-last-checked timestamp, and a payload hash. Re-imports update by
-`source_key + merchant_product_id`; records missing from a successful complete
-feed are retired. A failed feed never retires existing products.
+The importer accepts CSV, JSON, JSONL, and gzip-compressed feeds. Every
+published row requires a title, image URL, direct product URL, current price,
+availability, merchant product ID, and a last-checked timestamp. A row with a
+verifiable reference price greater than its current price is classified as a
+`Verified Deal`; a normal catalog row without a discount is classified as a
+`Shop Product`. The normalizer never fabricates a reference price, crossed-out
+price, sale badge, or discount percentage. It stores the source provider,
+affiliate URL when supplied, feed expiry, and a payload hash. Re-imports update
+by `source_key + merchant_product_id`; records missing from a successful
+complete feed are retired. A failed feed never retires existing products.
 
 ## Feed configuration
 
@@ -20,6 +23,7 @@ object in `MAK3DEALS_FEED_CONFIG`:
 
 ```json
 {
+  "upper": {"store": "UPPER Brand", "provider": "awin", "format": "csv", "compression": "gzip", "url": "https://authorized-feed.example/upper.csv.gz"},
   "walmart": {"store": "Walmart", "provider": "awin", "format": "csv", "url": "https://authorized-feed.example/walmart.csv.gz"},
   "best-buy": {"store": "Best Buy", "provider": "awin", "format": "csv", "url": "https://authorized-feed.example/best-buy.csv.gz"},
   "amazon": {"store": "Amazon", "provider": "cj", "format": "json", "url": "https://authorized-feed.example/amazon.json"},
@@ -28,11 +32,12 @@ object in `MAK3DEALS_FEED_CONFIG`:
 }
 ```
 
-The example URLs are placeholders and must not be used as data. The five
-merchants count as connected only after their real feed URLs are supplied and
-an ingestion run reports imported product records.
+The example URLs are placeholders and must not be used as data. A merchant
+counts as connected only after its real feed URL is supplied and an ingestion
+run reports imported product records.
 
-The per-source fallback names are `MAK3DEALS_FEED_URL_WALMART`,
+The per-source fallback names include `MAK3DEALS_FEED_URL_UPPER`,
+`MAK3DEALS_FEED_URL_WALMART`,
 `MAK3DEALS_FEED_URL_BEST_BUY`, `MAK3DEALS_FEED_URL_AMAZON`,
 `MAK3DEALS_FEED_URL_TARGET`, and `MAK3DEALS_FEED_URL_HOME_DEPOT`.
 
@@ -73,14 +78,16 @@ requires owner approval and a backup plan first.
 - `/api/feed-status` exposes source status, imported/retired counts, timestamps,
   and errors without exposing feed URLs that contain credentials.
 - `/feed-status` is the human-readable operations page.
-- `/api/offers` and the homepage return only active individual product cards.
+- `/api/offers` and the homepage return only active individual product cards;
+  the homepage keeps discounted rows in Verified Deals and non-discounted rows
+  in Shop Products.
 - `python scripts/refresh_offers.py --dry-run` validates configured feeds
   without writing records.
 - `python scripts/check_phase1.py` exits non-zero until the live milestone is
   genuinely met; it is currently expected to fail because no feeds are
   connected.
-- The Phase 1 live acceptance test is five configured merchant feeds, 100+
-  active product rows, current/reference prices and positive discounts on every
-  card, direct product URLs, images, source provider, availability, and
-  non-null last-checked timestamps. A second run must update existing rows and
-  retire a removed row.
+- The first merchant acceptance test is a configured authorized feed with real
+  catalog rows. The UPPER staging feed currently contains 135 rows, 107
+  reported in stock, and imports 107 active Shop Products. A second run must
+  update existing rows and retire a removed or unavailable row without
+  fabricating discount fields.
