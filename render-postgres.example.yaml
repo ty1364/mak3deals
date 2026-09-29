@@ -1,0 +1,18 @@
+# SAFETY: this is an example only and is not referenced by render.yaml.
+# Creating a Render Postgres instance incurs cost and must be approved by the
+# account owner. Do not copy this into production until the migration has been
+# reviewed and a non-destructive backup/export exists.
+
+databases:
+  - name: mak3deals-db
+    plan: basic-256mb
+    region: oregon
+
+services:
+  - type: web
+    name: mak3deals
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mak3deals-db
+          property: connectionString

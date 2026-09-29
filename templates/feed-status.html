@@ -14,8 +14,8 @@
   </header>
   <main class="legal-wrap">
     <p class="eyebrow">FEED CONTROL</p>
-    <h1>Verified offer generator</h1>
-    <p>The generator checks approved retailer sources, records feed health, and retires expired listings. It does not invent coupon codes, prices, or product photos.</p>
+    <h1>Product-feed control</h1>
+    <p>The importer publishes individual products only when an authorized feed supplies a direct product URL, image, current price, reference price, availability, and source timestamp.</p>
     <section class="legal-card">
       <h2>Latest run</h2>
       {% if latest %}
@@ -30,9 +30,9 @@
       <h2>Sources</h2>
       {% for source in sources %}
         <article class="feed-source">
-          <div><h3>{{ source[1] }}</h3><p><a href="{{ source[2] }}" rel="nofollow sponsored">Official source</a> · {{ source[3] }}</p></div>
-          <div class="feed-source-status {{ source[6] }}">{{ source[6] }}</div>
-          <small>{{ source[9] or 'Waiting for first check.' }}</small>
+          <div><h3>{{ source.store }}</h3><p><a href="{{ source.url }}" rel="nofollow sponsored">Official source</a> · {{ source.mode }}</p></div>
+          <div class="feed-source-status {{ source.status }}">{{ source.status }}</div>
+          <small>{{ source.message or 'Waiting for first feed run.' }} · Active products: {{ source.offer_count }} · Imported: {{ source.imported_count }} · Retired: {{ source.retired_count }}{% if source.last_imported_at %} · Last imported: {{ source.last_imported_at }}{% endif %}</small>
         </article>
       {% endfor %}
     </section>

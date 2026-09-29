@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 import hmac
 import os
 import re
@@ -10,60 +10,6 @@ from offer_pipeline import ensure_feed_schema, refresh_sources
 
 app = Flask(__name__)
 DATABASE = "deals.db"
-
-# These are live retailer deal hubs, not invented coupon claims. They give the
-# catalog useful, honest inventory while approved affiliate feeds are still
-# being connected. A future feed row can replace a hub without changing the UI.
-SOURCE_HUBS = [
-    {
-        "store": "Walmart",
-        "title": "Walmart deal hub",
-        "description": "Open Walmart's current advertised deals, rollbacks, and category savings. We show the retailer's live page so price, stock, pickup, and delivery details stay current.",
-        "category": "Everyday savings",
-        "link": "https://www.walmart.com/shop/deals/shop-advertised-deals",
-        "product_key": "source-hub-walmart",
-    },
-    {
-        "store": "Best Buy",
-        "title": "Best Buy top deals",
-        "description": "Browse Best Buy's current flash deals and category offers across electronics, appliances, gaming, and more.",
-        "category": "Electronics",
-        "link": "https://www.bestbuy.com/top-deals",
-        "product_key": "source-hub-best-buy",
-    },
-    {
-        "store": "Target",
-        "title": "Target deal hub",
-        "description": "See Target's live deals across home, grocery, clothing, beauty, toys, and electronics. Target controls the final terms and availability.",
-        "category": "Everyday savings",
-        "link": "https://www.target.com/c/deals/-/N-4xw74",
-        "product_key": "source-hub-target",
-    },
-    {
-        "store": "Amazon",
-        "title": "Amazon Today's Deals",
-        "description": "Open Amazon's current limited-time deal page and confirm the final price, seller, shipping, and membership terms before checkout.",
-        "category": "Online shopping",
-        "link": "https://www.amazon.com/gp/goldbox",
-        "product_key": "source-hub-amazon",
-    },
-    {
-        "store": "Home Depot",
-        "title": "Home Depot Special Buy savings",
-        "description": "Explore Home Depot's current Special Buy offers for tools, appliances, outdoor, hardware, and home improvement.",
-        "category": "Home improvement",
-        "link": "https://www.homedepot.com/SpecialBuy",
-        "product_key": "source-hub-home-depot",
-    },
-    {
-        "store": "Costco",
-        "title": "Costco warehouse savings",
-        "description": "Check Costco's current warehouse savings and member offers. Membership, warehouse, shipping, and item limits may apply.",
-        "category": "Groceries & household",
-        "link": "https://www.costco.com/warehouse-savings.html",
-        "product_key": "source-hub-costco",
-    },
-]
 
 SITE_AD_TV = """
 <style>
@@ -155,8 +101,8 @@ def setup():
         CREATE INDEX IF NOT EXISTS idx_game_scores_month_score
         ON game_scores (game, month, score DESC);""")
     ensure_feed_schema(database)
-    # Never serve an offer past its stated end date, even if the scheduled
-    # source-health refresh has not run yet.
+    # Feed expiry is enforced on every request even if the scheduled importer
+    # has not run yet.
     database.execute(
         "UPDATE deals SET verified=0 WHERE verified=1 AND expires_on < ?",
         (date.today().isoformat(),),
@@ -166,7 +112,11 @@ def setup():
     for column, definition in {
         "deal_kind": "TEXT DEFAULT 'deal'", "sale_price": "TEXT", "regular_price": "TEXT",
         "coupon_code": "TEXT", "offer_terms": "TEXT", "checked_on": "TEXT", "affiliate_url": "TEXT",
-        "product_key": "TEXT", "image_url": "TEXT", "image_source": "TEXT"
+        "product_key": "TEXT", "image_url": "TEXT", "image_source": "TEXT",
+        "merchant_product_id": "TEXT", "currency": "TEXT DEFAULT 'USD'",
+        "discount_percent": "REAL", "availability_status": "TEXT", "last_checked_at": "TEXT",
+        "source_key": "TEXT", "source_provider": "TEXT", "feed_updated_at": "TEXT",
+        "status": "TEXT DEFAULT 'active'", "raw_payload_hash": "TEXT"
     }.items():
         if column not in existing_columns:
             database.execute(f"ALTER TABLE deals ADD COLUMN {column} {definition}")
@@ -177,73 +127,10 @@ def setup():
     }.items():
         if column not in submission_columns:
             database.execute(f"ALTER TABLE submissions ADD COLUMN {column} {definition}")
-    # Never leave an old verified placeholder visible after the catalog schema upgrade.
-    database.execute("DELETE FROM deals WHERE verified=1 AND COALESCE(deal_kind, 'deal')='deal'")
-    # Mak3Deals does not promote Target; remove any legacy Target rows from older local catalogs.
-    # Target is now included as a clearly labeled source hub. Old rows are
-    # removed below and replaced with the current source-backed entry.
-    # Remove earlier placeholder claims before adding only sourced offers.
-    retired_titles = [
-        "Western Washington member savings", "Weekly household essentials deals", "Local electronics deals",
-        "Current Rollbacks and online savings", "Special Buy savings", "Today's Deals", "Member warehouse savings",
-        "Target Circle member savings", "Weekly savings on home projects", "Pet essentials and autoship savings",
-        "Sale shoes and apparel", "Hotel and travel deals", "Seasonal savings and coupons", "Department store sale hub",
-        "Get your deal in front of shoppers",
-        "Get your offer featured", "Blackstone 28-in griddle rollback — $197", "Starbucks Fall coffee pods — $16",
-        "DEWALT drill kit — $199"]
-    database.executemany("DELETE FROM deals WHERE title=?", [(title,) for title in retired_titles])
-
-    # Keep one current source-backed card per retailer. These cards are useful
-    # discovery links, not fake coupon codes or invented prices.
-    today = date.today()
-    for hub in SOURCE_HUBS:
-        existing = database.execute(
-            "SELECT id FROM deals WHERE product_key=? AND deal_kind='source-hub'",
-            (hub["product_key"],),
-        ).fetchone()
-        values = (
-            hub["store"], hub["title"], hub["description"], "Online", hub["category"],
-            hub["link"], (today + timedelta(days=7)).isoformat(), datetime.now().isoformat(),
-            "source-hub", "", "", "", "Retailer controls price, stock, terms, and expiration.",
-            today.isoformat(), hub["product_key"], "", "Official retailer deal page",
-        )
-        if existing:
-            database.execute(
-                """UPDATE deals SET store=?, title=?, description=?, city=?, category=?, link=?,
-                    expires_on=?, verified=1, created_at=?, sale_price=?, regular_price=?,
-                    coupon_code=?, offer_terms=?, checked_on=?, image_url=?, image_source=?
-                    WHERE id=?""",
-                (
-                    hub["store"], hub["title"], hub["description"], "Online", hub["category"],
-                    hub["link"], (today + timedelta(days=7)).isoformat(), datetime.now().isoformat(),
-                    "", "", "", "Retailer controls price, stock, terms, and expiration.",
-                    today.isoformat(), "", "Official retailer deal page", existing["id"],
-                ),
-            )
-        else:
-            database.execute(
-                """INSERT INTO deals
-                    (store,title,description,city,category,link,expires_on,verified,created_at,
-                     deal_kind,sale_price,regular_price,coupon_code,offer_terms,checked_on,
-                     product_key,image_url,image_source)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (hub["store"], hub["title"], hub["description"], "Online", hub["category"],
-                 hub["link"], (today + timedelta(days=7)).isoformat(), 1, datetime.now().isoformat(),
-                 "source-hub", "", "", "", "Retailer controls price, stock, terms, and expiration.",
-                 today.isoformat(), hub["product_key"], "", "Official retailer deal page"),
-            )
-
-    # These entries come from official retailer pages and include the terms/date shown there.
-    curated = [
-        ("Walmart", "Lodge Chef Collection 10-in skillet — $29.90", "Live price check for the pre-seasoned Lodge Chef Collection 10-inch cast-iron skillet. This is a retailer price match, not an invented coupon.", "Online", "Kitchen", "https://www.walmart.com/ip/Lodge-Cast-Iron-Inoxidable-10-Inch/204048002?classType=REGULAR", "2026-09-24", "price-check", "$29.90", "", "", "Observed online Sep 23; product price, seller, stock, and shipping can change.", "2026-09-23", "lodge-chef-collection-10-skillet", "https://i5.walmartimages.com/seo/Lodge-Cast-Iron-Inoxidable-10-Inch_50d4e335-fdac-4c9a-82f8-dc5ca0031494.e737235b951799bcbbf771c805e0d677.jpeg?odnBg=FFFFFF&odnHeight=576&odnWidth=576", "Walmart product listing"),
-        ("Best Buy", "Lodge Chef Collection 10-in skillet — $29.90", "Live price check for the Lodge Chef Collection 10-inch pre-seasoned cast-iron skillet, model LC10SK. This is a retailer price match, not an invented coupon.", "Online", "Kitchen", "https://www.bestbuy.com/product/lodge-chef-collection-10-pre-seasoned-cast-iron-skillet-kitchen-essential-for-frying-searing-black/J79YYFX38C", "2026-09-24", "price-check", "$29.90", "", "", "Observed online Sep 23; product price, seller, stock, and shipping can change.", "2026-09-23", "lodge-chef-collection-10-skillet", "https://i5.walmartimages.com/seo/Lodge-Cast-Iron-Inoxidable-10-Inch_50d4e335-fdac-4c9a-82f8-dc5ca0031494.e737235b951799bcbbf771c805e0d677.jpeg?odnBg=FFFFFF&odnHeight=576&odnWidth=576", "Walmart product listing"),
-        ("Local business", "Submit a verified local offer", "Business owners can submit a real offer for review. We publish it only after checking the details and source link.", "All", "Local", "/submit", "2026-11-01", "submission", "", "", "", "Requires review before publication.", "2026-09-22", "", "", "")]
-    for store, title, description, city, category, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source in curated:
-        exists = database.execute("SELECT 1 FROM deals WHERE store=? AND title=?", (store, title)).fetchone()
-        if not exists:
-            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at,deal_kind,sale_price,regular_price,coupon_code,offer_terms,checked_on,product_key,image_url,image_source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, expires_on, 1 if store != "Local business" else 0, datetime.now().isoformat(), deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source))
-        else:
-            database.execute("UPDATE deals SET description=?, link=?, expires_on=?, deal_kind=?, sale_price=?, regular_price=?, coupon_code=?, offer_terms=?, checked_on=?, product_key=?, image_url=?, image_source=? WHERE store=? AND title=?", (description, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source, store, title))
+    # Product cards are populated only by the authorized feed importer. Remove
+    # legacy source-hub and hand-seeded rows so a retailer landing page cannot
+    # masquerade as an individual deal.
+    database.execute("DELETE FROM deals WHERE COALESCE(deal_kind, 'deal') IN ('deal', 'source-hub', 'price-check', 'submission')")
     database.commit()
 
 @app.route("/")
@@ -263,7 +150,7 @@ def home():
     }
     if sort not in sort_order:
         sort = "featured"
-    query, values = "SELECT * FROM deals WHERE verified=1 AND expires_on >= ?", [date.today().isoformat()]
+    query, values = "SELECT * FROM deals WHERE verified=1 AND deal_kind='product' AND status='active' AND (expires_on IS NULL OR expires_on >= ?)", [date.today().isoformat()]
     if city != "All": query += " AND city = ?"; values.append(city)
     if category != "All": query += " AND category = ?"; values.append(category)
     if search:
@@ -337,7 +224,7 @@ def sitemap():
 @app.route("/compare/<product_key>")
 def compare_product(product_key):
     offers = db().execute(
-        "SELECT * FROM deals WHERE product_key=? AND verified=1 AND expires_on >= ? ORDER BY sale_price ASC, checked_on DESC",
+        "SELECT * FROM deals WHERE product_key=? AND deal_kind='product' AND verified=1 AND status='active' AND (expires_on IS NULL OR expires_on >= ?) ORDER BY sale_price ASC, checked_on DESC",
         (product_key, date.today().isoformat()),
     ).fetchall()
     if not offers:
@@ -350,7 +237,7 @@ def compare_product(product_key):
 
 @app.route("/coupons")
 def coupons():
-    deals = db().execute("SELECT * FROM deals WHERE verified=1 AND expires_on >= ? ORDER BY expires_on ASC", (date.today().isoformat(),)).fetchall()
+    deals = db().execute("SELECT * FROM deals WHERE verified=1 AND deal_kind='coupon' AND status='active' AND (expires_on IS NULL OR expires_on >= ?) ORDER BY expires_on ASC", (date.today().isoformat(),)).fetchall()
     return render_template("coupons.html", deals=deals)
 
 @app.route("/api/coupons")
@@ -358,8 +245,9 @@ def coupon_api():
     """Return only current, verified coupon codes for the browser extension."""
     store = request.args.get("store", "").strip()
     query = ("SELECT id, store, title, coupon_code, offer_terms, expires_on, checked_on, "
-             "link, affiliate_url FROM deals WHERE verified=1 AND coupon_code IS NOT NULL "
-             "AND TRIM(coupon_code) <> '' AND expires_on >= ?")
+             "last_checked_at, link, affiliate_url FROM deals WHERE verified=1 "
+             "AND deal_kind='coupon' AND status='active' AND coupon_code IS NOT NULL "
+             "AND TRIM(coupon_code) <> '' AND (expires_on IS NULL OR expires_on >= ?)")
     values = [date.today().isoformat()]
     if store:
         query += " AND lower(store)=lower(?)"
@@ -372,9 +260,10 @@ def offer_api():
     """Return current verified offers that match a product title or store."""
     store = request.args.get("store", "").strip()
     search = " ".join(request.args.get("q", "").lower().split())
-    query = ("SELECT id, store, title, description, sale_price, regular_price, offer_terms, "
-             "expires_on, checked_on, link, affiliate_url, product_key, image_url, deal_kind FROM deals "
-             "WHERE verified=1 AND expires_on >= ?")
+    query = ("SELECT id, store, title, description, sale_price, regular_price, discount_percent, "
+             "offer_terms, expires_on, checked_on, last_checked_at, availability_status, source_provider, "
+             "link, affiliate_url, product_key, image_url, deal_kind FROM deals "
+             "WHERE verified=1 AND deal_kind='product' AND status='active' AND (expires_on IS NULL OR expires_on >= ?)")
     values = [date.today().isoformat()]
     if store:
         query += " AND lower(store)=lower(?)"
@@ -392,7 +281,7 @@ def offer_api():
             item = dict(row)
             item["match_score"] = score
             matches.append(item)
-    matches.sort(key=lambda item: (-item["match_score"], item["expires_on"]))
+    matches.sort(key=lambda item: (-item["match_score"], item["expires_on"] is None, item["expires_on"] or ""))
     return jsonify({"offers": matches[:10]})
 
 @app.route("/api/feed-status")
@@ -404,7 +293,8 @@ def feed_status_api():
         "FROM feed_runs ORDER BY id DESC LIMIT 1"
     ).fetchone()
     sources = db().execute(
-        "SELECT source_key, store, url, mode, enabled, http_status, status, checked_at, offer_count, message "
+        "SELECT source_key, store, url, mode, enabled, http_status, status, checked_at, offer_count, "
+        "imported_count, retired_count, last_imported_at, last_error, message "
         "FROM feed_sources ORDER BY store"
     ).fetchall()
     return jsonify({

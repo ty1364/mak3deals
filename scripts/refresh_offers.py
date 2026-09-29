@@ -1,4 +1,4 @@
-"""Run the conservative Mak3Deals source-health refresh.
+"""Run the Mak3Deals authorized product-feed refresh.
 
 For local testing:
     python scripts/refresh_offers.py --dry-run
