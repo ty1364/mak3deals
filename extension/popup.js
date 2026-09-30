@@ -39,14 +39,20 @@ chrome.tabs.query({active: true, currentWindow: true}, tabs => {
     status.textContent = "Open a supported shopping page first.";
     return;
   }
-  chrome.scripting.executeScript({target: {tabId: tab.id}, func: () => {
-    const stores = [["amazon.", "Amazon"], ["walmart.", "Walmart"], ["bestbuy.", "Best Buy"], ["homedepot.", "Home Depot"], ["costco.", "Costco"], ["nike.", "Nike"], ["macys.", "Macy's"], ["kohls.", "Kohl's"], ["chewy.", "Chewy"]];
-    const host = location.hostname.toLowerCase();
-    const match = stores.find(([fragment]) => host.includes(fragment));
+  const match = mak3dealsRetailerForHost(new URL(tab.url).hostname);
+  const reenable = document.querySelector("#enable-assistant");
+  if (reenable && match) {
+    reenable.addEventListener("click", () => {
+      chrome.tabs.sendMessage(tab.id, {type: "clear-dismissal"}, () => {
+        reenable.textContent = chrome.runtime.lastError ? "Reload the store page to re-enable" : "Re-enabled for this site";
+      });
+    });
+  }
+  chrome.scripting.executeScript({target: {tabId: tab.id}, func: (retailer) => {
     const fields = [...document.querySelectorAll("input")].filter(input => /coupon|promo|discount|voucher|offer code/i.test(`${input.name} ${input.id} ${input.placeholder} ${input.getAttribute("aria-label") || ""}`));
     const title = document.querySelector("h1")?.innerText?.trim() || document.title || "";
-    return {store: match ? match[1] : "", title: title.slice(0, 180), supported: Boolean(match), checkoutLike: fields.length > 0};
-  }})
+    return {store: retailer ? retailer.name : "", title: title.slice(0, 180), supported: Boolean(retailer), checkoutLike: fields.length > 0};
+  }, args: [match]})
     .then(injectionResults => {
       const details = injectionResults[0]?.result || {};
       if (!details.supported) {

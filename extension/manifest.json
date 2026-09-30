@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Mak3Deals Savings Finder",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Find verified Mak3Deals coupon codes while you shop.",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["https://mak3deals.com/*"],
@@ -17,7 +17,7 @@
       "https://*.kohls.com/*",
       "https://*.chewy.com/*"
     ],
-    "js": ["content.js"],
+    "js": ["retailers.js", "content.js"],
     "run_at": "document_idle"
   }],
   "background": {"service_worker": "background.js"},
