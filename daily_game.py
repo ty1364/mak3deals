@@ -9,6 +9,7 @@ DAILY_WORDS = [
     "CASHY", "COINS", "SAVER", "SPEND", "STACK", "TERMS", "LOCAL", "LOYAL",
     "CARTS", "SHOPS", "CHECK", "BUYER", "SAVED", "WATCH", "MATCH", "CLICK",
     "TODAY", "FLASH", "BONUS", "POINT", "ROUND", "DRIVE",
+    "FUNDS", "GOODS", "PERKS", "PROMO", "SCORE", "SHELF", "TOTAL", "CENTS",
 ]
 
 DAILY_HINTS = {
@@ -28,6 +29,10 @@ DAILY_HINTS = {
     "FLASH": "A short-lived promotion with limited time.", "BONUS": "An extra reward added to the main savings.",
     "POINT": "A unit in a loyalty or rewards program.", "ROUND": "One cycle of guesses in a game.",
     "DRIVE": "A trip to the store, or motivation to save.",
+    "FUNDS": "Money set aside for a purchase.", "GOODS": "Items offered for sale.",
+    "PERKS": "Extra benefits attached to a membership or offer.", "PROMO": "A short name for a promotion.",
+    "SCORE": "The points you earn in a game or the value of a deal.", "SHELF": "Where a product waits in a store.",
+    "TOTAL": "The final amount before or after savings are applied.", "CENTS": "The smaller units that make up a dollar.",
 }
 
 DAILY_CLUES = {
@@ -61,6 +66,10 @@ DAILY_CLUES = {
     "POINT": "Today's word is a unit in a loyalty or rewards program.",
     "ROUND": "Today's word means one cycle of guesses in a game.",
     "DRIVE": "Today's word can mean a trip to the store or motivation to save.",
+    "FUNDS": "Today's word means money set aside for a purchase.", "GOODS": "Today's word means items offered for sale.",
+    "PERKS": "Today's word means extra benefits attached to an offer.", "PROMO": "Today's word is a short name for a promotion.",
+    "SCORE": "Today's word means points earned in a game or the value of a deal.", "SHELF": "Today's word is where a product waits in a store.",
+    "TOTAL": "Today's word is the final amount after the shopping math is done.", "CENTS": "Today's word means the smaller units that make up a dollar.",
 }
 
 HINT_COSTS = (150, 300)
@@ -71,6 +80,19 @@ def puzzle_date():
     return date.today().isoformat()
 
 
+def daily_words_for(day=None):
+    """Return the six-word set for a date, computed at request time.
+
+    The running application therefore rolls to a new set after midnight
+    without a code push, database write, or manual job. The date-derived
+    rotation is deterministic so a session remains stable for every visitor
+    on the same day.
+    """
+    day = day or date.today()
+    start = (day.toordinal() * 7) % len(DAILY_WORDS)
+    return tuple(DAILY_WORDS[(start + index * 7) % len(DAILY_WORDS)] for index in range(PUZZLES_PER_SESSION))
+
+
 def answer_for(day=None, puzzle_index=0):
     day = day or date.today()
     try:
@@ -78,7 +100,7 @@ def answer_for(day=None, puzzle_index=0):
     except (TypeError, ValueError):
         puzzle_index = 0
     puzzle_index = max(0, min(PUZZLES_PER_SESSION - 1, puzzle_index))
-    return DAILY_WORDS[(day.toordinal() * 7 + puzzle_index * 7) % len(DAILY_WORDS)]
+    return daily_words_for(day)[puzzle_index]
 
 
 def daily_clue(puzzle_index=0):
