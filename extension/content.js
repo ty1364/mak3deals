@@ -13,13 +13,13 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    #mak3deals-launcher{position:fixed;right:20px;bottom:20px;z-index:2147483647;display:flex;align-items:center;gap:2px;padding:3px;border:1px solid #cfe2dc;border-radius:999px;background:#fff;box-shadow:0 10px 28px rgba(24,37,54,.18);font:800 13px/1.1 Inter,ui-sans-serif,system-ui,sans-serif}
+    #mak3deals-launcher{position:fixed;right:20px;bottom:76px;z-index:2147483647;display:flex;align-items:center;gap:2px;padding:3px;border:1px solid #cfe2dc;border-radius:999px;background:#fff;box-shadow:0 10px 28px rgba(24,37,54,.18);font:800 13px/1.1 Inter,ui-sans-serif,system-ui,sans-serif}
     #mak3deals-launcher button{border:0;background:transparent;cursor:pointer;font:inherit}
     #mak3deals-launcher .m3d-launch{padding:8px 10px;border-radius:999px;color:#157c72}
     #mak3deals-launcher .m3d-launch:hover{background:#edf7f4}
     #mak3deals-launcher .m3d-disable{width:25px;height:25px;padding:0;border-radius:50%;color:#627286;font-size:17px;line-height:1}
     #mak3deals-launcher .m3d-disable:hover{background:#f0f3f4;color:#182536}
-    #mak3deals-assistant{position:fixed;right:20px;bottom:20px;z-index:2147483647;width:min(360px,calc(100vw - 32px));font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#182536}
+    #mak3deals-assistant{position:fixed;right:20px;bottom:76px;z-index:2147483647;width:min(360px,calc(100vw - 32px));font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#182536}
     #mak3deals-assistant *{box-sizing:border-box}
     .m3d-panel{overflow:hidden;border:1px solid #dfe7eb;border-radius:16px;background:#fff;box-shadow:0 18px 52px rgba(24,37,54,.22)}
     .m3d-head{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;background:#f6fbf9;border-bottom:1px solid #dfe7eb}
@@ -28,7 +28,7 @@
     .m3d-body{padding:15px}.m3d-status{display:flex;gap:9px;align-items:flex-start}.m3d-dot{width:8px;height:8px;flex:0 0 8px;margin-top:6px;border-radius:50%;background:#157c72;box-shadow:0 0 0 4px #e1f2ee}.m3d-status strong{display:block;font-size:15px}.m3d-status span{display:block;margin-top:2px;color:#627286;font-size:12px}
     .m3d-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:14px}.m3d-actions a{padding:9px 11px;border-radius:8px;background:#ed7d24;color:#fff;text-align:center;text-decoration:none;font-weight:850}.m3d-actions button{padding:9px 11px;border:1px solid #cfe2dc;border-radius:8px;background:#edf7f4;color:#157c72;font-weight:850;cursor:pointer}
     .m3d-offer{display:grid;gap:4px;margin-top:13px;padding:11px;border:1px solid #e5ecef;border-radius:11px}.m3d-offer strong{font-size:13px}.m3d-price{color:#157c72;font-weight:950}.m3d-muted{color:#627286;font-size:11px}
-    @media(max-width:520px){#mak3deals-launcher{right:12px;bottom:12px}#mak3deals-assistant{right:12px;bottom:12px;width:calc(100vw - 24px)}}`;
+    @media(max-width:520px){#mak3deals-launcher{right:12px;bottom:68px}#mak3deals-assistant{right:12px;bottom:68px;width:calc(100vw - 24px)}}`;
   document.documentElement.appendChild(style);
 
   function storeDismissal() {
