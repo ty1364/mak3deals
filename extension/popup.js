@@ -4,7 +4,7 @@ const results = document.querySelector("#results");
 function render(coupons) {
   results.hidden = false;
   if (!coupons.length) {
-    results.innerHTML = '<p class="muted">No verified coupon codes are available for this store yet. We will not show unverified codes.</p>';
+    results.innerHTML = '<div class="no-match"><strong>No verified coupon codes yet.</strong><span class="muted">We will not show unverified codes. Mak3Deals will keep the offer search honest.</span></div>';
     return;
   }
   results.innerHTML = coupons.map((coupon, index) => `
@@ -22,7 +22,7 @@ function render(coupons) {
 
 function renderOffers(offers) {
   if (!offers.length) return '<p class="muted">No matching verified Mak3Deals offer yet. We will not recommend an unrelated product.</p>';
-  return '<h3>Verified Mak3Deals savings</h3>' + offers.map(offer => `
+  return '<h3 class="result-heading">Verified savings for this page</h3>' + offers.map(offer => `
     <article class="offer">${offer.image_url && /^https:\/\//i.test(offer.image_url) ? `<img class="offer-image" src="${escapeHtml(offer.image_url)}" alt="${escapeHtml(offer.title)}" loading="lazy">` : ''}<strong>${escapeHtml(offer.title)}</strong>
       <span class="offer-price">${escapeHtml(offer.sale_price || "See offer")}</span>
       ${offer.regular_price ? `<span class="muted"> regularly ${escapeHtml(offer.regular_price)}</span>` : ''}
