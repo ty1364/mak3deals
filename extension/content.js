@@ -13,8 +13,12 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    #mak3deals-launcher{position:fixed;right:20px;bottom:20px;z-index:2147483647;border:1px solid #cfe2dc;border-radius:999px;padding:10px 14px;background:#fff;color:#157c72;box-shadow:0 10px 28px rgba(24,37,54,.18);font:800 13px/1.1 Inter,ui-sans-serif,system-ui,sans-serif;cursor:pointer}
-    #mak3deals-launcher:hover{background:#edf7f4}
+    #mak3deals-launcher{position:fixed;right:20px;bottom:20px;z-index:2147483647;display:flex;align-items:center;gap:2px;padding:3px;border:1px solid #cfe2dc;border-radius:999px;background:#fff;box-shadow:0 10px 28px rgba(24,37,54,.18);font:800 13px/1.1 Inter,ui-sans-serif,system-ui,sans-serif}
+    #mak3deals-launcher button{border:0;background:transparent;cursor:pointer;font:inherit}
+    #mak3deals-launcher .m3d-launch{padding:8px 10px;border-radius:999px;color:#157c72}
+    #mak3deals-launcher .m3d-launch:hover{background:#edf7f4}
+    #mak3deals-launcher .m3d-disable{width:25px;height:25px;padding:0;border-radius:50%;color:#627286;font-size:17px;line-height:1}
+    #mak3deals-launcher .m3d-disable:hover{background:#f0f3f4;color:#182536}
     #mak3deals-assistant{position:fixed;right:20px;bottom:20px;z-index:2147483647;width:min(360px,calc(100vw - 32px));font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#182536}
     #mak3deals-assistant *{box-sizing:border-box}
     .m3d-panel{overflow:hidden;border:1px solid #dfe7eb;border-radius:16px;background:#fff;box-shadow:0 18px 52px rgba(24,37,54,.22)}
@@ -46,15 +50,19 @@
 
   function createLauncher() {
     if (launcher || assistant) return;
-    launcher = document.createElement("button");
+    launcher = document.createElement("div");
     launcher.id = "mak3deals-launcher";
-    launcher.type = "button";
-    launcher.textContent = "Find Mak3Deals savings";
-    launcher.setAttribute("aria-label", `Check this ${retailer.name} page for verified Mak3Deals savings`);
-    launcher.addEventListener("click", () => {
+    launcher.innerHTML = `<button class="m3d-launch" type="button">Find Mak3Deals savings</button><button class="m3d-disable" type="button" aria-label="Hide Mak3Deals assistant on ${escapeHtml(retailer.name)}">×</button>`;
+    launcher.querySelector(".m3d-launch").setAttribute("aria-label", `Check this ${retailer.name} page for verified Mak3Deals savings`);
+    launcher.querySelector(".m3d-launch").addEventListener("click", () => {
       launcher.remove();
       launcher = null;
       loadAssistant();
+    });
+    launcher.querySelector(".m3d-disable").addEventListener("click", () => {
+      setDismissed(true);
+      launcher.remove();
+      launcher = null;
     });
     document.body.appendChild(launcher);
   }

@@ -4,7 +4,7 @@ This is the Chrome/Edge Manifest V3 extension for Mak3Deals.
 
 ## Current behavior
 
-- On supported shopping pages, the extension shows a passive launcher first; page context is checked only after the shopper clicks it.
+- On supported shopping pages, the extension shows a passive launcher first; page context is checked only after the shopper clicks it. The launcher has its own per-site disable control.
 - User can also open the toolbar popup on any page.
 - The extension recognizes supported stores and looks for a coupon field.
 - It requests only current, verified codes from `https://mak3deals.com/api/coupons`.
