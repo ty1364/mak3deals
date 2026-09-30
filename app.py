@@ -7,7 +7,7 @@ import secrets
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
-from daily_game import daily_session, daily_hint, evaluate_guess, puzzle_date
+from daily_game import ensure_daily_puzzle_schema, daily_session, daily_hint, evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 from retailer_deals import (
@@ -172,6 +172,7 @@ def setup():
         CREATE INDEX IF NOT EXISTS idx_auth_email_tokens_user ON auth_email_tokens (user_id, purpose);""")
     ensure_feed_schema(database)
     ensure_retailer_deal_schema(database)
+    ensure_daily_puzzle_schema(database)
     # Feed expiry is enforced on every request even if the scheduled importer
     # has not run yet.
     database.execute(
@@ -506,7 +507,7 @@ def guide_detail(slug):
 
 @app.route("/daily")
 def daily_game():
-    return render_template("daily.html", puzzle_date=puzzle_date(), daily_session=daily_session(), practice=request.args.get("practice") == "1")
+    return render_template("daily.html", puzzle_date=puzzle_date(), daily_session=daily_session(database=db()), practice=request.args.get("practice") == "1")
 
 @app.route("/api/daily/guess", methods=["POST"])
 def daily_guess():
@@ -516,6 +517,7 @@ def daily_guess():
         payload.get("attempts", 0),
         payload.get("puzzle_index", 0),
         payload.get("hints_used", 0),
+        database=db(),
     ))
 
 
@@ -526,7 +528,7 @@ def daily_hint_api():
         hint_index = int(payload.get("hint_index", 0))
     except (TypeError, ValueError):
         hint_index = 0
-    return jsonify(daily_hint(hint_index, payload.get("puzzle_index", 0)))
+    return jsonify(daily_hint(hint_index, payload.get("puzzle_index", 0), database=db()))
 
 @app.route("/robots.txt")
 def robots():

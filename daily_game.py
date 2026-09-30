@@ -1,6 +1,6 @@
 """Server-side daily word puzzle for Mak3Deals."""
 
-from datetime import date
+from datetime import date, datetime, timezone
 import re
 
 
@@ -76,11 +76,75 @@ HINT_COSTS = (150, 300)
 PUZZLES_PER_SESSION = 6
 
 
-def puzzle_date():
-    return date.today().isoformat()
+def ensure_daily_puzzle_schema(database):
+    """Create the durable process list used to prevent puzzle reuse."""
+    database.execute(
+        """CREATE TABLE IF NOT EXISTS daily_puzzle_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            puzzle_date TEXT NOT NULL,
+            puzzle_index INTEGER NOT NULL,
+            word TEXT NOT NULL UNIQUE,
+            hint_instruction TEXT NOT NULL UNIQUE,
+            clue TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(puzzle_date, puzzle_index)
+        )"""
+    )
+    database.commit()
 
 
-def daily_words_for(day=None):
+def puzzle_date(day=None):
+    return (day or date.today()).isoformat()
+
+
+def _candidate_words_for(day):
+    start = (day.toordinal() * 7) % len(DAILY_WORDS)
+    return [DAILY_WORDS[(start + offset * 7) % len(DAILY_WORDS)] for offset in range(len(DAILY_WORDS))]
+
+
+def _persistent_words_for(day, database):
+    ensure_daily_puzzle_schema(database)
+    day_text = puzzle_date(day)
+    existing = database.execute(
+        "SELECT word FROM daily_puzzle_history WHERE puzzle_date=? ORDER BY puzzle_index",
+        (day_text,),
+    ).fetchall()
+    if len(existing) == PUZZLES_PER_SESSION:
+        return tuple(row[0] for row in existing)
+    if existing:
+        database.execute("DELETE FROM daily_puzzle_history WHERE puzzle_date=?", (day_text,))
+
+    used = database.execute("SELECT word, hint_instruction FROM daily_puzzle_history").fetchall()
+    used_words = {row[0] for row in used}
+    used_hints = {row[1] for row in used}
+    selected = []
+    for word in _candidate_words_for(day):
+        hint = DAILY_HINTS.get(word, "This word is connected to finding a better deal.")
+        if word in used_words or hint in used_hints:
+            continue
+        selected.append((word, hint))
+        used_words.add(word)
+        used_hints.add(hint)
+        if len(selected) == PUZZLES_PER_SESSION:
+            break
+    if len(selected) != PUZZLES_PER_SESSION:
+        raise RuntimeError("Daily puzzle bank is exhausted; add unused words and hint instructions before continuing.")
+
+    created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    database.executemany(
+        """INSERT INTO daily_puzzle_history
+           (puzzle_date, puzzle_index, word, hint_instruction, clue, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        [
+            (day_text, index, word, hint, DAILY_CLUES.get(word, "Today's word is connected to finding a better deal."), created_at)
+            for index, (word, hint) in enumerate(selected)
+        ],
+    )
+    database.commit()
+    return tuple(word for word, _ in selected)
+
+
+def daily_words_for(day=None, database=None):
     """Return the six-word set for a date, computed at request time.
 
     The running application therefore rolls to a new set after midnight
@@ -89,29 +153,30 @@ def daily_words_for(day=None):
     on the same day.
     """
     day = day or date.today()
-    start = (day.toordinal() * 7) % len(DAILY_WORDS)
-    return tuple(DAILY_WORDS[(start + index * 7) % len(DAILY_WORDS)] for index in range(PUZZLES_PER_SESSION))
+    if database is not None:
+        return _persistent_words_for(day, database)
+    return tuple(_candidate_words_for(day)[:PUZZLES_PER_SESSION])
 
 
-def answer_for(day=None, puzzle_index=0):
+def answer_for(day=None, puzzle_index=0, database=None):
     day = day or date.today()
     try:
         puzzle_index = int(puzzle_index)
     except (TypeError, ValueError):
         puzzle_index = 0
     puzzle_index = max(0, min(PUZZLES_PER_SESSION - 1, puzzle_index))
-    return daily_words_for(day)[puzzle_index]
+    return daily_words_for(day, database=database)[puzzle_index]
 
 
-def daily_clue(puzzle_index=0):
-    answer = answer_for(puzzle_index=puzzle_index)
+def daily_clue(puzzle_index=0, day=None, database=None):
+    answer = answer_for(day=day, puzzle_index=puzzle_index, database=database)
     return {"category": "Shopper's vocabulary", "clue": DAILY_CLUES.get(answer, "Today's word is connected to finding a better deal.")}
 
 
-def daily_session():
+def daily_session(day=None, database=None):
     return {
         "puzzle_count": PUZZLES_PER_SESSION,
-        "clues": [daily_clue(index) for index in range(PUZZLES_PER_SESSION)],
+        "clues": [daily_clue(index, day=day, database=database) for index in range(PUZZLES_PER_SESSION)],
     }
 
 
@@ -146,7 +211,7 @@ def score_guess(guess, answer):
     return result
 
 
-def evaluate_guess(guess, attempts=0, puzzle_index=0, hints_used=0):
+def evaluate_guess(guess, attempts=0, puzzle_index=0, hints_used=0, database=None):
     normalized = re.sub(r"[^a-z]", "", (guess or "").lower()).upper()
     if len(normalized) != 5 or not normalized.isalpha():
         return {"ok": False, "error": "Enter a five-letter word."}
@@ -156,7 +221,7 @@ def evaluate_guess(guess, attempts=0, puzzle_index=0, hints_used=0):
         puzzle_index = 0
     if puzzle_index < 0 or puzzle_index >= PUZZLES_PER_SESSION:
         return {"ok": False, "error": "That puzzle is not available in this session."}
-    answer = answer_for(puzzle_index=puzzle_index)
+    answer = answer_for(puzzle_index=puzzle_index, database=database)
     pattern = score_guess(normalized, answer)
     won = normalized == answer
     try:
@@ -179,14 +244,14 @@ def evaluate_guess(guess, attempts=0, puzzle_index=0, hints_used=0):
     }
 
 
-def daily_hint(hint_index=0, puzzle_index=0):
+def daily_hint(hint_index=0, puzzle_index=0, database=None):
     try:
         puzzle_index = int(puzzle_index)
     except (TypeError, ValueError):
         puzzle_index = 0
     if puzzle_index < 0 or puzzle_index >= PUZZLES_PER_SESSION:
         return {"ok": False, "error": "That puzzle is not available in this session."}
-    answer = answer_for(puzzle_index=puzzle_index)
+    answer = answer_for(puzzle_index=puzzle_index, database=database)
     if hint_index == 0:
         return {"ok": True, "hint_index": 0, "hint": DAILY_HINTS.get(answer, "This word is connected to finding a better deal."), "cost": HINT_COSTS[0]}
     if hint_index == 1:
