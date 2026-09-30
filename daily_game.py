@@ -10,6 +10,15 @@ DAILY_WORDS = [
     "CARTS", "SHOPS", "CHECK", "BUYER", "SAVED", "WATCH", "MATCH", "CLICK",
     "TODAY", "FLASH", "BONUS", "POINT", "ROUND", "DRIVE",
     "FUNDS", "GOODS", "PERKS", "PROMO", "SCORE", "SHELF", "TOTAL", "CENTS",
+    "ADDED", "ALERT", "AWARD", "BILLS", "BRAND", "CARRY", "CLAIM", "CLEAR",
+    "CLOSE", "CODES", "COSTS", "DEBIT", "EMAIL", "ENTRY", "EVENT", "EXTRA",
+    "FEWER", "FIRST", "FIXED", "FRESH", "HABIT", "ITEMS", "LABEL", "LIMIT",
+    "MONEY", "ORDER", "PAIRS", "PAPER", "PLANS", "PRIZE", "QUICK", "RATES",
+    "REFER", "RENEW", "SCANS", "SHIPS", "SIZES", "SPREE", "STOCK", "STYLE",
+    "TAXES", "TRACK", "TRIAL", "USERS", "WORTH", "YIELD", "ZONES", "BASIC",
+    "CHART", "CLASS", "CLEAN", "DAILY", "FAVOR", "GUIDE", "HOMES", "INDEX",
+    "ISSUE", "KNOWN", "MAJOR", "NOTED", "PICKS", "PROOF", "RANGE", "RANKS",
+    "RECAP", "RIGHT", "SKILL", "SOLID", "STATS", "TRADE", "WEEKS", "WORDS",
 ]
 
 DAILY_HINTS = {
@@ -74,6 +83,22 @@ DAILY_CLUES = {
 
 HINT_COSTS = (150, 300)
 PUZZLES_PER_SESSION = 6
+DAILY_BANK_LOW_WATER_MARK = PUZZLES_PER_SESSION * 14
+
+
+def _hint_for_word(word):
+    """Return a unique, non-answer-revealing hint instruction for a word."""
+    return DAILY_HINTS.get(
+        word,
+        f"This is shopping vocabulary entry {DAILY_WORDS.index(word) + 1}; use the board feedback to place its letters.",
+    )
+
+
+def _clue_for_word(word):
+    return DAILY_CLUES.get(
+        word,
+        f"Today's word is a five-letter term connected to shopping, deals, or checkout and begins with {word[0]}.",
+    )
 
 
 def ensure_daily_puzzle_schema(database):
@@ -119,7 +144,7 @@ def _persistent_words_for(day, database):
     used_hints = {row[1] for row in used}
     selected = []
     for word in _candidate_words_for(day):
-        hint = DAILY_HINTS.get(word, "This word is connected to finding a better deal.")
+        hint = _hint_for_word(word)
         if word in used_words or hint in used_hints:
             continue
         selected.append((word, hint))
@@ -136,7 +161,7 @@ def _persistent_words_for(day, database):
            (puzzle_date, puzzle_index, word, hint_instruction, clue, created_at)
            VALUES (?, ?, ?, ?, ?, ?)""",
         [
-            (day_text, index, word, hint, DAILY_CLUES.get(word, "Today's word is connected to finding a better deal."), created_at)
+            (day_text, index, word, hint, _clue_for_word(word), created_at)
             for index, (word, hint) in enumerate(selected)
         ],
     )
@@ -158,6 +183,20 @@ def daily_words_for(day=None, database=None):
     return tuple(_candidate_words_for(day)[:PUZZLES_PER_SESSION])
 
 
+def daily_bank_status(database):
+    """Return capacity information for operators without exposing puzzle answers."""
+    ensure_daily_puzzle_schema(database)
+    used = database.execute("SELECT COUNT(*) FROM daily_puzzle_history").fetchone()[0]
+    remaining = max(0, len(DAILY_WORDS) - used)
+    return {
+        "total_words": len(DAILY_WORDS),
+        "used_words": used,
+        "remaining_words": remaining,
+        "days_remaining": remaining // PUZZLES_PER_SESSION,
+        "needs_replenishment": remaining < DAILY_BANK_LOW_WATER_MARK,
+    }
+
+
 def answer_for(day=None, puzzle_index=0, database=None):
     day = day or date.today()
     try:
@@ -170,7 +209,7 @@ def answer_for(day=None, puzzle_index=0, database=None):
 
 def daily_clue(puzzle_index=0, day=None, database=None):
     answer = answer_for(day=day, puzzle_index=puzzle_index, database=database)
-    return {"category": "Shopper's vocabulary", "clue": DAILY_CLUES.get(answer, "Today's word is connected to finding a better deal.")}
+    return {"category": "Shopper's vocabulary", "clue": _clue_for_word(answer)}
 
 
 def daily_session(day=None, database=None):
@@ -253,7 +292,7 @@ def daily_hint(hint_index=0, puzzle_index=0, database=None):
         return {"ok": False, "error": "That puzzle is not available in this session."}
     answer = answer_for(puzzle_index=puzzle_index, database=database)
     if hint_index == 0:
-        return {"ok": True, "hint_index": 0, "hint": DAILY_HINTS.get(answer, "This word is connected to finding a better deal."), "cost": HINT_COSTS[0]}
+        return {"ok": True, "hint_index": 0, "hint": _hint_for_word(answer), "cost": HINT_COSTS[0]}
     if hint_index == 1:
         return {"ok": True, "hint_index": 1, "hint": f"The word starts with {answer[0]}.", "letter": answer[0], "cost": HINT_COSTS[1]}
     return {"ok": False, "error": "No more hints remain for today's puzzle."}

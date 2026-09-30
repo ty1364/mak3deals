@@ -2,7 +2,7 @@ import unittest
 import sqlite3
 from datetime import date, timedelta
 
-from daily_game import PUZZLES_PER_SESSION, answer_for, daily_words_for, ensure_daily_puzzle_schema
+from daily_game import PUZZLES_PER_SESSION, answer_for, daily_bank_status, daily_words_for, ensure_daily_puzzle_schema
 
 
 class DailyGameRotationTests(unittest.TestCase):
@@ -48,6 +48,11 @@ class DailyGameRotationTests(unittest.TestCase):
         ).fetchall()
         self.assertEqual(len(rows), len({row[0] for row in rows}))
         self.assertEqual(len(rows), len({row[1] for row in rows}))
+
+    def test_bank_status_warns_before_replenishment_is_needed(self):
+        status = daily_bank_status(self.database)
+        self.assertGreaterEqual(status["total_words"], PUZZLES_PER_SESSION * 14)
+        self.assertFalse(status["needs_replenishment"])
 
 
 if __name__ == "__main__":
