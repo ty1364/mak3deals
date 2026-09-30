@@ -27,6 +27,7 @@
         <a class="{% if request.path == '/daily' %}is-active{% endif %}" href="/daily">Daily challenge</a>
         <a class="{% if request.path == '/watchlist' %}is-active{% endif %}" href="/watchlist">Watchlist</a>
         <a class="{% if request.path == '/submit' %}is-active{% endif %}" href="/submit">Submit a Deal</a>
+        {% if current_user %}<a class="{% if request.path == '/account' %}is-active{% endif %}" href="/account">Account</a>{% else %}<a class="{% if request.path in ['/login', '/signup'] %}is-active{% endif %}" href="/login">Log in</a>{% endif %}
       </nav>
     </div>
   </header>

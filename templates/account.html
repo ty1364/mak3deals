@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Your account · Mak3Deals{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='auth.css', v='auth-v1') }}">{% endblock %}
+{% block content %}
+<section class="auth-page">
+  <section class="auth-card account-card" aria-labelledby="account-title">
+    <p class="eyebrow">MAK3DEALS ACCOUNT</p>
+    <h1 id="account-title">Hi, {{ current_user['display_name'] }}.</h1>
+    <p class="auth-intro">Your account is ready. Guest shopping, product browsing, and the daily challenge remain available to everyone.</p>
+    <dl class="account-details">
+      <div><dt>Email</dt><dd>{{ current_user['email'] }}</dd></div>
+      <div><dt>Email status</dt><dd>{% if current_user['email_verified'] %}Verified{% else %}Pending verification{% endif %}</dd></div>
+      <div><dt>Member since</dt><dd>{{ current_user['created_at'][:10] }}</dd></div>
+    </dl>
+    <div class="account-actions"><a class="auth-submit account-link" href="/products">Browse products</a><a class="account-secondary" href="/watchlist">Open watchlist</a></div>
+    <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="account-logout" type="submit">Log out</button></form>
+  </section>
+</section>
+{% endblock %}

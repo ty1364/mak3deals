@@ -1,9 +1,12 @@
 from datetime import date, datetime, timezone
 import hmac
+import hashlib
 import os
 import re
+import secrets
 import sqlite3
-from flask import Flask, abort, g, jsonify, redirect, render_template, request
+from flask import Flask, abort, g, jsonify, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 from daily_game import daily_session, daily_hint, evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
@@ -19,6 +22,12 @@ from retailer_deals import (
 )
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("MAK3DEALS_SECRET_KEY", "local-development-secret-change-me")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("MAK3DEALS_COOKIE_SECURE", "0") == "1",
+)
 # Staging can point at an isolated SQLite file without changing production's
 # default database path. Render production keeps using its configured path.
 DATABASE = os.environ.get("MAK3DEALS_DATABASE", "deals.db")
@@ -59,7 +68,7 @@ def add_site_ad_tv(response):
     # Submit is a utility form and should stay distraction-free. Game routes
     # have their own dedicated placements. Normal savings pages get one
     # clearly labeled channel, and the homepage puts it in the hero column.
-    excluded_paths = {"/submit", "/daily", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status", "/retailer-deal-admin"}
+    excluded_paths = {"/submit", "/daily", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status", "/retailer-deal-admin", "/login", "/signup", "/account"}
     if request.path not in excluded_paths and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
@@ -132,7 +141,35 @@ def setup():
         wave INTEGER NOT NULL, duration_seconds INTEGER NOT NULL,
         submitted_at TEXT NOT NULL, review_status TEXT DEFAULT 'pending');
         CREATE INDEX IF NOT EXISTS idx_game_scores_month_score
-        ON game_scores (game, month, score DESC);""")
+        ON game_scores (game, month, score DESC);
+        CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        display_name TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        email_verified INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TEXT NOT NULL,
+        last_login_at TEXT);
+        CREATE TABLE IF NOT EXISTS auth_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        token_hash TEXT NOT NULL UNIQUE,
+        user_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        last_seen_at TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id));
+        CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions (user_id);
+        CREATE TABLE IF NOT EXISTS auth_email_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        token_hash TEXT NOT NULL UNIQUE,
+        user_id INTEGER NOT NULL,
+        purpose TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        used_at TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id));
+        CREATE INDEX IF NOT EXISTS idx_auth_email_tokens_user ON auth_email_tokens (user_id, purpose);""")
     ensure_feed_schema(database)
     ensure_retailer_deal_schema(database)
     # Feed expiry is enforced on every request even if the scheduled importer
@@ -167,6 +204,109 @@ def setup():
     database.execute("DELETE FROM deals WHERE COALESCE(deal_kind, 'deal') IN ('deal', 'source-hub', 'price-check', 'submission')")
     database.commit()
 
+
+AUTH_SESSION_COOKIE = "mak3deals_session"
+AUTH_SESSION_DAYS = 30
+
+
+def _now_utc():
+    return datetime.now(timezone.utc)
+
+
+def _token_hash(token):
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def csrf_token():
+    token = session.get("_csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["_csrf_token"] = token
+    return token
+
+
+def _csrf_valid():
+    supplied = request.form.get("_csrf", "")
+    expected = session.get("_csrf_token", "")
+    return bool(supplied and expected and hmac.compare_digest(supplied, expected))
+
+
+def _safe_next(value):
+    value = (value or "").strip()
+    return value if value.startswith("/") and not value.startswith("//") else "/account"
+
+
+def _start_auth_session(user_id, response):
+    token = secrets.token_urlsafe(48)
+    now = _now_utc()
+    expires = now.timestamp() + AUTH_SESSION_DAYS * 24 * 60 * 60
+    expires_at = datetime.fromtimestamp(expires, tz=timezone.utc).isoformat()
+    database = db()
+    database.execute(
+        "INSERT INTO auth_sessions (token_hash, user_id, created_at, expires_at, last_seen_at) VALUES (?, ?, ?, ?, ?)",
+        (_token_hash(token), user_id, now.isoformat(), expires_at, now.isoformat()),
+    )
+    database.commit()
+    response.set_cookie(
+        AUTH_SESSION_COOKIE,
+        token,
+        max_age=AUTH_SESSION_DAYS * 24 * 60 * 60,
+        httponly=True,
+        secure=app.config["SESSION_COOKIE_SECURE"] or request.is_secure,
+        samesite="Lax",
+    )
+    return response
+
+
+def _clear_auth_session(response):
+    token = request.cookies.get(AUTH_SESSION_COOKIE)
+    if token:
+        db().execute("DELETE FROM auth_sessions WHERE token_hash=?", (_token_hash(token),))
+        db().commit()
+    response.delete_cookie(AUTH_SESSION_COOKIE)
+    return response
+
+
+def _auth_user():
+    token = request.cookies.get(AUTH_SESSION_COOKIE)
+    if not token:
+        g.current_user = None
+        return None
+    now = _now_utc().isoformat()
+    user = db().execute(
+        "SELECT u.* FROM auth_sessions s JOIN users u ON u.id=s.user_id "
+        "WHERE s.token_hash=? AND s.expires_at >= ? AND u.status='active'",
+        (_token_hash(token), now),
+    ).fetchone()
+    g.current_user = user
+    if user:
+        db().execute("UPDATE auth_sessions SET last_seen_at=? WHERE token_hash=?", (now, _token_hash(token)))
+        db().commit()
+    return user
+
+
+def _require_login():
+    if getattr(g, "current_user", None) is None:
+        return redirect(url_for("login", next=request.full_path))
+    return None
+
+
+@app.before_request
+def load_current_user():
+    _auth_user()
+
+
+@app.before_request
+def protect_auth_forms():
+    if request.method == "POST" and request.path in {"/login", "/signup", "/logout"} and not _csrf_valid():
+        mode = "signup" if request.path == "/signup" else "login"
+        return render_template("auth.html", mode=mode, error="Your form expired. Please try again.", next_path=_safe_next(request.form.get("next"))), 400
+
+
+@app.context_processor
+def inject_auth_context():
+    return {"current_user": getattr(g, "current_user", None), "csrf_token": csrf_token}
+
 SORT_OPTIONS = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
 SORT_ORDER = {
     "featured": "verified DESC, expires_on ASC, id DESC",
@@ -195,6 +335,119 @@ def _product_listing_filters():
     cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals WHERE deal_kind='product' ORDER BY city") if r[0] not in {"All", "Online"}]
     categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals WHERE deal_kind='product' ORDER BY category")]
     return raw_products, cities, categories, city, category, search, sort
+
+
+def _auth_autoconfirm_enabled():
+    return os.environ.get("MAK3DEALS_AUTH_AUTOCONFIRM", "0") == "1"
+
+
+def _email_verification_required():
+    return os.environ.get("MAK3DEALS_AUTH_REQUIRE_EMAIL_VERIFICATION", "1") != "0"
+
+
+def _auth_form(mode, error=None, success=None, next_path="/account"):
+    return render_template(
+        "auth.html",
+        mode=mode,
+        error=error,
+        success=success,
+        next_path=_safe_next(next_path),
+    )
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    next_path = _safe_next(request.args.get("next") or request.form.get("next"))
+    if getattr(g, "current_user", None) is not None:
+        return redirect(next_path)
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        user = db().execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        if not user or user["status"] != "active" or not check_password_hash(user["password_hash"], password):
+            return _auth_form("login", error="The email or password is not correct.", next_path=next_path), 401
+        if not user["email_verified"]:
+            return _auth_form("login", error="Please verify your email before signing in. The account is created, but email delivery must be configured before a verification message can be sent.", next_path=next_path), 403
+        now = _now_utc().isoformat()
+        db().execute("UPDATE users SET last_login_at=? WHERE id=?", (now, user["id"]))
+        db().commit()
+        response = redirect(next_path)
+        return _start_auth_session(user["id"], response)
+    return _auth_form("login", next_path=next_path)
+
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    next_path = _safe_next(request.args.get("next") or request.form.get("next"))
+    if getattr(g, "current_user", None) is not None:
+        return redirect(next_path)
+    if request.method == "POST":
+        display_name = " ".join(request.form.get("display_name", "").split())[:80]
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirmation = request.form.get("password_confirm", "")
+        if not display_name:
+            display_name = email.split("@", 1)[0][:80]
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+            return _auth_form("signup", error="Enter a valid email address.", next_path=next_path), 400
+        if len(password) < 8:
+            return _auth_form("signup", error="Use a password with at least 8 characters.", next_path=next_path), 400
+        if password != confirmation:
+            return _auth_form("signup", error="The passwords do not match.", next_path=next_path), 400
+        verified = 1 if _auth_autoconfirm_enabled() or not _email_verification_required() else 0
+        now = _now_utc()
+        try:
+            cursor = db().execute(
+                "INSERT INTO users (email, display_name, password_hash, email_verified, created_at) VALUES (?, ?, ?, ?, ?)",
+                (email, display_name, generate_password_hash(password), verified, now.isoformat()),
+            )
+            user_id = cursor.lastrowid
+            verification_token = None
+            if not verified:
+                verification_token = secrets.token_urlsafe(48)
+                expires_at = (now.timestamp() + 48 * 60 * 60)
+                db().execute(
+                    "INSERT INTO auth_email_tokens (token_hash, user_id, purpose, created_at, expires_at) VALUES (?, ?, ?, ?, ?)",
+                    (_token_hash(verification_token), user_id, "verify-email", now.isoformat(), datetime.fromtimestamp(expires_at, tz=timezone.utc).isoformat()),
+                )
+            db().commit()
+        except sqlite3.IntegrityError:
+            db().rollback()
+            return _auth_form("signup", error="An account with that email already exists. Try signing in instead.", next_path=next_path), 409
+        if verified:
+            response = redirect(next_path)
+            return _start_auth_session(user_id, response)
+        return _auth_form("signup", success="Account created. Verify your email before signing in. Email delivery is the remaining production configuration step.", next_path=next_path)
+    return _auth_form("signup", next_path=next_path)
+
+
+@app.route("/verify-email/<token>")
+def verify_email(token):
+    row = db().execute(
+        "SELECT * FROM auth_email_tokens WHERE token_hash=? AND purpose='verify-email' AND used_at IS NULL AND expires_at >= ?",
+        (_token_hash(token), _now_utc().isoformat()),
+    ).fetchone()
+    if not row:
+        return _auth_form("login", error="That verification link is invalid or expired."), 400
+    now = _now_utc().isoformat()
+    db().execute("UPDATE users SET email_verified=1 WHERE id=?", (row["user_id"],))
+    db().execute("UPDATE auth_email_tokens SET used_at=? WHERE id=?", (now, row["id"]))
+    db().commit()
+    response = redirect(url_for("account"))
+    return _start_auth_session(row["user_id"], response)
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    return _clear_auth_session(redirect(url_for("home")))
+
+
+@app.route("/account")
+def account():
+    required = _require_login()
+    if required:
+        return required
+    return render_template("account.html")
 
 @app.route("/")
 def home():

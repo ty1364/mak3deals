@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'login' %}Log in{% else %}Create your account{% endif %} · Mak3Deals{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='auth.css', v='auth-v1') }}">{% endblock %}
+{% block content %}
+<section class="auth-page">
+  <section class="auth-card" aria-labelledby="auth-title">
+    <p class="eyebrow">MAK3DEALS ACCOUNT</p>
+    <h1 id="auth-title">{% if mode == 'login' %}Welcome back.{% else %}Save your shopping progress.{% endif %}</h1>
+    <p class="auth-intro">{% if mode == 'login' %}Sign in to keep your watchlist and account activity together.{% else %}Create a free account for a persistent watchlist and future account features. Shopping and the daily challenge remain available without signing in.{% endif %}</p>
+    {% if error %}<p class="auth-notice auth-error" role="alert">{{ error }}</p>{% endif %}
+    {% if success %}<p class="auth-notice auth-success" role="status">{{ success }}</p>{% endif %}
+    <form class="auth-form" method="post" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ next_path }}">
+      {% if mode == 'signup' %}
+      <label for="display_name">Name <input id="display_name" name="display_name" autocomplete="name" maxlength="80" value="{{ request.form.get('display_name', '') }}"></label>
+      {% endif %}
+      <label for="email">Email <input id="email" type="email" name="email" autocomplete="email" required value="{{ request.form.get('email', '') }}"></label>
+      <label for="password">Password <input id="password" type="password" name="password" autocomplete="{% if mode == 'login' %}current-password{% else %}new-password{% endif %}" minlength="8" required></label>
+      {% if mode == 'signup' %}<label for="password_confirm">Confirm password <input id="password_confirm" type="password" name="password_confirm" autocomplete="new-password" minlength="8" required></label>{% endif %}
+      <button class="auth-submit" type="submit">{% if mode == 'login' %}Log in{% else %}Create account{% endif %}</button>
+    </form>
+    <p class="auth-switch">{% if mode == 'login' %}New to Mak3Deals? <a href="{{ url_for('signup', next=next_path) }}">Create an account</a>.{% else %}Already have an account? <a href="{{ url_for('login', next=next_path) }}">Log in</a>.{% endif %}</p>
+    <p class="auth-footnote">We use your account to provide the features you request. See our <a href="/privacy">Privacy Policy</a>.</p>
+  </section>
+</section>
+{% endblock %}
