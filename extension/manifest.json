@@ -1,10 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Mak3Deals Savings Finder",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Find verified Mak3Deals coupon codes while you shop.",
   "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["https://mak3deals.com/*"],
+  "host_permissions": [
+    "https://mak3deals.com/*",
+    "https://*.amazon.com/*",
+    "https://*.walmart.com/*",
+    "https://*.bestbuy.com/*",
+    "https://*.homedepot.com/*",
+    "https://*.costco.com/*",
+    "https://*.nike.com/*",
+    "https://*.macys.com/*",
+    "https://*.kohls.com/*",
+    "https://*.chewy.com/*"
+  ],
   "content_scripts": [{
     "matches": [
       "https://*.amazon.com/*",
