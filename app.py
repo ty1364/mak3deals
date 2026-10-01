@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import hmac
 import hashlib
 import os
@@ -7,7 +7,7 @@ import secrets
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
-from daily_game import ensure_daily_puzzle_schema, daily_session, daily_hint, evaluate_guess, puzzle_date
+from daily_game import ensure_daily_puzzle_schema, daily_session, daily_hint, editorial_puzzle_cards, evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 from retailer_deals import (
@@ -510,6 +510,18 @@ def guide_detail(slug):
 def daily_game():
     return render_template("daily.html", puzzle_date=puzzle_date(), daily_session=daily_session(database=db()), practice=request.args.get("practice") == "1")
 
+@app.route("/daily-hints")
+def daily_hints_page():
+    # Keep the contest session private from the SEO answer page. This page is
+    # intentionally for the completed prior day, so it cannot reveal today's
+    # answers before a player has had a chance to enter the session.
+    completed_day = date.today() - timedelta(days=1)
+    return render_template(
+        "daily-hints.html",
+        completed_day=completed_day.isoformat(),
+        puzzle_cards=editorial_puzzle_cards(completed_day, database=db()),
+    )
+
 @app.route("/api/daily/guess", methods=["POST"])
 def daily_guess():
     payload = request.get_json(silent=True) or {}
@@ -537,7 +549,7 @@ def robots():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons", "https://mak3deals.com/retailer-picks"]
+    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons", "https://mak3deals.com/retailer-picks", "https://mak3deals.com/daily-hints"]
     urls.extend(f"https://mak3deals.com/guides/{guide['slug']}" for guide in GUIDES)
     body = "".join(f"<url><loc>{url}</loc></url>" for url in urls)
     return f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>', 200, {"Content-Type": "application/xml; charset=utf-8"}

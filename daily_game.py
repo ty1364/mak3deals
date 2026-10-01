@@ -219,6 +219,21 @@ def daily_session(day=None, database=None):
     }
 
 
+def editorial_puzzle_cards(day=None, database=None):
+    """Return a spoiler-page view for a completed day, separate from gameplay."""
+    selected_day = day or date.today()
+    words = daily_words_for(selected_day, database=database)
+    return [
+        {
+            "number": index + 1,
+            "word": word,
+            "clue": _clue_for_word(word),
+            "hint": _hint_for_word(word),
+        }
+        for index, word in enumerate(words)
+    ]
+
+
 def daily_score(attempts=0, hints_used=0, won=False):
     """Return the visible game score; the contest backend can make this authoritative later."""
     try:

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}DealDrop Daily Hints & Answers · Mak3Deals{% endblock %}
+{% block meta %}<meta name="description" content="Yesterday's DealDrop Daily shopping-word hints and answers from Mak3Deals.">{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='daily-hints.css', v='daily-hints-v1') }}">{% endblock %}
+{% block content %}
+<section class="simple-hero daily-hints-hero">
+  <div>
+    <p class="eyebrow">MAK3DEALS // DAILY WORD ARCHIVE</p>
+    <h1>Yesterday's hints<br><em>and answers.</em></h1>
+    <p>Review the six shopping-word puzzles from {{ completed_day }}. Today's contest answers stay separate until the daily session has had its run.</p>
+    <div class="daily-hints-actions"><a class="deal-btn" href="/daily">Play today's six puzzles →</a><a class="outline" href="/products">Shop verified products</a></div>
+  </div>
+</section>
+<main class="daily-hints-page">
+  <section class="daily-hints-intro"><div><p class="eyebrow dark">SIX ORIGINAL PUZZLES</p><h2>Start with a clue. Open the answer only if you need it.</h2></div><p>These are original Mak3Deals words connected to shopping, savings, and checkout. Hints and answers are editorial content; they do not change contest entries or scores.</p></section>
+  <section class="hint-card-grid" aria-label="DealDrop Daily hints and answers">
+    {% for puzzle in puzzle_cards %}
+    <article class="hint-card">
+      <span class="hint-number">Puzzle {{ puzzle.number }}</span>
+      <h3>{{ puzzle.clue }}</h3>
+      <p><strong>Hint:</strong> {{ puzzle.hint }}</p>
+      <details><summary>Reveal answer</summary><div class="answer-reveal" aria-label="Puzzle {{ puzzle.number }} answer">{{ puzzle.word }}</div></details>
+      <a href="/products?q={{ puzzle.word|urlencode }}">Find related savings →</a>
+    </article>
+    {% endfor %}
+  </section>
+  <section class="daily-hints-next"><div><p class="eyebrow dark">KEEP THE ROUTINE</p><h2>Come back for a fresh six-puzzle session.</h2><p>Play free, solve all six, and follow the official contest terms when entries open.</p></div><a class="deal-btn" href="/daily">Play DealDrop Daily →</a></section>
+</main>
+{% endblock %}

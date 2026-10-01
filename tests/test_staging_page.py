@@ -101,7 +101,7 @@ class StagingPageTests(unittest.TestCase):
         self.assertEqual(offers[0]["source_provider"], "staging-fixture")
 
     def test_customer_routes_share_shell_and_hide_sources(self):
-        routes = ["/", "/coupons", "/guides", "/daily", "/watchlist", "/submit", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/retailer-picks"]
+        routes = ["/", "/coupons", "/guides", "/daily", "/daily-hints", "/watchlist", "/submit", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/retailer-picks"]
         for route in routes:
             with self.subTest(route=route):
                 response = self.client.get(route)
@@ -111,6 +111,15 @@ class StagingPageTests(unittest.TestCase):
                 self.assertIn('class="site-footer"', body)
                 self.assertNotIn('>Sources<', body)
                 self.assertEqual(body.count("<main"), 1)
+
+    def test_daily_hints_page_is_prior_day_editorial_and_has_six_cards(self):
+        response = self.client.get("/daily-hints")
+        body = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.count('class="hint-card"'), 6)
+        self.assertIn("Reveal answer", body)
+        self.assertIn("Today's contest answers stay separate", body)
+        self.assertIn('class="site-ad-tv"', body)
 
     def test_feed_diagnostics_are_not_public(self):
         external = {"REMOTE_ADDR": "203.0.113.1", "HTTP_HOST": "mak3deals.com"}
