@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS deals (
     category TEXT,
     link TEXT,
     expires_on DATE,
-    verified BOOLEAN NOT NULL DEFAULT FALSE,
+    verified INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deal_kind TEXT NOT NULL DEFAULT 'deal',
     sale_price TEXT,
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS feed_sources (
     store TEXT NOT NULL,
     url TEXT NOT NULL,
     mode TEXT NOT NULL DEFAULT 'product-feed',
-    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    enabled INTEGER NOT NULL DEFAULT 0,
     http_status INTEGER,
     status TEXT NOT NULL DEFAULT 'pending',
     checked_at TIMESTAMPTZ,
@@ -80,4 +80,3 @@ CREATE INDEX IF NOT EXISTS idx_deals_product_identity
     ON deals (source_key, merchant_product_id);
 CREATE INDEX IF NOT EXISTS idx_feed_runs_completed
     ON feed_runs (completed_at DESC);
-

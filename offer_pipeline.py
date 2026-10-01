@@ -53,8 +53,9 @@ def utc_now():
 
 
 def ensure_feed_schema(connection):
-    connection.executescript(
-        """
+    if not getattr(connection, "is_postgres", False):
+        connection.executescript(
+            """
         CREATE TABLE IF NOT EXISTS feed_runs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             started_at TEXT NOT NULL,
@@ -77,19 +78,19 @@ def ensure_feed_schema(connection):
             offer_count INTEGER NOT NULL DEFAULT 0,
             message TEXT
         );
-        """
-    )
-    source_columns = {row[1] for row in connection.execute("PRAGMA table_info(feed_sources)").fetchall()}
+            """
+        )
+    source_columns = set() if getattr(connection, "is_postgres", False) else {row[1] for row in connection.execute("PRAGMA table_info(feed_sources)").fetchall()}
     for name, definition in {
         "last_imported_at": "TEXT",
         "last_error": "TEXT",
         "imported_count": "INTEGER NOT NULL DEFAULT 0",
         "retired_count": "INTEGER NOT NULL DEFAULT 0",
     }.items():
-        if name not in source_columns:
+        if name not in source_columns and not getattr(connection, "is_postgres", False):
             connection.execute(f"ALTER TABLE feed_sources ADD COLUMN {name} {definition}")
 
-    if connection.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='deals'").fetchone():
+    if not getattr(connection, "is_postgres", False) and connection.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='deals'").fetchone():
         deal_columns = {row[1] for row in connection.execute("PRAGMA table_info(deals)").fetchall()}
         for name, definition in DEAL_COLUMNS.items():
             if name not in deal_columns:

@@ -6,6 +6,7 @@ import re
 import secrets
 import sqlite3
 from flask import Flask, abort, g, jsonify, redirect, render_template, request, session, url_for
+from database import DB_INTEGRITY_ERRORS, connect_database, ensure_postgres_schema
 from werkzeug.security import check_password_hash, generate_password_hash
 from daily_game import ensure_daily_puzzle_schema, daily_session, daily_hint, editorial_puzzle_cards, evaluate_guess, puzzle_date
 from guides import GUIDE_BY_SLUG, GUIDES
@@ -23,13 +24,15 @@ from retailer_deals import (
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("MAK3DEALS_SECRET_KEY", "local-development-secret-change-me")
+if os.environ.get("RENDER") == "true" and not os.environ.get("MAK3DEALS_SECRET_KEY"):
+    raise RuntimeError("MAK3DEALS_SECRET_KEY must be configured for a Render deployment.")
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.environ.get("MAK3DEALS_COOKIE_SECURE", "0") == "1",
 )
-# Staging can point at an isolated SQLite file without changing production's
-# default database path. Render production keeps using its configured path.
+# Staging can point at an isolated SQLite file. Render production selects the
+# persistent database supplied through DATABASE_URL.
 DATABASE = os.environ.get("MAK3DEALS_DATABASE", "deals.db")
 
 SITE_AD_TV = """
@@ -48,8 +51,7 @@ SITE_AD_HERO = SITE_AD_TV.replace('<div class="site-ad-slot">', '<div class="sit
 
 def db():
     if "db" not in g:
-        g.db = sqlite3.connect(DATABASE)
-        g.db.row_factory = sqlite3.Row
+        g.db = connect_database(DATABASE)
     return g.db
 
 def price_number(value):
@@ -127,7 +129,15 @@ def protect_feed_diagnostics():
 @app.before_request
 def setup():
     database = db()
-    database.executescript("""CREATE TABLE IF NOT EXISTS deals (
+    if getattr(database, "is_postgres", False):
+        if not app.config.get("_POSTGRES_SCHEMA_READY"):
+            ensure_postgres_schema(database)
+            ensure_feed_schema(database)
+            ensure_retailer_deal_schema(database)
+            ensure_daily_puzzle_schema(database)
+            app.config["_POSTGRES_SCHEMA_READY"] = True
+    else:
+        database.executescript("""CREATE TABLE IF NOT EXISTS deals (
         id INTEGER PRIMARY KEY AUTOINCREMENT, store TEXT, title TEXT,
         description TEXT, city TEXT, category TEXT, link TEXT,
         expires_on TEXT, verified INTEGER DEFAULT 0, created_at TEXT);
@@ -171,9 +181,9 @@ def setup():
         used_at TEXT,
         FOREIGN KEY(user_id) REFERENCES users(id));
         CREATE INDEX IF NOT EXISTS idx_auth_email_tokens_user ON auth_email_tokens (user_id, purpose);""")
-    ensure_feed_schema(database)
-    ensure_retailer_deal_schema(database)
-    ensure_daily_puzzle_schema(database)
+        ensure_feed_schema(database)
+        ensure_retailer_deal_schema(database)
+        ensure_daily_puzzle_schema(database)
     # Feed expiry is enforced on every request even if the scheduled importer
     # has not run yet.
     database.execute(
@@ -181,8 +191,9 @@ def setup():
         (date.today().isoformat(),),
     )
     database.commit()
-    existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
-    for column, definition in {
+    if not getattr(database, "is_postgres", False):
+        existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
+        for column, definition in {
         "deal_kind": "TEXT DEFAULT 'deal'", "sale_price": "TEXT", "regular_price": "TEXT",
         "coupon_code": "TEXT", "offer_terms": "TEXT", "checked_on": "TEXT", "affiliate_url": "TEXT",
         "product_key": "TEXT", "image_url": "TEXT", "image_source": "TEXT",
@@ -190,20 +201,20 @@ def setup():
         "discount_percent": "REAL", "availability_status": "TEXT", "last_checked_at": "TEXT",
         "source_key": "TEXT", "source_provider": "TEXT", "feed_updated_at": "TEXT",
         "status": "TEXT DEFAULT 'active'", "raw_payload_hash": "TEXT"
-    }.items():
-        if column not in existing_columns:
-            database.execute(f"ALTER TABLE deals ADD COLUMN {column} {definition}")
-    submission_columns = {row[1] for row in database.execute("PRAGMA table_info(submissions)").fetchall()}
-    for column, definition in {
+        }.items():
+            if column not in existing_columns:
+                database.execute(f"ALTER TABLE deals ADD COLUMN {column} {definition}")
+        submission_columns = {row[1] for row in database.execute("PRAGMA table_info(submissions)").fetchall()}
+        for column, definition in {
         "coupon_code": "TEXT", "offer_terms": "TEXT", "expires_on": "TEXT",
         "source_type": "TEXT DEFAULT 'user-submitted'"
-    }.items():
-        if column not in submission_columns:
-            database.execute(f"ALTER TABLE submissions ADD COLUMN {column} {definition}")
-    # Product cards are populated only by the authorized feed importer. Remove
-    # legacy source-hub and hand-seeded rows so a retailer landing page cannot
-    # masquerade as an individual deal.
-    database.execute("DELETE FROM deals WHERE COALESCE(deal_kind, 'deal') IN ('deal', 'source-hub', 'price-check', 'submission')")
+        }.items():
+            if column not in submission_columns:
+                database.execute(f"ALTER TABLE submissions ADD COLUMN {column} {definition}")
+    # Cleanup is explicit and operator-controlled. App startup must never
+    # delete production records as a side effect of a web request.
+    if os.environ.get("MAK3DEALS_PRUNE_LEGACY_DATA") == "1":
+        database.execute("DELETE FROM deals WHERE COALESCE(deal_kind, 'deal') IN ('deal', 'source-hub', 'price-check', 'submission')")
     database.commit()
 
 
@@ -399,11 +410,15 @@ def signup():
         verified = 1 if _auth_autoconfirm_enabled() or not _email_verification_required() else 0
         now = _now_utc()
         try:
+            insert_sql = (
+                "INSERT INTO users (email, display_name, password_hash, email_verified, created_at) VALUES (?, ?, ?, ?, ?)"
+                + (" RETURNING id" if getattr(db(), "is_postgres", False) else "")
+            )
             cursor = db().execute(
-                "INSERT INTO users (email, display_name, password_hash, email_verified, created_at) VALUES (?, ?, ?, ?, ?)",
+                insert_sql,
                 (email, display_name, generate_password_hash(password), verified, now.isoformat()),
             )
-            user_id = cursor.lastrowid
+            user_id = cursor.lastrowid if not getattr(db(), "is_postgres", False) else cursor.fetchone()["id"]
             verification_token = None
             if not verified:
                 verification_token = secrets.token_urlsafe(48)
@@ -413,7 +428,7 @@ def signup():
                     (_token_hash(verification_token), user_id, "verify-email", now.isoformat(), datetime.fromtimestamp(expires_at, tz=timezone.utc).isoformat()),
                 )
             db().commit()
-        except sqlite3.IntegrityError:
+        except DB_INTEGRITY_ERRORS:
             db().rollback()
             return _auth_form("signup", error="An account with that email already exists. Try signing in instead.", next_path=next_path), 409
         if verified:
@@ -847,6 +862,13 @@ def submit_score():
 @app.route("/ads.txt")
 def ads_txt():
     return "google.com, pub-3943554631291586, DIRECT, f08c47fec0942fa0\n", 200, {"Content-Type": "text/plain"}
+
+@app.route("/healthz")
+def healthz():
+    """Render health check: the process is up and the configured DB answers."""
+    database = db()
+    database.execute("SELECT 1").fetchone()
+    return jsonify({"ok": True, "database": "postgres" if getattr(database, "is_postgres", False) else "sqlite"})
 
 @app.route("/about")
 def about():

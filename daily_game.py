@@ -104,7 +104,16 @@ def _clue_for_word(word):
 def ensure_daily_puzzle_schema(database):
     """Create the durable process list used to prevent puzzle reuse."""
     database.execute(
-        """CREATE TABLE IF NOT EXISTS daily_puzzle_history (
+        ("""CREATE TABLE IF NOT EXISTS daily_puzzle_history (
+            id BIGSERIAL PRIMARY KEY,
+            puzzle_date TEXT NOT NULL,
+            puzzle_index INTEGER NOT NULL,
+            word TEXT NOT NULL UNIQUE,
+            hint_instruction TEXT NOT NULL UNIQUE,
+            clue TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(puzzle_date, puzzle_index)
+        )""" if getattr(database, "is_postgres", False) else """CREATE TABLE IF NOT EXISTS daily_puzzle_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             puzzle_date TEXT NOT NULL,
             puzzle_index INTEGER NOT NULL,
@@ -113,7 +122,7 @@ def ensure_daily_puzzle_schema(database):
             clue TEXT NOT NULL,
             created_at TEXT NOT NULL,
             UNIQUE(puzzle_date, puzzle_index)
-        )"""
+        )""")
     )
     database.commit()
 

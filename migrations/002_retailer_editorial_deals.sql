@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS retailer_sources (
     merchant TEXT NOT NULL,
     official_source_url TEXT NOT NULL,
     source_type TEXT NOT NULL,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    enabled INTEGER NOT NULL DEFAULT 1,
     last_checked_at TIMESTAMPTZ,
     http_status INTEGER,
     status TEXT NOT NULL DEFAULT 'registered',
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS retailer_deal_candidates (
     reviewed_at TIMESTAMPTZ,
     review_note TEXT,
     published_at TIMESTAMPTZ,
-    affiliate_claimed BOOLEAN NOT NULL DEFAULT FALSE
+    affiliate_claimed INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_retailer_candidates_status_expiry

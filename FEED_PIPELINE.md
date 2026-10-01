@@ -66,15 +66,15 @@ Every fixture card is labeled `TEST FIXTURE · NOT A REAL DEAL`. Do not point
 `MAK3DEALS_REFRESH_TOKEN`. GitHub Actions calls it every 30 minutes from
 `.github/workflows/refresh-offers.yml` after that secret is configured.
 
-The current service still uses SQLite. That is suitable for local fixture
-tests, but a production milestone with automatic updates needs a shared
-persistent database such as Render Postgres before the feed job is enabled in
-production. Compute-plan upgrades do not make a SQLite file durable.
+Local staging continues to use SQLite. The Render blueprint now wires the web
+service to a persistent Postgres database and applies the additive migrations
+on first request. The app selects Postgres whenever `DATABASE_URL` is present;
+it never falls back to a local SQLite file in that deployment mode.
 
-`migrations/001_product_pipeline.sql` is additive-only preparation for that
-move. `render-postgres.example.yaml` is intentionally not referenced by the
-live Render blueprint; creating the database and switching `DATABASE_URL`
-requires owner approval and a backup plan first.
+The blueprint does not contain feed credentials. The owner must supply
+`MAK3DEALS_FEED_CONFIG` and `MAK3DEALS_REFRESH_TOKEN` in Render, then place the
+same refresh token in the GitHub Actions secret of the repository. The
+database is not created until the owner applies the blueprint.
 
 ## Status and acceptance checks
 

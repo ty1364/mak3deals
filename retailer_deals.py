@@ -71,8 +71,9 @@ def utc_now():
 
 
 def ensure_retailer_deal_schema(connection):
-    connection.executescript(
-        """
+    if not getattr(connection, "is_postgres", False):
+        connection.executescript(
+            """
         CREATE TABLE IF NOT EXISTS retailer_sources (
             source_key TEXT PRIMARY KEY,
             merchant TEXT NOT NULL,
@@ -141,9 +142,9 @@ def ensure_retailer_deal_schema(connection):
             ON retailer_deal_candidates (status, expires_on, merchant);
         CREATE INDEX IF NOT EXISTS idx_retailer_candidates_source
             ON retailer_deal_candidates (source_key, last_seen_at);
-        """
-    )
-    source_columns = {row[1] for row in connection.execute("PRAGMA table_info(retailer_sources)").fetchall()}
+            """
+        )
+    source_columns = set() if getattr(connection, "is_postgres", False) else {row[1] for row in connection.execute("PRAGMA table_info(retailer_sources)").fetchall()}
     for column, definition in {
         "hold_reason": "TEXT",
         "source_check_state": "TEXT NOT NULL DEFAULT 'not_checked'",
@@ -152,23 +153,23 @@ def ensure_retailer_deal_schema(connection):
         "last_feed_attempt_at": "TEXT",
         "last_feed_success_at": "TEXT",
     }.items():
-        if column not in source_columns:
+        if column not in source_columns and not getattr(connection, "is_postgres", False):
             connection.execute(f"ALTER TABLE retailer_sources ADD COLUMN {column} {definition}")
-    run_columns = {row[1] for row in connection.execute("PRAGMA table_info(retailer_discovery_runs)").fetchall()}
+    run_columns = set() if getattr(connection, "is_postgres", False) else {row[1] for row in connection.execute("PRAGMA table_info(retailer_discovery_runs)").fetchall()}
     for column, definition in {
         "source_check_failure_count": "INTEGER NOT NULL DEFAULT 0",
         "feed_error_count": "INTEGER NOT NULL DEFAULT 0",
         "held_count": "INTEGER NOT NULL DEFAULT 0",
     }.items():
-        if column not in run_columns:
+        if column not in run_columns and not getattr(connection, "is_postgres", False):
             connection.execute(f"ALTER TABLE retailer_discovery_runs ADD COLUMN {column} {definition}")
-    candidate_columns = {row[1] for row in connection.execute("PRAGMA table_info(retailer_deal_candidates)").fetchall()}
+    candidate_columns = set() if getattr(connection, "is_postgres", False) else {row[1] for row in connection.execute("PRAGMA table_info(retailer_deal_candidates)").fetchall()}
     for column, definition in {
         "recheck_on": "TEXT",
         "evidence_reference": "TEXT",
         "evidence_scope": "TEXT NOT NULL DEFAULT 'landing-page'",
     }.items():
-        if column not in candidate_columns:
+        if column not in candidate_columns and not getattr(connection, "is_postgres", False):
             connection.execute(f"ALTER TABLE retailer_deal_candidates ADD COLUMN {column} {definition}")
     for source in RETAILER_SOURCE_DEFINITIONS:
         connection.execute(
@@ -361,19 +362,22 @@ def upsert_candidate(connection, payload, checked_on=None):
              next_status, reviewed_at, review_note, published_at, existing["id"]),
         )
         return existing["id"], False
-    cursor = connection.execute(
-        """INSERT INTO retailer_deal_candidates
+    insert_sql = """INSERT INTO retailer_deal_candidates
            (source_key, merchant, title, summary, source_url, retailer_url, checked_on,
             promotion_type, promotion_terms, expires_on, recheck_on, evidence_reference, evidence_scope, location_restrictions,
             membership_restrictions, link_scope, status, dedupe_key, created_at,
             last_seen_at, affiliate_claimed)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate', ?, ?, ?, 0)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate', ?, ?, ?, 0)"""
+    if getattr(connection, "is_postgres", False):
+        insert_sql += " RETURNING id"
+    cursor = connection.execute(
+        insert_sql,
         (candidate["source_key"], candidate["merchant"], candidate["title"], candidate["summary"],
         candidate["source_url"], candidate["retailer_url"], candidate["checked_on"], candidate["promotion_type"],
         candidate["promotion_terms"], candidate["expires_on"], candidate["recheck_on"], candidate["evidence_reference"],
         candidate["evidence_scope"], candidate["location_restrictions"], candidate["membership_restrictions"], candidate["link_scope"], dedupe_key, now, now),
     )
-    return cursor.lastrowid, True
+    return (cursor.fetchone()["id"] if getattr(connection, "is_postgres", False) else cursor.lastrowid), True
 
 
 def expire_candidates(connection, today=None):
