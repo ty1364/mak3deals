@@ -1,5 +1,2 @@
 id,title,description,price,rrp_price,merchant_deep_link,merchant_image_url,brand,gtin,in_stock,category
-fixture-busy-baby,Busy Baby test mat,STAGING ONLY — example baby mealtime product,24.99,39.99,https://example.invalid/mak3deals-fixture/busy-baby, __STAGING_ORIGIN__/static/assets/staging/busy-baby.svg,Busy Baby,fixture-1001,1,Baby & Family
-fixture-bully-beds,Bully Beds test dog bed,STAGING ONLY — example pet comfort product,59.99,89.99,https://example.invalid/mak3deals-fixture/bully-beds, __STAGING_ORIGIN__/static/assets/staging/bully-beds.svg,Bully Beds,fixture-1002,1,Pet Care
 fixture-upper,UPPER test weekender bag,STAGING ONLY — example travel bag product,79.00,120.00,https://example.invalid/mak3deals-fixture/upper, __STAGING_ORIGIN__/static/assets/staging/upper.svg,UPPER,fixture-1003,1,Travel
-fixture-bean-box,Bean Box test coffee subscription,STAGING ONLY — example specialty coffee offer,18.00,24.00,https://example.invalid/mak3deals-fixture/bean-box, __STAGING_ORIGIN__/static/assets/staging/bean-box.svg,Bean Box,fixture-1004,1,Food & Beverage

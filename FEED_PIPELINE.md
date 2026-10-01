@@ -37,17 +37,19 @@ counts as connected only after its real feed URL is supplied and an ingestion
 run reports imported product records.
 
 The per-source fallback names include `MAK3DEALS_FEED_URL_UPPER`,
-`MAK3DEALS_FEED_URL_YELOLY`,
 `MAK3DEALS_FEED_URL_WALMART`,
 `MAK3DEALS_FEED_URL_BEST_BUY`, `MAK3DEALS_FEED_URL_AMAZON`,
-`MAK3DEALS_FEED_URL_TARGET`, and `MAK3DEALS_FEED_URL_HOME_DEPOT`.
+`MAK3DEALS_FEED_URL_TARGET`, and `MAK3DEALS_FEED_URL_HOME_DEPOT`. Additional
+authorized merchants may be supplied through `MAK3DEALS_FEED_CONFIG`; their
+source keys are registered dynamically after a real feed is configured. No
+merchant is counted as connected until its feed produces validated records.
 
 ## Scheduler and storage
 
 ## Isolated staging fixtures
 
-The review branch includes four clearly labeled fixture products so the page
-can be tested before an advertiser feed is approved. They use `example.invalid`
+The review branch includes one clearly labeled UPPER fixture product so the page
+can be tested before an advertiser feed is approved. It uses `example.invalid`
 product links and are never real offers. Load them into a separate database:
 
 ```powershell

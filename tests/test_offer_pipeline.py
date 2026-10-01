@@ -75,11 +75,10 @@ class ProductFeedTests(unittest.TestCase):
         self.assertEqual(product["regular_price"], "$30.00")
         self.assertEqual(product["affiliate_url"], "https://track.example/kettle")
 
-    def test_yeloly_is_a_supported_feed_source_without_committing_a_secret_url(self):
-        source = next(item for item in offer_pipeline.SOURCE_DEFINITIONS if item["key"] == "yeloly")
-        self.assertEqual(source["store"], "Yeloly")
-        self.assertEqual(source["url"], "https://www.yeloly.com/")
-        self.assertNotIn("datafeed", source["url"])
+    def test_rejected_yeloly_source_cannot_be_reactivated_by_old_config(self):
+        self.assertNotIn("yeloly", {item["key"] for item in offer_pipeline.SOURCE_DEFINITIONS})
+        with patch.dict(os.environ, {"MAK3DEALS_FEED_URL_YELOLY": "https://example.invalid/old-feed"}, clear=False):
+            self.assertNotIn("yeloly", offer_pipeline.load_feed_configs())
 
     def test_awin_google_retail_sale_price_mapping(self):
         product, reason = offer_pipeline.normalize_awin_product(

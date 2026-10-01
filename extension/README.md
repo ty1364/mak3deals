@@ -11,6 +11,11 @@ This is the Chrome/Edge Manifest V3 extension for Mak3Deals.
 - It lets the user copy a code; it does not silently change checkout forms.
 - It looks for a matching verified Mak3Deals offer and provides a clearly labeled affiliate “Get deal” link.
 
+This release is a verified-savings discovery beta, not an automatic checkout
+agent. It does not test codes, submit orders, read payment fields, or claim
+support for stores outside the explicit retailer registry. Those capabilities
+require approved merchant-specific checkout adapters and additional review.
+
 ## Load locally
 
 1. Open `chrome://extensions` or `edge://extensions`.
@@ -18,4 +23,4 @@ This is the Chrome/Edge Manifest V3 extension for Mak3Deals.
 3. Choose **Load unpacked**.
 4. Select this `extension` folder.
 
-The assistant and popup show only verified Mak3Deals codes and offers. The privacy copy explains that the retailer name and page title are sent only after user activation to look for matching offers. Dismissal is stored per retailer host and can be re-enabled from the popup. The extension does not submit orders, interact with payment information, or claim universal compatibility. Automatic code testing and broader product comparison should be added only after we have merchant-specific adapters, verified affiliate links, and clear user controls.
+The assistant and popup show only verified Mak3Deals codes and offers. The privacy copy explains that the retailer name and page title are sent only after user activation to look for matching offers. Dismissal is stored per retailer host and can be re-enabled from the popup. Keep the extension unpublished until the production API, privacy/legal pages, store permissions, and Chrome Web Store listing have been reviewed.

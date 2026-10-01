@@ -21,13 +21,18 @@ from urllib.request import Request, urlopen
 
 SOURCE_DEFINITIONS = [
     {"key": "upper", "store": "UPPER Brand", "url": "https://upperbags.com/"},
-    {"key": "yeloly", "store": "Yeloly", "url": "https://www.yeloly.com/"},
     {"key": "walmart", "store": "Walmart", "url": "https://www.walmart.com/shop/deals/shop-advertised-deals"},
     {"key": "best-buy", "store": "Best Buy", "url": "https://www.bestbuy.com/top-deals-b"},
     {"key": "amazon", "store": "Amazon", "url": "https://www.amazon.com/gp/goldbox"},
     {"key": "target", "store": "Target", "url": "https://www.target.com/c/deals/-/N-4xw74"},
     {"key": "home-depot", "store": "Home Depot", "url": "https://www.homedepot.com/daily-deals"},
 ]
+
+# Merchant feeds are opt-in. These sources are deliberately excluded even if
+# an old environment variable or config file still contains credentials for
+# them; a rejected or out-of-scope advertiser must never reappear in the
+# customer catalog.
+BLOCKED_SOURCE_KEYS = {"yeloly"}
 
 DEAL_COLUMNS = {
     "merchant_product_id": "TEXT",
@@ -114,15 +119,37 @@ def load_feed_configs():
                 if key and isinstance(item, dict) and item.get("url"):
                     config = dict(item)
                     config["source_key"] = key
-                    configs[key] = config
+                    if key not in BLOCKED_SOURCE_KEYS:
+                        configs[key] = config
         except (TypeError, ValueError):
             return {}
     for source in SOURCE_DEFINITIONS:
         env_key = "MAK3DEALS_FEED_URL_" + re.sub(r"[^A-Z0-9]", "_", source["key"].upper())
         url = os.environ.get(env_key, "").strip()
-        if url and source["key"] not in configs:
+        if url and source["key"] not in configs and source["key"] not in BLOCKED_SOURCE_KEYS:
             configs[source["key"]] = {"source_key": source["key"], "store": source["store"], "url": url}
     return configs
+
+
+def configured_source_definitions(configs):
+    """Return built-in sources plus explicitly configured merchant feeds.
+
+    The built-in list is intentionally small and contains no fake catalog
+    rows. Authorized merchants can be added through the server-side JSON feed
+    config without a code change; each one still has to pass normalisation and
+    produce real individual products before it becomes visible.
+    """
+    definitions = list(SOURCE_DEFINITIONS)
+    known = {source["key"] for source in definitions}
+    for key, config in configs.items():
+        if key in known or key in BLOCKED_SOURCE_KEYS:
+            continue
+        definitions.append({
+            "key": key,
+            "store": config.get("store") or config.get("merchant") or key,
+            "url": config.get("public_url") or "configured authorized feed",
+        })
+    return definitions
 
 
 def _fetch_feed(config, timeout=90):
@@ -370,9 +397,19 @@ def refresh_sources(connection, check_urls=True, dry_run=False):
     ensure_feed_schema(connection)
     started_at = utc_now()
     configs = load_feed_configs()
+    sources = configured_source_definitions(configs)
+    for source in sources:
+        connection.execute(
+            """INSERT INTO feed_sources (source_key, store, url, mode, enabled, message)
+               VALUES (?, ?, ?, 'product-feed', 1, ?)
+               ON CONFLICT(source_key) DO UPDATE SET
+                 store=excluded.store, mode=excluded.mode, enabled=excluded.enabled""",
+            (source["key"], source["store"], source.get("url", "configured authorized feed"),
+             "Awaiting an authorized product feed refresh."),
+        )
     source_results = []
     imported_total = retired_total = errors = 0
-    for source in SOURCE_DEFINITIONS:
+    for source in sources:
         config = configs.get(source["key"])
         if not config:
             result = {
