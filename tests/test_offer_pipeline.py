@@ -94,6 +94,18 @@ class ProductFeedTests(unittest.TestCase):
         self.assertEqual(product["regular_price"], "$100.00")
         self.assertEqual(product["discount_percent"], 25.0)
 
+    def test_awin_title_drops_embedded_price_annotation(self):
+        product, reason = offer_pipeline.normalize_awin_product(
+            {"id": "google-2", "title": "Travel set ($180)", "price": "175.00 USD",
+             "link": "https://shop.example/travel", "image_link": "https://img.example/travel.jpg",
+             "availability": "in_stock"},
+            {"source_key": "upper", "store": "UPPER Brand"},
+            "2026-09-29T00:00:00Z",
+        )
+        self.assertIsNone(reason)
+        self.assertEqual(product["title"], "Travel set")
+        self.assertEqual(product["sale_price"], "$175.00")
+
     def test_awin_catalog_without_sale_price_is_shop_product(self):
         product, reason = offer_pipeline.normalize_awin_product(
             {"id": "catalog-1", "title": "UPPER catalog bag", "price": "100.00 USD",

@@ -210,11 +210,18 @@ def _slug(value):
     return value[:160]
 
 
+def _clean_title(value):
+    """Remove stale price annotations that some merchant titles include."""
+    cleaned = re.sub(r"\s+", " ", str(value or "")).strip()
+    cleaned = re.sub(r"\s*\(\s*\$[\d,]+(?:\.\d{1,2})?\s*\)\s*$", "", cleaned).strip()
+    return cleaned
+
+
 def normalize_product(row, config, checked_at=None):
     if not isinstance(row, dict):
         return None, "row is not an object"
     checked_at = checked_at or utc_now()
-    title = _first(row, "title", "product_name", "name")
+    title = _clean_title(_first(row, "title", "product_name", "name"))
     product_url = _first(row, "product_url", "merchant_deep_link", "direct_url", "link", "url")
     image_url = _first(row, "image_url", "image_link", "merchant_image_url", "large_image", "image", "aw_image_url")
     current = _money(_first(row, "sale_price", "current_price", "price", "search_price", "store_price"))
