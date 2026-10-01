@@ -52,3 +52,47 @@
 @media(max-width:1000px){.shopping-ad-channel-02,.product-catalog-hero,.catalog-filters{margin-left:6%;margin-right:6%}.catalog-filters{grid-template-columns:1fr 1fr}.catalog-filters label:first-child{grid-column:1/-1}.catalog-filters button{grid-column:1/-1}}
 @media(max-width:1000px){.retailer-pick-grid{grid-template-columns:1fr 1fr}.admin-status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-source-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.shopping-ad-channel-02{align-items:flex-start;flex-direction:column;margin-top:10px;padding:16px}.shopping-ad-channel-02-cta{width:100%;text-align:center}.product-catalog-hero{padding:28px 6% 24px}.catalog-filters{grid-template-columns:1fr}.catalog-filters label:first-child{grid-column:auto}.catalog-filters button{grid-column:auto}.catalog-pagination{flex-wrap:wrap}.watchlist-item{align-items:flex-start;flex-direction:column}.watchlist-actions{width:100%}.watchlist-actions .deal-btn{flex:1;text-align:center}.retailer-pick-grid{grid-template-columns:1fr}.retailer-pick-top{align-items:flex-start;flex-direction:column}.pick-type{text-align:left}.admin-status-grid,.admin-source-grid{grid-template-columns:1fr}.admin-panel{margin-left:6%;margin-right:6%}}
+
+/* Visual polish: warmer editorial shopping system with lighter hierarchy. */
+.shopping-home{background:#f7f5f0}
+.shopping-hero{max-width:1180px;margin:24px auto 0;padding:34px 5% 30px;min-height:0;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(300px,.92fr);align-items:center;gap:46px;background:#fffdf8;border:1px solid #e6ded2;border-radius:20px;box-shadow:0 12px 30px rgba(58,48,35,.06);color:#1f2b2b}
+.shopping-hero h1{font-size:clamp(2.35rem,4.2vw,3.75rem);margin:8px 0 14px;line-height:1.02;letter-spacing:-.055em}
+.shopping-hero .eyebrow{color:#24776e;letter-spacing:.08em;text-transform:none}
+.shopping-hero .hero-lede{font-size:1rem;line-height:1.55;color:#596563}
+.shopping-hero .hero-note{align-self:stretch;justify-content:center;margin:0;padding:22px;border:1px solid #e5ded3;border-left:1px solid #e5ded3;border-radius:14px;background:#f4f0e8;color:#66716f}
+.shopping-hero .hero-note strong{font-size:1.12rem;color:#1f2b2b}
+.shopping-search{box-shadow:0 8px 18px rgba(42,49,45,.08)}
+.shopping-search input{background:#fff;border:1px solid #dad8cf}
+.category-pill{border-radius:10px;background:#fffdf9;border-color:#dedbd2;color:#4f5e5b}
+.category-pill:hover,.category-pill.active{border-color:#e87524;background:#fff0e4;color:#a65319}
+.shopping-filters{border:1px solid #e5e1d8;border-radius:12px;background:#fffdf9;box-shadow:none}
+.shopping-heading h2{font-size:1.8rem;letter-spacing:-.04em}
+.shopping-heading .eyebrow,.shopping-section .eyebrow,.lower-panel .eyebrow{letter-spacing:.08em;text-transform:none}
+.section-count{border-radius:8px;background:#eef4f1;color:#24776e;font-weight:700}
+.shopping-card{border:1px solid #e5e1d8;border-radius:12px;background:#fffdf9;box-shadow:0 8px 22px rgba(58,48,35,.045)}
+.shopping-card .product-media{border-radius:12px 12px 0 0;background:#faf9f5}
+.shopping-card h3{font-weight:700;line-height:1.3}
+.shopping-card .price-row strong{font-weight:800}
+.shopping-card .deal-btn{border-radius:9px}
+.shopping-empty{border-color:#d4d8d1;border-radius:12px;background:#fffdf9}
+.shopping-ad-channel-02{border-color:#e3ddd2;border-radius:12px;background:#fffdf9;box-shadow:0 8px 20px rgba(58,48,35,.04)}
+.shopping-ad-channel-label{letter-spacing:.08em;text-transform:none;color:#24776e}
+.shopping-ad-channel-02-copy strong{font-size:1.15rem;color:#1f2b2b}
+.shopping-ad-channel-02-cta{border-radius:9px;background:#e87524}
+.lower-panel{border-color:#e5e1d8;border-radius:14px;background:#fffdf9}
+.daily-promo{background:#eef6f1;border-color:#d5e6dd}
+.fixture-badge{display:inline-flex;width:max-content;margin:0 0 7px;padding:4px 7px;border-radius:6px;background:#f6ead8;color:#8b5a28;font-size:.66rem;font-weight:700;letter-spacing:.02em}
+@media(max-width:900px){.shopping-hero{margin:16px 6% 0;padding:30px 6% 26px;grid-template-columns:1fr;gap:24px}.shopping-hero .hero-note{min-height:150px}}
+@media(max-width:700px){.shopping-hero{margin-top:10px;border-radius:16px}.shopping-hero h1{font-size:clamp(2.25rem,11vw,3.35rem)}.shopping-hero .hero-note{padding:18px}.shopping-card{box-shadow:0 5px 14px rgba(58,48,35,.04)}}
+
+/* Keep the ad inventory honest without letting its player dictate the page's visual language. */
+.shopping-home .eyebrow,.shopping-home .shopping-ad-channel-label{ text-transform:lowercase; letter-spacing:.06em }
+.shopping-hero .site-ad-tv{background:#edf4f1!important;border:1px solid #d0dfda!important;color:#1f2b2b!important;box-shadow:none!important;font-family:inherit!important;letter-spacing:.04em!important}
+.shopping-hero .site-ad-tv-top,.shopping-hero .site-ad-tv-foot{color:#24776e!important}
+.shopping-hero .site-ad-live{color:#e87524!important}
+.shopping-hero .site-ad-tv-screen{background:#fffdf9!important;border:1px solid #d8e5df!important}
+.shopping-hero .site-ad-tv-screen strong{color:#1f2b2b!important}
+.shopping-hero .site-ad-tv-screen em{color:#e87524!important}
+.shopping-hero .ad-player-detail{color:#66716f!important}
+.shopping-hero .ad-player-cta,.shopping-hero .ad-player-disclosure{color:#24776e!important;border-color:#b8d2c9!important}
+.shopping-hero .ad-player-cta:hover,.shopping-hero .ad-player-disclosure:hover{color:#1f2b2b!important;background:#eef6f1!important}

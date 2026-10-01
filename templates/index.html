@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Mak3Deals · Shop verified savings{% endblock %}
 {% block meta %}<meta name="description" content="Search individual products, verified deals, and current coupon offers on Mak3Deals.">{% endblock %}
-{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='home-shopping.css', v='shopping-first-v1') }}">{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='home-shopping.css', v='shopping-first-v2') }}">{% endblock %}
 {% block content %}
 <section class="shopping-home">
   <section class="hero shopping-hero"><div class="shopping-hero-copy"><p class="eyebrow">MAK3DEALS SHOPPING DESK</p><h1>Find something good.<br><em>Save when it counts.</em></h1><p class="hero-lede">Search real products, compare current prices, and open the retailer when you are ready to shop.</p><form class="search shopping-search" action="/" method="get" role="search"><label class="sr-only" for="home-search">Search products and stores</label><input id="home-search" name="q" value="{{ search }}" placeholder="Search products, stores, or categories…" autocomplete="off"><button type="submit">Search deals</button></form><div class="hero-proof"><span>✓ Individual products</span><span>✓ Direct retailer links</span><span>✓ Checked timestamps</span></div></div><div class="hero-note"><strong>Shopping ad placement.</strong><span>Sponsored placements stay clearly labeled.</span><span>Confirm final price and availability at checkout.</span></div></section>
