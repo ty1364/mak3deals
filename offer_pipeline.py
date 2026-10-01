@@ -21,6 +21,7 @@ from urllib.request import Request, urlopen
 
 SOURCE_DEFINITIONS = [
     {"key": "upper", "store": "UPPER Brand", "url": "https://upperbags.com/"},
+    {"key": "yeloly", "store": "Yeloly", "url": "https://www.yeloly.com/"},
     {"key": "walmart", "store": "Walmart", "url": "https://www.walmart.com/shop/deals/shop-advertised-deals"},
     {"key": "best-buy", "store": "Best Buy", "url": "https://www.bestbuy.com/top-deals-b"},
     {"key": "amazon", "store": "Amazon", "url": "https://www.amazon.com/gp/goldbox"},

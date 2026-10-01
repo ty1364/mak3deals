@@ -37,6 +37,7 @@ counts as connected only after its real feed URL is supplied and an ingestion
 run reports imported product records.
 
 The per-source fallback names include `MAK3DEALS_FEED_URL_UPPER`,
+`MAK3DEALS_FEED_URL_YELOLY`,
 `MAK3DEALS_FEED_URL_WALMART`,
 `MAK3DEALS_FEED_URL_BEST_BUY`, `MAK3DEALS_FEED_URL_AMAZON`,
 `MAK3DEALS_FEED_URL_TARGET`, and `MAK3DEALS_FEED_URL_HOME_DEPOT`.
