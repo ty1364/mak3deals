@@ -96,3 +96,19 @@
 .shopping-hero .ad-player-detail{color:#66716f!important}
 .shopping-hero .ad-player-cta,.shopping-hero .ad-player-disclosure{color:#24776e!important;border-color:#b8d2c9!important}
 .shopping-hero .ad-player-cta:hover,.shopping-hero .ad-player-disclosure:hover{color:#1f2b2b!important;background:#eef6f1!important}
+
+/* Distinct editorial treatment: less software-dashboard, more real shopping desk. */
+.shopping-home{background:#f3f0e9}
+.shopping-hero{margin-top:18px;padding:46px 5% 42px;border-radius:12px;border-color:#ddd8ce;box-shadow:0 18px 42px rgba(55,48,39,.08)}
+.shopping-hero h1{font-family:"Space Grotesk","Trebuchet MS",sans-serif;font-size:clamp(2.55rem,4.6vw,4.25rem);font-weight:600;letter-spacing:-.065em;line-height:.98}
+.shopping-hero h1 em{font-weight:600}
+.shopping-hero .hero-lede{max-width:510px;font-family:"DM Sans","Segoe UI",sans-serif;font-size:1.05rem;line-height:1.6}
+.shopping-search{margin-top:26px}.shopping-search input{font-family:"DM Sans","Segoe UI",sans-serif;font-size:.98rem}.shopping-search button{font-family:"DM Sans","Segoe UI",sans-serif;font-size:.9rem}
+.shopping-hero .hero-proof{gap:14px 22px;font-family:"DM Sans","Segoe UI",sans-serif;font-size:.78rem;font-weight:600}
+.category-bar{padding-top:38px}.category-list{gap:7px}.category-pill{font-family:"DM Sans","Segoe UI",sans-serif;font-size:.82rem;font-weight:600;border-radius:7px;padding:8px 11px}
+.shopping-filters{padding:18px 20px}.shopping-filters label span{font-family:"DM Sans","Segoe UI",sans-serif;font-size:.75rem;font-weight:600}.shopping-filters select,.shopping-filters button{font-family:"DM Sans","Segoe UI",sans-serif}
+.shopping-section{padding-top:38px}.shopping-heading h2{font-size:2rem;font-weight:600}.shopping-heading p:not(.eyebrow){font-family:"DM Sans","Segoe UI",sans-serif}
+.shopping-card{border-radius:10px;box-shadow:0 7px 18px rgba(55,48,39,.055)}.shopping-card .product-media{height:178px;border-radius:10px 10px 0 0}.shopping-card .product-card-body{padding:16px}.shopping-card .store{font-size:.74rem;letter-spacing:.01em}.shopping-card h3{font-family:"DM Sans","Segoe UI",sans-serif;font-size:.98rem;line-height:1.32;font-weight:600;letter-spacing:-.015em}.shopping-card .price-row strong{font-family:"Space Grotesk","Trebuchet MS",sans-serif;font-size:1.36rem}.shopping-card .deal-btn{font-family:"DM Sans","Segoe UI",sans-serif;font-weight:700}
+.shopping-ad-channel-02{border-radius:10px;box-shadow:none}.shopping-ad-channel-02-copy strong{font-family:"Space Grotesk","Trebuchet MS",sans-serif;font-weight:600}.shopping-ad-channel-02-cta{font-family:"DM Sans","Segoe UI",sans-serif;font-weight:700}
+.lower-panel{border-radius:10px}.daily-promo h2{font-family:"Space Grotesk","Trebuchet MS",sans-serif;font-weight:600}
+@media(max-width:700px){.site-header-inner{min-height:72px}.site-brand img{height:54px}.shopping-hero{padding:34px 6% 30px}.shopping-hero h1{font-size:clamp(2.4rem,12vw,3.55rem)}.shopping-section{padding-top:30px}}

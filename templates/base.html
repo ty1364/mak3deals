@@ -11,6 +11,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css', v='site-wide-v2') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
   {% block page_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}site-page{% endblock %}">
@@ -37,6 +40,7 @@
     <nav aria-label="Footer navigation"><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/affiliate-disclosure">Affiliate disclosure</a></nav>
   </footer>
   <script src="{{ url_for('static', filename='site-shell.js', v='site-wide-v2') }}" defer></script>
+  <script src="{{ url_for('static', filename='home-polish.js', v='visual-system-v1') }}" defer></script>
   {% block page_scripts %}{% endblock %}
 </body>
 </html>
