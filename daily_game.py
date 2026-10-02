@@ -19,6 +19,7 @@ DAILY_WORDS = [
     "CHART", "CLASS", "CLEAN", "DAILY", "FAVOR", "GUIDE", "HOMES", "INDEX",
     "ISSUE", "KNOWN", "MAJOR", "NOTED", "PICKS", "PROOF", "RANGE", "RANKS",
     "RECAP", "RIGHT", "SKILL", "SOLID", "STATS", "TRADE", "WEEKS", "WORDS",
+    "AISLE", "BULKS", "DELAY", "LOWER", "PENNY", "SAVES", "TOKEN", "TREND",
 ]
 
 DAILY_HINTS = {
@@ -42,6 +43,10 @@ DAILY_HINTS = {
     "PERKS": "Extra benefits attached to a membership or offer.", "PROMO": "A short name for a promotion.",
     "SCORE": "The points you earn in a game or the value of a deal.", "SHELF": "Where a product waits in a store.",
     "TOTAL": "The final amount before or after savings are applied.", "CENTS": "The smaller units that make up a dollar.",
+    "AISLE": "A passage between shelves where shoppers walk.", "BULKS": "Large quantities bought or sold together.",
+    "DELAY": "A wait before an order, sale, or delivery happens.", "LOWER": "What a retailer may do to a price.",
+    "PENNY": "One cent in U.S. currency.", "SAVES": "Reduces what someone has to spend.",
+    "TOKEN": "A small item or unit that can represent value or access.", "TREND": "A pattern in prices, products, or shopping behavior.",
 }
 
 DAILY_CLUES = {
@@ -79,6 +84,10 @@ DAILY_CLUES = {
     "PERKS": "Today's word means extra benefits attached to an offer.", "PROMO": "Today's word is a short name for a promotion.",
     "SCORE": "Today's word means points earned in a game or the value of a deal.", "SHELF": "Today's word is where a product waits in a store.",
     "TOTAL": "Today's word is the final amount after the shopping math is done.", "CENTS": "Today's word means the smaller units that make up a dollar.",
+    "AISLE": "Today's word is the passage between store shelves.", "BULKS": "Today's word means large quantities grouped together.",
+    "DELAY": "Today's word means a wait before something happens.", "LOWER": "Today's word is what a retailer may do to a price.",
+    "PENNY": "Today's word means one cent.", "SAVES": "Today's word means reduces the amount someone must spend.",
+    "TOKEN": "Today's word can represent a small unit of value or access.", "TREND": "Today's word means a pattern in prices, products, or shopping behavior.",
 }
 
 HINT_COSTS = (150, 300)
