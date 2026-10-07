@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Positive savings state · Mak3Deals staging fixture</title>
+  <link rel="stylesheet" href="../popup.css">
+  <style>
+    body { width: min(360px, 100vw); min-width: 0; margin: 0 auto; background: #f6f8fa; }
+    .fixture-banner { padding: 9px 14px; background: #fff1d6; border-bottom: 2px solid #d98a00; color: #744800; font-size: 11px; font-weight: 950; letter-spacing: .07em; text-align: center; }
+    .fixture-context { margin: 0 0 12px; padding: 9px 10px; border-radius: 9px; background: #edf2ff; color: #344a77; font-size: 11px; font-weight: 800; }
+    .fixture-warning { margin: 10px 0 0; color: #8a4d00; font-size: 11px; font-weight: 800; }
+    .fixture-product { display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: center; }
+    .fixture-art { display: grid; place-items: center; width: 76px; height: 76px; border: 1px solid #dfe7eb; border-radius: 11px; background: linear-gradient(145deg, #f9fbfc, #e8eef2); }
+    .fixture-art svg { width: 58px; height: 58px; }
+    .fixture-price { display: flex; align-items: baseline; gap: 8px; margin: 9px 0 0; }
+    .fixture-price strong { color: #157c72; font-size: 22px; }
+    .fixture-price del { color: #748194; font-size: 13px; }
+    .fixture-saving { display: inline-block; margin-top: 5px; padding: 4px 7px; border-radius: 5px; background: #e1f2ee; color: #126b61; font-size: 11px; font-weight: 900; }
+    .fixture-action { display: block; width: 100%; margin-top: 13px; padding: 10px; border: 0; border-radius: 8px; background: #ed7d24; color: #fff; font-weight: 900; }
+    @media (max-width: 340px) {
+      main { padding: 12px; }
+      .coupon, .offer { padding: 11px; }
+      .fixture-product { grid-template-columns: 60px 1fr; gap: 9px; }
+      .fixture-art { width: 60px; height: 60px; }
+      .fixture-art svg { width: 46px; height: 46px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="fixture-banner" role="status">STAGING FIXTURE · SAMPLE DATA ONLY</div>
+  <header class="brand-bar">
+    <div class="brand-lockup"><span class="brand-mark" aria-hidden="true">M</span><div><strong>Mak3Deals</strong><small>Shopping assistant</small></div></div>
+    <span class="header-dot" aria-hidden="true"></span>
+  </header>
+  <main>
+    <div class="status-row"><span class="status-dot" aria-hidden="true"></span><p>Example savings found</p></div>
+    <section id="results" aria-labelledby="result-title">
+      <h2 id="result-title" class="result-heading">SIMULATED WALMART PAGE · TEST STATE</h2>
+      <article class="offer">
+        <div class="fixture-context">Example store context · not connected to a retailer page</div>
+        <div class="fixture-product">
+          <div class="fixture-art" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 34v-5a19 19 0 0 1 38 0v5" stroke="#344a5e" stroke-width="5" stroke-linecap="round"/>
+              <rect x="9" y="31" width="13" height="23" rx="6" fill="#ed7d24"/>
+              <rect x="42" y="31" width="13" height="23" rx="6" fill="#ed7d24"/>
+              <path d="M22 48c3 5 7 7 12 7" stroke="#344a5e" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <strong>Sample wireless headphones</strong>
+            <div class="fixture-price"><strong>$49.99</strong><del>$79.99</del></div>
+            <span class="fixture-saving">Sample savings: $30 · 38%</span>
+          </div>
+        </div>
+        <p class="muted">Synthetic item and prices used only to preview the positive-savings layout.</p>
+        <button class="fixture-action" type="button" disabled>Example deal action · disabled</button>
+        <p class="fixture-warning">Not a live Walmart offer. No purchase link or real savings data.</p>
+      </article>
+    </section>
+    <a class="site-link" href="https://mak3deals.com/coupons" target="_blank" rel="noopener">Browse Mak3Deals <span aria-hidden="true">↗</span></a>
+  </main>
+</body>
+</html>
