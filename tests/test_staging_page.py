@@ -2,6 +2,7 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from datetime import date, timedelta
 
 import app as app_module
 from offer_pipeline import _upsert_product, ensure_feed_schema, normalize_product
@@ -119,7 +120,43 @@ class StagingPageTests(unittest.TestCase):
         self.assertEqual(body.count('class="hint-card"'), 6)
         self.assertIn("Reveal answer", body)
         self.assertIn("Today's contest answers stay separate", body)
-        self.assertIn('class="site-ad-tv"', body)
+        self.assertNotIn('class="site-ad-tv"', body)
+        self.assertIn('<meta name="robots" content="noindex,follow">', body)
+
+    def test_guides_have_useful_content_and_legacy_urls_resolve(self):
+        listing = self.client.get("/guides")
+        body = listing.get_data(as_text=True)
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(len(app_module.GUIDES), 4)
+        self.assertIn("Compare the price you will actually pay", body)
+        self.assertNotIn("Updated September 2026", body)
+
+        detail = self.client.get("/guides/compare-the-final-price")
+        detail_body = detail.get_data(as_text=True)
+        self.assertEqual(detail.status_code, 200)
+        self.assertIn('id="price-check-form"', detail_body)
+        self.assertIn("price-check.js", detail_body)
+        self.assertIn("estimate excludes tax", detail_body)
+
+        legacy = self.client.get("/guides/spot-a-real-deal", follow_redirects=False)
+        self.assertEqual(legacy.status_code, 301)
+        self.assertEqual(legacy.headers["Location"], "/guides/compare-the-final-price")
+
+    def test_empty_catalog_pages_are_not_promoted_as_search_landing_pages(self):
+        coupon_response = self.client.get("/coupons")
+        picks_response = self.client.get("/retailer-picks")
+        coupons = coupon_response.get_data(as_text=True)
+        picks = picks_response.get_data(as_text=True)
+        products = self.client.get("/products").get_data(as_text=True)
+        self.assertIn('<meta name="robots" content="noindex,follow">', coupons)
+        self.assertEqual(picks_response.headers.get("X-Robots-Tag"), "noindex, follow")
+        self.assertNotIn('<meta name="robots" content="noindex,follow">', products)
+
+        sitemap = self.client.get("/sitemap.xml").get_data(as_text=True)
+        self.assertIn("https://mak3deals.com/products", sitemap)
+        self.assertNotIn("https://mak3deals.com/coupons", sitemap)
+        self.assertNotIn("https://mak3deals.com/retailer-picks", sitemap)
+        self.assertNotIn("https://mak3deals.com/daily-hints", sitemap)
 
     def test_feed_diagnostics_are_not_public(self):
         external = {"REMOTE_ADDR": "203.0.113.1", "HTTP_HOST": "mak3deals.com"}
@@ -190,10 +227,10 @@ class StagingPageTests(unittest.TestCase):
             "summary": "A concise original preview of the current weekly ad and digital promotions.",
             "source_url": "https://www.fredmeyer.com/savingsoverview/weekly-ad-info",
             "retailer_url": "https://www.fredmeyer.com/",
-            "checked_on": "2026-09-28",
+            "checked_on": date.today().isoformat(),
             "promotion_type": "weekly ad",
             "promotion_terms": "Clip digital coupons where required.",
-            "expires_on": "2026-10-05",
+            "expires_on": (date.today() + timedelta(days=7)).isoformat(),
             "location_restrictions": "Select stores; choose a preferred store.",
             "membership_restrictions": "A free Fred Meyer account may be required for digital coupons.",
             "link_scope": "weekly-ad",

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Shop Products · Mak3Deals{% endblock %}
-{% block meta %}<meta name="description" content="Browse individual products from authorized Mak3Deals merchant feeds.">{% endblock %}
+{% block meta %}<meta name="description" content="Browse individual products from connected merchant catalogs with prices, images, and direct retailer links.">{% if total_count == 0 %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
 {% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='home-shopping.css', v='shopping-first-v1') }}">{% endblock %}
 {% block content %}
 <section class="product-catalog shopping-home">

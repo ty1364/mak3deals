@@ -9,7 +9,7 @@ from flask import Flask, abort, g, jsonify, redirect, render_template, request, 
 from database import DB_INTEGRITY_ERRORS, connect_database, ensure_postgres_schema
 from werkzeug.security import check_password_hash, generate_password_hash
 from daily_game import ensure_daily_puzzle_schema, daily_session, daily_hint, editorial_puzzle_cards, evaluate_guess, puzzle_date
-from guides import GUIDE_BY_SLUG, GUIDES
+from guides import GUIDE_BY_SLUG, GUIDE_REDIRECTS, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
 from retailer_deals import (
     ensure_retailer_deal_schema,
@@ -71,7 +71,7 @@ def add_site_ad_tv(response):
     # Submit is a utility form and should stay distraction-free. Game routes
     # have their own dedicated placements. Normal savings pages get one
     # clearly labeled channel, and the homepage puts it in the hero column.
-    excluded_paths = {"/submit", "/daily", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status", "/retailer-deal-admin", "/login", "/signup", "/account"}
+    excluded_paths = {"/submit", "/daily", "/daily-hints", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status", "/retailer-deal-admin", "/login", "/signup", "/account"}
     if request.path not in excluded_paths and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
@@ -518,6 +518,9 @@ def guides():
 def guide_detail(slug):
     guide = GUIDE_BY_SLUG.get(slug)
     if not guide:
+        destination = GUIDE_REDIRECTS.get(slug)
+        if destination:
+            return redirect(url_for("guide_detail", slug=destination), code=301)
         abort(404)
     return render_template("guide.html", guide=guide)
 
@@ -564,7 +567,24 @@ def robots():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons", "https://mak3deals.com/retailer-picks", "https://mak3deals.com/daily-hints"]
+    today = date.today().isoformat()
+    urls = ["https://mak3deals.com/"]
+    active_products = db().execute(
+        "SELECT COUNT(*) FROM deals WHERE verified=1 AND deal_kind='product' "
+        "AND status='active' AND (expires_on IS NULL OR expires_on >= ?)",
+        (today,),
+    ).fetchone()[0]
+    active_coupons = db().execute(
+        "SELECT COUNT(*) FROM deals WHERE verified=1 AND deal_kind='coupon' "
+        "AND status='active' AND (expires_on IS NULL OR expires_on >= ?)",
+        (today,),
+    ).fetchone()[0]
+    if active_products:
+        urls.append("https://mak3deals.com/products")
+    if active_coupons:
+        urls.append("https://mak3deals.com/coupons")
+    if published_picks(db()):
+        urls.append("https://mak3deals.com/retailer-picks")
     urls.extend(f"https://mak3deals.com/guides/{guide['slug']}" for guide in GUIDES)
     body = "".join(f"<url><loc>{url}</loc></url>" for url in urls)
     return f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>', 200, {"Content-Type": "application/xml; charset=utf-8"}
@@ -590,7 +610,11 @@ def coupons():
 
 @app.route("/retailer-picks")
 def retailer_picks_page():
-    return render_template("retailer-picks.html", picks=published_picks(db()))
+    picks = published_picks(db())
+    response = app.make_response(render_template("retailer-picks.html", picks=picks))
+    if not picks:
+        response.headers["X-Robots-Tag"] = "noindex, follow"
+    return response
 
 @app.route("/api/coupons")
 def coupon_api():
