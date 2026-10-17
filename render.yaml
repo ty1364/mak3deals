@@ -23,6 +23,8 @@ services:
         value: "1"
       - key: MAK3DEALS_DEPLOY_ENV
         value: production
+      - key: MAK3DEALS_ACCOUNTS_ENABLED
+        value: "0"
 
 databases:
   - name: mak3deals-db

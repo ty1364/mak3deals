@@ -222,6 +222,23 @@ AUTH_SESSION_COOKIE = "mak3deals_session"
 AUTH_SESSION_DAYS = 30
 
 
+def accounts_enabled():
+    """Keep unfinished account flows off production until email verification is ready."""
+    configured = os.environ.get("MAK3DEALS_ACCOUNTS_ENABLED")
+    if configured is not None:
+        return configured.strip() == "1"
+    return os.environ.get("RENDER") != "true"
+
+
+@app.before_request
+def gate_account_routes_until_enabled():
+    if not accounts_enabled() and (
+        request.path in {"/login", "/signup", "/account", "/logout"}
+        or request.path.startswith("/verify-email/")
+    ):
+        abort(404)
+
+
 def _now_utc():
     return datetime.now(timezone.utc)
 
@@ -318,7 +335,11 @@ def protect_auth_forms():
 
 @app.context_processor
 def inject_auth_context():
-    return {"current_user": getattr(g, "current_user", None), "csrf_token": csrf_token}
+    return {
+        "current_user": getattr(g, "current_user", None),
+        "accounts_enabled": accounts_enabled(),
+        "csrf_token": csrf_token,
+    }
 
 SORT_OPTIONS = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
 SORT_ORDER = {
