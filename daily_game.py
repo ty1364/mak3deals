@@ -58,6 +58,7 @@ DAILY_WORDS = [
     "SLEDS", "SKATE", "CIDER", "FEAST", "ROAST", "GRAVY", "SPUDS", "ROLLS",
     "CRUST", "CLOVE", "CUMIN", "THYME", "MAPLE", "PECAN", "DATES", "PLUMS",
     "RAMEN", "BROTH", "CHILI", "CURRY", "BASIL", "DILLS", "GLAZE", "ICING", "FUDGE", "CRISP", "CRUMB", "TARTS", "KNEAD", "SLICE", "PEELS", "BASTE", "BOILS", "FRIES", "SAUTE", "CHURN", "BROIL", "STEAM", "ZESTY", "SALTY",
+    "CROWN", "PEARL", "DENIM", "FLASK", "PILOT", "WINGS", "BEACH", "OCEAN", "RIVER", "CABIN", "SLEEP",
 ]
 
 DAILY_HINTS = {
@@ -347,6 +348,17 @@ DAILY_HINTS = {
     "STEAM": "Hot water vapor used to cook vegetables.",
     "ZESTY": "Pleasantly sharp or tangy in flavor.",
     "SALTY": "Tasting strongly of salt.",
+    "CROWN": "A decorative headpiece worn by a king or queen.",
+    "PEARL": "A round gem formed inside certain mollusks.",
+    "DENIM": "A sturdy cotton fabric commonly used for jeans.",
+    "FLASK": "A small container for carrying liquids.",
+    "PILOT": "A person trained to operate an aircraft.",
+    "WINGS": "Paired structures that generate lift for an aircraft.",
+    "BEACH": "A sandy or pebbly shore beside water.",
+    "OCEAN": "A vast body of salt water.",
+    "RIVER": "A natural stream of flowing water.",
+    "CABIN": "A small dwelling or enclosed passenger space.",
+    "SLEEP": "The natural state of rest at night.",
 }
 
 DAILY_CLUES = {
@@ -650,6 +662,17 @@ DAILY_CLUES = {
     "STEAM": "Today's answer is the vapor rising from boiling water.",
     "ZESTY": "Today's answer describes a lively citrus flavor.",
     "SALTY": "Today's answer describes food with too much sodium seasoning.",
+    "CROWN": "Today's answer is a royal headpiece often sold as costume jewelry.",
+    "PEARL": "Today's answer is a lustrous bead used in necklaces.",
+    "DENIM": "Today's answer is the fabric most associated with blue jeans.",
+    "FLASK": "Today's answer is a portable bottle often used for drinks.",
+    "PILOT": "Today's answer is the person who flies an airplane.",
+    "WINGS": "Today's answer names the lifting surfaces of a plane.",
+    "BEACH": "Today's answer is a shoreline where people spread towels.",
+    "OCEAN": "Today's answer is a huge expanse of seawater.",
+    "RIVER": "Today's answer is a waterway flowing toward a lake or sea.",
+    "CABIN": "Today's answer is a small woodland shelter or an airplane interior.",
+    "SLEEP": "Today's answer is the nightly rest you get on a mattress.",
 }
 
 HINT_COSTS = (150, 300)
