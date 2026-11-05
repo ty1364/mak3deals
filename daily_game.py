@@ -59,6 +59,7 @@ DAILY_WORDS = [
     "CRUST", "CLOVE", "CUMIN", "THYME", "MAPLE", "PECAN", "DATES", "PLUMS",
     "RAMEN", "BROTH", "CHILI", "CURRY", "BASIL", "DILLS", "GLAZE", "ICING", "FUDGE", "CRISP", "CRUMB", "TARTS", "KNEAD", "SLICE", "PEELS", "BASTE", "BOILS", "FRIES", "SAUTE", "CHURN", "BROIL", "STEAM", "ZESTY", "SALTY",
     "CROWN", "PEARL", "DENIM", "FLASK", "PILOT", "WINGS", "BEACH", "OCEAN", "RIVER", "CABIN", "SLEEP",
+    "FERRY", "TRAIN", "TRUCK", "PLANE", "BIKES", "WALKS", "PARKS", "LAKES", "HILLS", "TREES", "CLOUD", "STORM",
 ]
 
 DAILY_HINTS = {
@@ -359,6 +360,18 @@ DAILY_HINTS = {
     "RIVER": "A natural stream of flowing water.",
     "CABIN": "A small dwelling or enclosed passenger space.",
     "SLEEP": "The natural state of rest at night.",
+    "FERRY": "A boat that carries people or vehicles across water.",
+    "TRAIN": "A connected series of railway cars.",
+    "TRUCK": "A road vehicle designed to haul goods.",
+    "PLANE": "An aircraft with wings and an engine.",
+    "BIKES": "Two-wheeled pedal vehicles, in the plural.",
+    "WALKS": "Trips made on foot, in the plural.",
+    "PARKS": "Public green spaces for recreation.",
+    "LAKES": "Inland bodies of standing water.",
+    "HILLS": "Raised areas of land smaller than mountains.",
+    "TREES": "Tall plants with woody trunks.",
+    "CLOUD": "A visible mass of water droplets in the sky.",
+    "STORM": "Severe weather with wind, rain or snow.",
 }
 
 DAILY_CLUES = {
@@ -673,6 +686,18 @@ DAILY_CLUES = {
     "RIVER": "Today's answer is a waterway flowing toward a lake or sea.",
     "CABIN": "Today's answer is a small woodland shelter or an airplane interior.",
     "SLEEP": "Today's answer is the nightly rest you get on a mattress.",
+    "FERRY": "Today's word describes a vessel used for regular crossings between shores.",
+    "TRAIN": "Today's word describes rail transport made of linked cars.",
+    "TRUCK": "Today's word describes a large vehicle used to transport cargo.",
+    "PLANE": "Today's word describes a flying vehicle that carries passengers or freight.",
+    "BIKES": "Today's word describes cycles used for commuting or exercise.",
+    "WALKS": "Today's word describes short journeys taken without a vehicle.",
+    "PARKS": "Today's word describes outdoor places with paths and lawns.",
+    "LAKES": "Today's word describes large freshwater areas surrounded by land.",
+    "HILLS": "Today's word describes sloping landforms that can make hiking harder.",
+    "TREES": "Today's word describes large plants that often provide shade.",
+    "CLOUD": "Today's word describes a floating-looking formation overhead.",
+    "STORM": "Today's word describes a period of rough weather.",
 }
 
 HINT_COSTS = (150, 300)
