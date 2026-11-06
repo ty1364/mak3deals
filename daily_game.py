@@ -60,6 +60,7 @@ DAILY_WORDS = [
     "RAMEN", "BROTH", "CHILI", "CURRY", "BASIL", "DILLS", "GLAZE", "ICING", "FUDGE", "CRISP", "CRUMB", "TARTS", "KNEAD", "SLICE", "PEELS", "BASTE", "BOILS", "FRIES", "SAUTE", "CHURN", "BROIL", "STEAM", "ZESTY", "SALTY",
     "CROWN", "PEARL", "DENIM", "FLASK", "PILOT", "WINGS", "BEACH", "OCEAN", "RIVER", "CABIN", "SLEEP",
     "FERRY", "TRAIN", "TRUCK", "PLANE", "BIKES", "WALKS", "PARKS", "LAKES", "HILLS", "TREES", "CLOUD", "STORM",
+    "SHEEN", "PLIER", "LATCH", "DOWEL", "CLOAK", "MITTS", "MOPED", "BOLTS", "NODES", "FIBER", "VAULT", "PATCH",
 ]
 
 DAILY_HINTS = {
@@ -372,6 +373,18 @@ DAILY_HINTS = {
     "TREES": "Tall plants with woody trunks.",
     "CLOUD": "A visible mass of water droplets in the sky.",
     "STORM": "Severe weather with wind, rain or snow.",
+    "SHEEN": "A soft shine on polished fabric or metal.",
+    "PLIER": "A gripping hand tool with two hinged handles.",
+    "LATCH": "A small fastening device that keeps a door closed.",
+    "DOWEL": "A cylindrical wooden pin used to join furniture.",
+    "CLOAK": "A loose outer garment worn over clothing.",
+    "MITTS": "Protective hand coverings used for hot cookware.",
+    "MOPED": "A small motorized two-wheeled vehicle.",
+    "BOLTS": "Threaded metal fasteners often used with nuts.",
+    "NODES": "Connection points in a network or diagram.",
+    "FIBER": "A thin strand used in textiles or communications.",
+    "VAULT": "A secure locked room for valuables.",
+    "PATCH": "A small piece used to repair a hole.",
 }
 
 DAILY_CLUES = {
@@ -698,6 +711,18 @@ DAILY_CLUES = {
     "TREES": "Today's word describes large plants that often provide shade.",
     "CLOUD": "Today's word describes a floating-looking formation overhead.",
     "STORM": "Today's word describes a period of rough weather.",
+    "SHEEN": "Today's word describes a gentle shine on a product's surface.",
+    "PLIER": "Today's word is a hand tool used to grip or bend small objects.",
+    "LATCH": "Today's word is a simple fastener that holds a cabinet or gate shut.",
+    "DOWEL": "Today's word is a round wooden peg used in furniture assembly.",
+    "CLOAK": "Today's word is a sleeveless outer covering worn over other clothes.",
+    "MITTS": "Today's word is plural protective coverings for handling hot pans.",
+    "MOPED": "Today's word is a compact motorized two-wheeler.",
+    "BOLTS": "Today's word is plural threaded fasteners used in assembly.",
+    "NODES": "Today's word is plural points where connections meet.",
+    "FIBER": "Today's word is a slender strand found in fabric or optical cables.",
+    "VAULT": "Today's word is a protected storage room for valuable items.",
+    "PATCH": "Today's word is a piece added to mend damaged fabric.",
 }
 
 HINT_COSTS = (150, 300)
