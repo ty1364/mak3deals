@@ -61,6 +61,7 @@ DAILY_WORDS = [
     "CROWN", "PEARL", "DENIM", "FLASK", "PILOT", "WINGS", "BEACH", "OCEAN", "RIVER", "CABIN", "SLEEP",
     "FERRY", "TRAIN", "TRUCK", "PLANE", "BIKES", "WALKS", "PARKS", "LAKES", "HILLS", "TREES", "CLOUD", "STORM",
     "SHEEN", "PLIER", "LATCH", "DOWEL", "CLOAK", "MITTS", "MOPED", "BOLTS", "NODES", "FIBER", "VAULT", "PATCH",
+    "EMBER", "FLAME", "HEART", "SMILE", "LAUGH", "DREAM", "NIGHT", "STARS", "MOONS", "COMET", "ORBIT", "SPACE",
 ]
 
 DAILY_HINTS = {
@@ -385,6 +386,18 @@ DAILY_HINTS = {
     "FIBER": "A thin strand used in textiles or communications.",
     "VAULT": "A secure locked room for valuables.",
     "PATCH": "A small piece used to repair a hole.",
+    "EMBER": "It glows in a fireplace.",
+    "FLAME": "It dances above a candle wick.",
+    "HEART": "It beats in your chest.",
+    "SMILE": "Your mouth curves upward.",
+    "LAUGH": "You might do this at a funny joke.",
+    "DREAM": "It can happen while you sleep.",
+    "NIGHT": "Stars are often visible during it.",
+    "STARS": "You can see them in a clear night sky.",
+    "MOONS": "Earth has one; Jupiter has many.",
+    "COMET": "It may show a bright tail in the sky.",
+    "ORBIT": "Planets follow one around the Sun.",
+    "SPACE": "Astronauts travel into it.",
 }
 
 DAILY_CLUES = {
@@ -723,6 +736,18 @@ DAILY_CLUES = {
     "FIBER": "Today's word is a slender strand found in fabric or optical cables.",
     "VAULT": "Today's word is a protected storage room for valuable items.",
     "PATCH": "Today's word is a piece added to mend damaged fabric.",
+    "EMBER": "Today's word is a small glowing remnant of a fire.",
+    "FLAME": "Today's word is the bright burning shape above a candle.",
+    "HEART": "Today's word is the organ that keeps blood moving.",
+    "SMILE": "Today's word is the expression you make when something delights you.",
+    "LAUGH": "Today's word is what you do when a joke really lands.",
+    "DREAM": "Today's word is an imagined experience during sleep.",
+    "NIGHT": "Today's word is the time between evening and morning.",
+    "STARS": "Today's word describes distant suns seen as tiny lights.",
+    "MOONS": "Today's word is the plural of a natural planetary satellite.",
+    "COMET": "Today's word is an icy space traveler with a possible tail.",
+    "ORBIT": "Today's word is the path a satellite follows around a planet.",
+    "SPACE": "Today's word is the vast expanse beyond our atmosphere.",
 }
 
 HINT_COSTS = (150, 300)
