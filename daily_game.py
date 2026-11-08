@@ -62,6 +62,7 @@ DAILY_WORDS = [
     "FERRY", "TRAIN", "TRUCK", "PLANE", "BIKES", "WALKS", "PARKS", "LAKES", "HILLS", "TREES", "CLOUD", "STORM",
     "SHEEN", "PLIER", "LATCH", "DOWEL", "CLOAK", "MITTS", "MOPED", "BOLTS", "NODES", "FIBER", "VAULT", "PATCH",
     "EMBER", "FLAME", "HEART", "SMILE", "LAUGH", "DREAM", "NIGHT", "STARS", "MOONS", "COMET", "ORBIT", "SPACE",
+    "ACORN", "CEDAR", "BIRCH", "FERNS", "MOSSY", "STONE", "CREEK", "RIDGE", "FIELD", "GROVE", "BLAZE",
 ]
 
 DAILY_HINTS = {
@@ -398,6 +399,17 @@ DAILY_HINTS = {
     "COMET": "It may show a bright tail in the sky.",
     "ORBIT": "Planets follow one around the Sun.",
     "SPACE": "Astronauts travel into it.",
+    "ACORN": "A nut produced by an oak tree.",
+    "CEDAR": "An evergreen tree with aromatic wood.",
+    "BIRCH": "A tree often recognized by its pale bark.",
+    "FERNS": "Leafy plants that reproduce using spores.",
+    "MOSSY": "Covered with soft green moss.",
+    "STONE": "A small piece of rock.",
+    "CREEK": "A small flowing stream.",
+    "RIDGE": "A long narrow raised stretch of land.",
+    "FIELD": "An open area of land.",
+    "GROVE": "A small group of trees.",
+    "BLAZE": "A large, bright fire.",
 }
 
 DAILY_CLUES = {
@@ -748,6 +760,17 @@ DAILY_CLUES = {
     "COMET": "Today's word is an icy space traveler with a possible tail.",
     "ORBIT": "Today's word is the path a satellite follows around a planet.",
     "SPACE": "Today's word is the vast expanse beyond our atmosphere.",
+    "ACORN": "Today's word: A nut produced by an oak tree.",
+    "CEDAR": "Today's word: An evergreen tree with aromatic wood.",
+    "BIRCH": "Today's word: A tree often recognized by its pale bark.",
+    "FERNS": "Today's word: Leafy plants that reproduce using spores.",
+    "MOSSY": "Today's word: Covered with soft green moss.",
+    "STONE": "Today's word: A small piece of rock.",
+    "CREEK": "Today's word: A small flowing stream.",
+    "RIDGE": "Today's word: A long narrow raised stretch of land.",
+    "FIELD": "Today's word: An open area of land.",
+    "GROVE": "Today's word: A small group of trees.",
+    "BLAZE": "Today's word: A large, bright fire.",
 }
 
 HINT_COSTS = (150, 300)
