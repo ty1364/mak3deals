@@ -82,7 +82,7 @@ DAILY_WORDS = [
     "BISON",
     "VIPER",
     "GECKO",
-    "FINCH",
+    "FINCH",    "SPARK", "TORCH", "BLADE", "ANVIL", "LATHE", "WELDS", "RIVET", "GAUGE", "BEAMS", "TRUSS", "FORGE", "MILLS",
 ]
 
 DAILY_HINTS = {
@@ -450,6 +450,18 @@ DAILY_HINTS = {
     "VIPER": "A venomous snake.",
     "GECKO": "A small climbing lizard.",
     "FINCH": "A small seed-eating songbird.",
+    "SPARK": "A tiny flash of light from a fire or electrical contact.",
+    "TORCH": "A handheld source of flame or bright light.",
+    "BLADE": "The sharp cutting edge of a knife or tool.",
+    "ANVIL": "A heavy metal block used by a blacksmith.",
+    "LATHE": "A machine that rotates a workpiece for shaping.",
+    "WELDS": "Joins pieces of metal using heat or pressure.",
+    "RIVET": "A permanent metal fastener often used in aircraft.",
+    "GAUGE": "An instrument for checking a dimension or pressure.",
+    "BEAMS": "Long structural members that carry loads.",
+    "TRUSS": "A framework of connected members supporting a structure.",
+    "FORGE": "Shape heated metal by hammering or pressing.",
+    "MILLS": "Machines that remove material with rotating cutters.",
 }
 
 DAILY_CLUES = {
