@@ -83,6 +83,7 @@ DAILY_WORDS = [
     "VIPER",
     "GECKO",
     "FINCH",    "SPARK", "TORCH", "BLADE", "ANVIL", "LATHE", "WELDS", "RIVET", "GAUGE", "BEAMS", "TRUSS", "FORGE", "MILLS",
+    "QUAKE", "FLOOD", "WINDY", "HAILS", "SLEET", "FOGGY", "GUSTS", "TIDES", "DELTA", "DUNES", "REEFS", "GLADE",
 ]
 
 DAILY_HINTS = {
@@ -462,6 +463,18 @@ DAILY_HINTS = {
     "TRUSS": "A framework of connected members supporting a structure.",
     "FORGE": "Shape heated metal by hammering or pressing.",
     "MILLS": "Machines that remove material with rotating cutters.",
+    "QUAKE": "A sudden shaking of the ground.",
+    "FLOOD": "Water overflowing onto normally dry land.",
+    "WINDY": "Weather with strong or frequent moving air.",
+    "HAILS": "Falls as pellets of ice from storm clouds.",
+    "SLEET": "Frozen or partly frozen precipitation.",
+    "FOGGY": "Covered by a low cloud that reduces visibility.",
+    "GUSTS": "Brief bursts of stronger wind.",
+    "TIDES": "Regular rises and falls of ocean water.",
+    "DELTA": "Landform built from sediment at a river mouth.",
+    "DUNES": "Hills of sand shaped by the wind.",
+    "REEFS": "Underwater ridges often built by coral.",
+    "GLADE": "An open grassy area within woodland.",
 }
 
 DAILY_CLUES = {
@@ -843,6 +856,18 @@ DAILY_CLUES = {
     "VIPER": "A snake known for long hinged fangs.",
     "GECKO": "A lizard that can cling to walls and ceilings.",
     "FINCH": "A tiny bird with a stout seed-cracking beak.",
+    "QUAKE": "Today's word describes an earthquake's shaking.",
+    "FLOOD": "Today's word describes an overflow of water onto land.",
+    "WINDY": "Today's word describes a day with plenty of moving air.",
+    "HAILS": "Today's word describes what icy pellets do during a storm.",
+    "SLEET": "Today's word is a wintry mix of icy precipitation.",
+    "FOGGY": "Today's word describes weather with poor visibility from mist.",
+    "GUSTS": "Today's word means sudden short bursts of wind.",
+    "TIDES": "Today's word refers to the sea's periodic rise and fall.",
+    "DELTA": "Today's word is a sediment deposit where a river enters a larger body of water.",
+    "DUNES": "Today's word describes wind-built hills of sand.",
+    "REEFS": "Today's word means underwater ridges that can shelter marine life.",
+    "GLADE": "Today's word is a clearing among trees.",
 }
 
 HINT_COSTS = (150, 300)
