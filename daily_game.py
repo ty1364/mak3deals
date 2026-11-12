@@ -84,6 +84,7 @@ DAILY_WORDS = [
     "GECKO",
     "FINCH",    "SPARK", "TORCH", "BLADE", "ANVIL", "LATHE", "WELDS", "RIVET", "GAUGE", "BEAMS", "TRUSS", "FORGE", "MILLS",
     "QUAKE", "FLOOD", "WINDY", "HAILS", "SLEET", "FOGGY", "GUSTS", "TIDES", "DELTA", "DUNES", "REEFS", "GLADE",
+    "ASTRO", "NEXUS", "PRISM", "LASER", "RADAR", "SONAR", "ROTOR", "SERVO", "OPTIC", "ARRAY", "LOGIC",
 ]
 
 DAILY_HINTS = {
@@ -475,6 +476,17 @@ DAILY_HINTS = {
     "DUNES": "Hills of sand shaped by the wind.",
     "REEFS": "Underwater ridges often built by coral.",
     "GLADE": "An open grassy area within woodland.",
+    "ASTRO": "Related to stars and outer space.",
+    "NEXUS": "A connection or central link.",
+    "PRISM": "A transparent solid that can split light into colors.",
+    "LASER": "A device that produces a narrow, focused beam of light.",
+    "RADAR": "A system that detects objects using radio waves.",
+    "SONAR": "A system that uses sound waves to locate objects.",
+    "ROTOR": "A rotating part of a machine.",
+    "SERVO": "A motor system designed for precise controlled movement.",
+    "OPTIC": "Related to vision or light.",
+    "ARRAY": "An ordered arrangement of items.",
+    "LOGIC": "Rules used for reasoning or computing.",
 }
 
 DAILY_CLUES = {
@@ -868,6 +880,17 @@ DAILY_CLUES = {
     "DUNES": "Today's word describes wind-built hills of sand.",
     "REEFS": "Today's word means underwater ridges that can shelter marine life.",
     "GLADE": "Today's word is a clearing among trees.",
+    "ASTRO": "Today's word is a prefix often used when talking about space.",
+    "NEXUS": "Today's word means a point where things connect.",
+    "PRISM": "Today's word is a shape used in optics to separate colors.",
+    "LASER": "Today's word is a concentrated beam used in scanning and manufacturing.",
+    "RADAR": "Today's word helps aircraft detect weather and other objects.",
+    "SONAR": "Today's word helps find things underwater using echoes.",
+    "ROTOR": "Today's word is the spinning component in a motor or helicopter.",
+    "SERVO": "Today's word is a controlled actuator used in robotics.",
+    "OPTIC": "Today's word describes something associated with seeing.",
+    "ARRAY": "Today's word is a structured collection in programming.",
+    "LOGIC": "Today's word describes the rules behind a program's decisions.",
 }
 
 HINT_COSTS = (150, 300)
