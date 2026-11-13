@@ -85,6 +85,7 @@ DAILY_WORDS = [
     "FINCH",    "SPARK", "TORCH", "BLADE", "ANVIL", "LATHE", "WELDS", "RIVET", "GAUGE", "BEAMS", "TRUSS", "FORGE", "MILLS",
     "QUAKE", "FLOOD", "WINDY", "HAILS", "SLEET", "FOGGY", "GUSTS", "TIDES", "DELTA", "DUNES", "REEFS", "GLADE",
     "ASTRO", "NEXUS", "PRISM", "LASER", "RADAR", "SONAR", "ROTOR", "SERVO", "OPTIC", "ARRAY", "LOGIC",
+    "QUART", "WATTS", "AMPSY", "PUMPS",
 ]
 
 DAILY_HINTS = {
@@ -487,6 +488,10 @@ DAILY_HINTS = {
     "OPTIC": "Related to vision or light.",
     "ARRAY": "An ordered arrangement of items.",
     "LOGIC": "Rules used for reasoning or computing.",
+    "QUART": "A quarter of a gallon is this unit of volume.",
+    "WATTS": "Units used to measure electrical power.",
+    "AMPSY": "A playful term for something related to electrical current.",
+    "PUMPS": "Machines that move fluids.",
 }
 
 DAILY_CLUES = {
@@ -891,6 +896,11 @@ DAILY_CLUES = {
     "OPTIC": "Today's word describes something associated with seeing.",
     "ARRAY": "Today's word is a structured collection in programming.",
     "LOGIC": "Today's word describes the rules behind a program's decisions.",
+    "QUART": "Today's word names a liquid-volume unit equal to two pints.",
+    "WATTS": "Today's word measures how quickly electrical energy is used.",
+    "AMPSY": "Today's word is a playful adjective based on amps.",
+    "PUMPS": "Today's word refers to multiple machines that push water.",
+
 }
 
 HINT_COSTS = (150, 300)
