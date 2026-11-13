@@ -86,6 +86,7 @@ DAILY_WORDS = [
     "QUAKE", "FLOOD", "WINDY", "HAILS", "SLEET", "FOGGY", "GUSTS", "TIDES", "DELTA", "DUNES", "REEFS", "GLADE",
     "ASTRO", "NEXUS", "PRISM", "LASER", "RADAR", "SONAR", "ROTOR", "SERVO", "OPTIC", "ARRAY", "LOGIC",
     "QUART", "WATTS", "AMPSY", "PUMPS",
+    "OHMIC", "DIODE", "RELAY", "FUSES", "SHAFT", "CHUCK", "SOLDER", "TRACE",
 ]
 
 DAILY_HINTS = {
@@ -492,6 +493,14 @@ DAILY_HINTS = {
     "WATTS": "Units used to measure electrical power.",
     "AMPSY": "A playful term for something related to electrical current.",
     "PUMPS": "Machines that move fluids.",
+    "OHMIC": "Relating to electrical resistance measured in ohms.",
+    "DIODE": "An electronic component that lets current pass mainly one way.",
+    "RELAY": "An electrically operated switch.",
+    "FUSES": "Safety components that break a circuit when overloaded.",
+    "SHAFT": "A rotating rod that transmits power.",
+    "CHUCK": "The part of a drill that grips a bit.",
+    "SOLDER": "A metal alloy used to join electrical connections.",
+    "TRACE": "A conductive path on a circuit board.",
 }
 
 DAILY_CLUES = {
@@ -901,6 +910,14 @@ DAILY_CLUES = {
     "AMPSY": "Today's word is a playful adjective based on amps.",
     "PUMPS": "Today's word refers to multiple machines that push water.",
 
+    "OHMIC": "Today's word describes behavior governed by Ohm's law.",
+    "DIODE": "Today's word names a one-way electronic component.",
+    "RELAY": "Today's word is a switch activated by an electrical signal.",
+    "FUSES": "Today's word describes devices that melt to protect circuits.",
+    "SHAFT": "Today's word is a machine rod that carries torque.",
+    "CHUCK": "Today's word grips the cutting bit in a drill.",
+    "SOLDER": "Today's word is melted to connect wires or circuit components.",
+    "TRACE": "Today's word can be a narrow copper pathway on a PCB.",
 }
 
 HINT_COSTS = (150, 300)
