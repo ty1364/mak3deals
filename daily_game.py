@@ -86,7 +86,8 @@ DAILY_WORDS = [
     "QUAKE", "FLOOD", "WINDY", "HAILS", "SLEET", "FOGGY", "GUSTS", "TIDES", "DELTA", "DUNES", "REEFS", "GLADE",
     "ASTRO", "NEXUS", "PRISM", "LASER", "RADAR", "SONAR", "ROTOR", "SERVO", "OPTIC", "ARRAY", "LOGIC",
     "QUART", "WATTS", "AMPSY", "PUMPS",
-    "OHMIC", "DIODE", "RELAY", "FUSES", "SHAFT", "CHUCK", "SOLDER", "TRACE",
+    "OHMIC", "DIODE", "RELAY", "FUSES", "SHAFT", "CHUCK", "TRACE",
+    "TURBO", "CAMEL", "SCOPE", "PROBE", "PHASE", "LOADS", "FLAPS", "YAWNS", "PITCH", "DRAGS", "LIFTS", "STALL",
 ]
 
 DAILY_HINTS = {
@@ -501,6 +502,18 @@ DAILY_HINTS = {
     "CHUCK": "The part of a drill that grips a bit.",
     "SOLDER": "A metal alloy used to join electrical connections.",
     "TRACE": "A conductive path on a circuit board.",
+    "TURBO": "Today's word: A device that boosts engine intake pressure using exhaust energy.",
+    "CAMEL": "Today's word: A desert animal known for its humps.",
+    "SCOPE": "Today's word: An instrument used to inspect a signal or distant object.",
+    "PROBE": "Today's word: A testing tip used to measure a circuit.",
+    "PHASE": "Today's word: A stage in a repeating electrical waveform.",
+    "LOADS": "Today's word: Forces or demands applied to a structure.",
+    "FLAPS": "Today's word: Movable wing surfaces that increase lift during approach.",
+    "YAWNS": "Today's word: Opens the mouth involuntarily when tired.",
+    "PITCH": "Today's word: The nose-up or nose-down rotation of an aircraft.",
+    "DRAGS": "Today's word: Resists motion through air or water.",
+    "LIFTS": "Today's word: Raises an object upward.",
+    "STALL": "Today's word: A loss of lift from excessive wing angle of attack.",
 }
 
 DAILY_CLUES = {
@@ -918,6 +931,18 @@ DAILY_CLUES = {
     "CHUCK": "Today's word grips the cutting bit in a drill.",
     "SOLDER": "Today's word is melted to connect wires or circuit components.",
     "TRACE": "Today's word can be a narrow copper pathway on a PCB.",
+    "TURBO": "A device that boosts engine intake pressure using exhaust energy.",
+    "CAMEL": "A desert animal known for its humps.",
+    "SCOPE": "An instrument used to inspect a signal or distant object.",
+    "PROBE": "A testing tip used to measure a circuit.",
+    "PHASE": "A stage in a repeating electrical waveform.",
+    "LOADS": "Forces or demands applied to a structure.",
+    "FLAPS": "Movable wing surfaces that increase lift during approach.",
+    "YAWNS": "Opens the mouth involuntarily when tired.",
+    "PITCH": "The nose-up or nose-down rotation of an aircraft.",
+    "DRAGS": "Resists motion through air or water.",
+    "LIFTS": "Raises an object upward.",
+    "STALL": "A loss of lift from excessive wing angle of attack.",
 }
 
 HINT_COSTS = (150, 300)
