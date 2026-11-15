@@ -88,6 +88,7 @@ DAILY_WORDS = [
     "QUART", "WATTS", "AMPSY", "PUMPS",
     "OHMIC", "DIODE", "RELAY", "FUSES", "SHAFT", "CHUCK", "TRACE",
     "TURBO", "CAMEL", "SCOPE", "PROBE", "PHASE", "LOADS", "FLAPS", "YAWNS", "PITCH", "DRAGS", "LIFTS", "STALL",
+    "CIRCU", "CRANE", "HOIST", "BRAKE", "AXLES", "TREAD", "PIVOT", "BARGE", "DOCKS", "BUOYS", "CARGO", "WINCH", "GLIDE",
 ]
 
 DAILY_HINTS = {
@@ -514,6 +515,19 @@ DAILY_HINTS = {
     "DRAGS": "Today's word: Resists motion through air or water.",
     "LIFTS": "Today's word: Raises an object upward.",
     "STALL": "Today's word: A loss of lift from excessive wing angle of attack.",
+    "CIRCU": "",
+    "CRANE": "A tall machine that lifts heavy loads at a construction site.",
+    "HOIST": "A device that raises heavy equipment or materials.",
+    "BRAKE": "A mechanism used to slow or stop a moving vehicle.",
+    "AXLES": "Shafts that support wheels and transmit rotation.",
+    "TREAD": "The patterned surface of a tire that contacts the road.",
+    "PIVOT": "A point around which a part rotates.",
+    "BARGE": "A flat-bottomed vessel used to transport cargo.",
+    "DOCKS": "Places where ships tie up to load or unload.",
+    "BUOYS": "Floating markers that guide boats or indicate hazards.",
+    "CARGO": "Goods transported by a truck, ship, or aircraft.",
+    "WINCH": "A drum-and-cable device used to pull a load.",
+    "GLIDE": "To move smoothly through air or across a surface.",
 }
 
 DAILY_CLUES = {
