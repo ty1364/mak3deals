@@ -88,7 +88,7 @@ DAILY_WORDS = [
     "QUART", "WATTS", "AMPSY", "PUMPS",
     "OHMIC", "DIODE", "RELAY", "FUSES", "SHAFT", "CHUCK", "TRACE",
     "TURBO", "CAMEL", "SCOPE", "PROBE", "PHASE", "LOADS", "FLAPS", "YAWNS", "PITCH", "DRAGS", "LIFTS", "STALL",
-    "CIRCU", "CRANE", "HOIST", "BRAKE", "AXLES", "TREAD", "PIVOT", "BARGE", "DOCKS", "BUOYS", "CARGO", "WINCH", "GLIDE",
+    "CRANE", "HOIST", "BRAKE", "AXLES", "TREAD", "PIVOT", "BARGE", "DOCKS", "BUOYS", "CARGO", "WINCH", "GLIDE",
 ]
 
 DAILY_HINTS = {
@@ -515,7 +515,6 @@ DAILY_HINTS = {
     "DRAGS": "Today's word: Resists motion through air or water.",
     "LIFTS": "Today's word: Raises an object upward.",
     "STALL": "Today's word: A loss of lift from excessive wing angle of attack.",
-    "CIRCU": "",
     "CRANE": "A tall machine that lifts heavy loads at a construction site.",
     "HOIST": "A device that raises heavy equipment or materials.",
     "BRAKE": "A mechanism used to slow or stop a moving vehicle.",
