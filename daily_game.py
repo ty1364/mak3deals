@@ -89,6 +89,7 @@ DAILY_WORDS = [
     "OHMIC", "DIODE", "RELAY", "FUSES", "SHAFT", "CHUCK", "TRACE",
     "TURBO", "CAMEL", "SCOPE", "PROBE", "PHASE", "LOADS", "FLAPS", "YAWNS", "PITCH", "DRAGS", "LIFTS", "STALL",
     "CRANE", "HOIST", "BRAKE", "AXLES", "TREAD", "PIVOT", "BARGE", "DOCKS", "BUOYS", "CARGO", "WINCH", "GLIDE",
+    "RIGID", "GIRDS", "SPLIT", "SEAMS", "BRACE", "TENON", "DRAFT", "CALIP", "SLOPE", "PLUMB", "JOIST", "SPANS",
 ]
 
 DAILY_HINTS = {
@@ -527,6 +528,18 @@ DAILY_HINTS = {
     "CARGO": "Goods transported by a truck, ship, or aircraft.",
     "WINCH": "A drum-and-cable device used to pull a load.",
     "GLIDE": "To move smoothly through air or across a surface.",
+    "RIGID": "Not flexible; a quality needed for some structural components.",
+    "GIRDS": "Encircles or braces something to strengthen it.",
+    "SPLIT": "To separate a component into parts.",
+    "SEAMS": "Lines where two pieces of material meet.",
+    "BRACE": "A support that strengthens a structure.",
+    "TENON": "A projecting wood joint that fits into a mortise.",
+    "DRAFT": "An early technical drawing or proposed design.",
+    "CALIP": "A shortened informal reference to a caliper; avoid.",
+    "SLOPE": "The rise or fall of a line relative to its run.",
+    "PLUMB": "Exactly vertical, as checked with a level.",
+    "JOIST": "A horizontal framing member supporting a floor or ceiling.",
+    "SPANS": "Distances bridged between supports.",
 }
 
 DAILY_CLUES = {
