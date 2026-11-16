@@ -89,7 +89,7 @@ DAILY_WORDS = [
     "OHMIC", "DIODE", "RELAY", "FUSES", "SHAFT", "CHUCK", "TRACE",
     "TURBO", "CAMEL", "SCOPE", "PROBE", "PHASE", "LOADS", "FLAPS", "YAWNS", "PITCH", "DRAGS", "LIFTS", "STALL",
     "CRANE", "HOIST", "BRAKE", "AXLES", "TREAD", "PIVOT", "BARGE", "DOCKS", "BUOYS", "CARGO", "WINCH", "GLIDE",
-    "RIGID", "GIRDS", "SPLIT", "SEAMS", "BRACE", "TENON", "DRAFT", "CALIP", "SLOPE", "PLUMB", "JOIST", "SPANS",
+    "RIGID", "GIRDS", "SPLIT", "SEAMS", "BRACE", "TENON", "DRAFT", "BEVEL", "SLOPE", "PLUMB", "JOIST", "SPANS",
 ]
 
 DAILY_HINTS = {
@@ -535,7 +535,7 @@ DAILY_HINTS = {
     "BRACE": "A support that strengthens a structure.",
     "TENON": "A projecting wood joint that fits into a mortise.",
     "DRAFT": "An early technical drawing or proposed design.",
-    "CALIP": "A shortened informal reference to a caliper; avoid.",
+    "BEVEL": "An angled edge rather than a square-cut edge.",
     "SLOPE": "The rise or fall of a line relative to its run.",
     "PLUMB": "Exactly vertical, as checked with a level.",
     "JOIST": "A horizontal framing member supporting a floor or ceiling.",
