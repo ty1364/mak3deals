@@ -90,9 +90,22 @@ DAILY_WORDS = [
     "TURBO", "CAMEL", "SCOPE", "PROBE", "PHASE", "LOADS", "FLAPS", "YAWNS", "PITCH", "DRAGS", "LIFTS", "STALL",
     "CRANE", "HOIST", "BRAKE", "AXLES", "TREAD", "PIVOT", "BARGE", "DOCKS", "BUOYS", "CARGO", "WINCH", "GLIDE",
     "RIGID", "GIRDS", "SPLIT", "SEAMS", "BRACE", "TENON", "DRAFT", "BEVEL", "SLOPE", "PLUMB", "JOIST", "SPANS",
+    "TRIAD", "TAPER", "ALIGN", "WAFER", "REBAR", "MASON", "DOVES", "FLINT", "QUILL", "VAPOR", "FJORD", "BLOBS",
 ]
 
 DAILY_HINTS = {
+    "TRIAD": "A group of three related things.",
+    "TAPER": "A gradual reduction in thickness or width.",
+    "ALIGN": "Position parts in a straight line or correct relationship.",
+    "WAFER": "A thin slice or disk, including one used to make microchips.",
+    "REBAR": "Steel bars used to reinforce concrete.",
+    "MASON": "A craftsperson who builds with stone or brick.",
+    "DOVES": "Plural birds often associated with peace.",
+    "FLINT": "A hard stone that can produce sparks.",
+    "QUILL": "A feather shaft once used as a writing pen.",
+    "VAPOR": "A substance in gaseous form.",
+    "FJORD": "A narrow sea inlet between steep cliffs.",
+    "BLOBS": "Rounded, shapeless masses.",
     "PRICE": "It is the number you check before deciding whether something is worth buying.",
     "SMART": "A careful shopper is this.", "SALES": "More than one savings event happening at once.",
     "SHARE": "What you do when you pass a great deal to a friend.", "VALUE": "What you get compared with what you spend.",
