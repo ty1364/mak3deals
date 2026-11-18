@@ -91,9 +91,22 @@ DAILY_WORDS = [
     "CRANE", "HOIST", "BRAKE", "AXLES", "TREAD", "PIVOT", "BARGE", "DOCKS", "BUOYS", "CARGO", "WINCH", "GLIDE",
     "RIGID", "GIRDS", "SPLIT", "SEAMS", "BRACE", "TENON", "DRAFT", "BEVEL", "SLOPE", "PLUMB", "JOIST", "SPANS",
     "TRIAD", "TAPER", "ALIGN", "WAFER", "REBAR", "MASON", "DOVES", "FLINT", "QUILL", "VAPOR", "FJORD", "BLOBS",
+    "AMBER", "OPALS", "AGATE", "SHALE", "SLATE", "CHALK", "SANDY", "LOAMY", "DUSTY", "MUDDY", "OCHRE", "GEODE",
 ]
 
 DAILY_HINTS = {
+    "AMBER": "A golden fossil resin.",
+    "OPALS": "Gemstones with shifting colors.",
+    "AGATE": "A banded variety of quartz.",
+    "SHALE": "A fine-grained sedimentary rock.",
+    "SLATE": "A rock used for roofing tiles.",
+    "CHALK": "A soft white limestone.",
+    "SANDY": "Covered with loose grains of rock.",
+    "LOAMY": "Rich in a balanced mix of soil particles.",
+    "DUSTY": "Covered with fine dry particles.",
+    "MUDDY": "Covered with wet soil.",
+    "OCHRE": "An earthy yellow or reddish pigment.",
+    "GEODE": "A hollow rock lined with crystals.",
     "TRIAD": "A group of three related things.",
     "TAPER": "A gradual reduction in thickness or width.",
     "ALIGN": "Position parts in a straight line or correct relationship.",
@@ -556,6 +569,18 @@ DAILY_HINTS = {
 }
 
 DAILY_CLUES = {
+    "AMBER": "Yellow-orange material sometimes containing ancient insects.",
+    "OPALS": "Plural gems known for iridescent flashes.",
+    "AGATE": "A striped stone often polished for jewelry.",
+    "SHALE": "Rock that often splits into thin flat layers.",
+    "SLATE": "A metamorphic stone that splits into sheets.",
+    "CHALK": "Material traditionally used to write on blackboards.",
+    "SANDY": "Describes the texture of many beaches.",
+    "LOAMY": "Describes fertile soil containing sand, silt and clay.",
+    "DUSTY": "Describes a shelf that has not been wiped lately.",
+    "MUDDY": "Describes boots after walking through a rain-soaked field.",
+    "OCHRE": "Natural coloring material containing iron oxide.",
+    "GEODE": "A stone that can reveal sparkling crystals when opened.",
     "PRICE": "Today's word is the number you compare before paying for an item.",
     "SMART": "Today's word describes a shopper who plans before spending.",
     "SALES": "Today's word describes multiple store events where prices come down.",
