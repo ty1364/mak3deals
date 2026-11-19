@@ -92,9 +92,22 @@ DAILY_WORDS = [
     "RIGID", "GIRDS", "SPLIT", "SEAMS", "BRACE", "TENON", "DRAFT", "BEVEL", "SLOPE", "PLUMB", "JOIST", "SPANS",
     "TRIAD", "TAPER", "ALIGN", "WAFER", "REBAR", "MASON", "DOVES", "FLINT", "QUILL", "VAPOR", "FJORD", "BLOBS",
     "AMBER", "OPALS", "AGATE", "SHALE", "SLATE", "CHALK", "SANDY", "LOAMY", "DUSTY", "MUDDY", "OCHRE", "GEODE",
+    "ACUTE", "ANGLE", "CURVE", "ARCED", "CHORD", "TANGS", "CONES", "OVALS", "TORUS", "PRIME", "RATIO", "DIGIT",
 ]
 
 DAILY_HINTS = {
+    "ACUTE": "An angle smaller than a right angle.",
+    "ANGLE": "Two rays meeting at a point.",
+    "CURVE": "A line that bends.",
+    "ARCED": "Bent into a bow shape.",
+    "CHORD": "A segment joining points on a circle.",
+    "TANGS": "Sharp projecting parts.",
+    "CONES": "Solids tapering to a point.",
+    "OVALS": "Rounded elongated shapes.",
+    "TORUS": "A ring-shaped solid.",
+    "PRIME": "A number divisible only by one and itself.",
+    "RATIO": "A comparison by division.",
+    "DIGIT": "A single numeral.",
     "AMBER": "A golden fossil resin.",
     "OPALS": "Gemstones with shifting colors.",
     "AGATE": "A banded variety of quartz.",
@@ -569,6 +582,18 @@ DAILY_HINTS = {
 }
 
 DAILY_CLUES = {
+    "ACUTE": "A triangle can have three of this kind of angle.",
+    "ANGLE": "Measured in degrees or radians.",
+    "CURVE": "A road may follow this instead of a straight path.",
+    "ARCED": "Describes a path shaped like part of a circle.",
+    "CHORD": "In geometry, a diameter is a special example.",
+    "TANGS": "Prongs extending from a tool blade into its handle.",
+    "CONES": "Traffic markers often have these shapes.",
+    "OVALS": "Egg-like outlines without corners.",
+    "TORUS": "The geometric shape of a doughnut.",
+    "PRIME": "Seven is an example of this type of integer.",
+    "RATIO": "Three to two expresses this relationship.",
+    "DIGIT": "Any one of the symbols zero through nine.",
     "AMBER": "Yellow-orange material sometimes containing ancient insects.",
     "OPALS": "Plural gems known for iridescent flashes.",
     "AGATE": "A striped stone often polished for jewelry.",
