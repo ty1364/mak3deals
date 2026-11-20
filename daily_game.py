@@ -93,9 +93,22 @@ DAILY_WORDS = [
     "TRIAD", "TAPER", "ALIGN", "WAFER", "REBAR", "MASON", "DOVES", "FLINT", "QUILL", "VAPOR", "FJORD", "BLOBS",
     "AMBER", "OPALS", "AGATE", "SHALE", "SLATE", "CHALK", "SANDY", "LOAMY", "DUSTY", "MUDDY", "OCHRE", "GEODE",
     "ACUTE", "ANGLE", "CURVE", "ARCED", "CHORD", "TANGS", "CONES", "OVALS", "TORUS", "PRIME", "RATIO", "DIGIT",
+    "CRABS", "CLAMS", "HYENA", "STORK", "SKUNK", "SHREW", "VOLES", "MIDGE", "MOTHS", "GNATS", "TROUT", "PERCH",
 ]
 
 DAILY_HINTS = {
+    "CRABS": "Often walk sideways.",
+    "CLAMS": "Often burrow in sand.",
+    "HYENA": "Some species make a laughing call.",
+    "STORK": "Often nests on rooftops.",
+    "SKUNK": "Often black and white.",
+    "SHREW": "Has a pointed snout.",
+    "VOLES": "Resemble mice with short tails.",
+    "MIDGE": "Often found near water.",
+    "MOTHS": "Many are active at night.",
+    "GNATS": "Often gather in swarms.",
+    "TROUT": "Often caught in mountain streams.",
+    "PERCH": "A name also meaning a resting branch.",
     "ACUTE": "An angle smaller than a right angle.",
     "ANGLE": "Two rays meeting at a point.",
     "CURVE": "A line that bends.",
@@ -582,6 +595,18 @@ DAILY_HINTS = {
 }
 
 DAILY_CLUES = {
+    "CRABS": "Crustaceans with pincers.",
+    "CLAMS": "Bivalves with hinged shells.",
+    "HYENA": "Carnivore with powerful jaws.",
+    "STORK": "Long-legged bird.",
+    "SKUNK": "Mammal with a pungent defense.",
+    "SHREW": "Tiny insect-eating mammal.",
+    "VOLES": "Small burrowing rodents.",
+    "MIDGE": "Tiny flying insect.",
+    "MOTHS": "Winged insects related to butterflies.",
+    "GNATS": "Small flying insects.",
+    "TROUT": "Freshwater fish.",
+    "PERCH": "Spiny-finned fish.",
     "ACUTE": "A triangle can have three of this kind of angle.",
     "ANGLE": "Measured in degrees or radians.",
     "CURVE": "A road may follow this instead of a straight path.",
