@@ -94,9 +94,22 @@ DAILY_WORDS = [
     "AMBER", "OPALS", "AGATE", "SHALE", "SLATE", "CHALK", "SANDY", "LOAMY", "DUSTY", "MUDDY", "OCHRE", "GEODE",
     "ACUTE", "ANGLE", "CURVE", "ARCED", "CHORD", "TANGS", "CONES", "OVALS", "TORUS", "PRIME", "RATIO", "DIGIT",
     "CRABS", "CLAMS", "HYENA", "STORK", "SKUNK", "SHREW", "VOLES", "MIDGE", "MOTHS", "GNATS", "TROUT", "PERCH",
+    "KITES", "SHELL", "PONDS", "BROOK", "BIRDS", "NESTS", "LEAPS", "BARKS", "PAWSY", "FANGS", "SNAIL", "SWANS",
 ]
 
 DAILY_HINTS = {
+    "KITES": "Tethered objects flown in the wind.",
+    "SHELL": "A hard outer covering on some animals.",
+    "PONDS": "Small bodies of still freshwater.",
+    "BROOK": "A small flowing stream.",
+    "BIRDS": "Feathered animals with beaks.",
+    "NESTS": "Structures where birds lay eggs.",
+    "LEAPS": "Jumps through the air.",
+    "BARKS": "Sounds dogs make.",
+    "PAWSY": "Resembling or full of animal paws.",
+    "FANGS": "Long pointed teeth of certain animals.",
+    "SNAIL": "A slow-moving mollusk, often with a spiral shell.",
+    "SWANS": "Large graceful waterbirds.",
     "CRABS": "Often walk sideways.",
     "CLAMS": "Often burrow in sand.",
     "HYENA": "Some species make a laughing call.",
