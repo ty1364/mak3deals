@@ -1,4 +1,4 @@
-name: Refresh Mak3Deals offer sources
+name: Refresh Mak3Deals product feeds
 
 on:
   schedule:
@@ -11,7 +11,7 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Wake the site and refresh verified source health
+      - name: Wake the site and ingest authorized product feeds
         env:
           REFRESH_TOKEN: ${{ secrets.MAK3DEALS_REFRESH_TOKEN }}
         run: >-

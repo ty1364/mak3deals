@@ -1,0 +1,2 @@
+id,title,description,price,rrp_price,merchant_deep_link,merchant_image_url,brand,gtin,in_stock,category
+fixture-upper,UPPER test weekender bag,STAGING ONLY — example travel bag product,79.00,120.00,https://example.invalid/mak3deals-fixture/upper, __STAGING_ORIGIN__/static/assets/staging/upper.svg,UPPER,fixture-1003,1,Travel

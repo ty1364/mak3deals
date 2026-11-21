@@ -1,44 +1,96 @@
-# Mak3Deals offer pipeline
+# Mak3Deals product-feed pipeline
 
-The generator is intentionally conservative. It checks official retailer pages,
-records source health, and retires expired verified listings. It does not scrape
-or guess a price, coupon code, image, or commission relationship.
+Mak3Deals now publishes only individual `product` records from an authorized
+merchant or affiliate-network feed. Retailer homepages, sale-page links,
+hand-entered prices, and guessed coupon codes are not product records.
 
-The live app exposes:
+The importer accepts CSV, JSON, JSONL, and gzip-compressed feeds. Every
+published row requires a title, image URL, direct product URL, current price,
+availability, merchant product ID, and a last-checked timestamp. A row with a
+verifiable reference price greater than its current price is classified as a
+`Verified Deal`; a normal catalog row without a discount is classified as a
+`Shop Product`. The normalizer never fabricates a reference price, crossed-out
+price, sale badge, or discount percentage. It stores the source provider,
+affiliate URL when supplied, feed expiry, and a payload hash. Re-imports update
+by `source_key + merchant_product_id`; records missing from a successful
+complete feed are retired. A failed feed never retires existing products.
 
-- `/api/feed-status` for a safe health summary
-- `/feed-status` for the human-readable dashboard
-- `POST /internal/refresh-offers` for a trusted scheduler
+## Feed configuration
 
-The internal endpoint requires the `MAK3DEALS_REFRESH_TOKEN` environment
-variable and the matching `X-Mak3Deals-Refresh-Token` header. Keep that token
-private.
+Feed URLs are secrets when they contain a network download key, so configure
+them only in Render environment variables. The preferred setting is one JSON
+object in `MAK3DEALS_FEED_CONFIG`:
 
-## Why the scheduler is not in the first deploy
-
-Render cron jobs run as a separate service and cannot share this app's SQLite
-file. The scheduler must therefore call the protected web hook, or we must
-migrate the app to a shared database such as Render Postgres first. Render also
-charges a minimum of $1/month per cron job, even though the task may only run
-for a few seconds.
-
-The repository includes a GitHub Actions schedule at `.github/workflows/refresh-offers.yml`.
-After `MAK3DEALS_REFRESH_TOKEN` is added as a repository Actions secret, it
-checks the site every 30 minutes and can also be started manually from the
-Actions tab. This avoids paying for a separate Render Cron Job while the
-project is small.
-
-If we later choose Render Cron instead, its command can call:
-
-```text
-curl -fsS -X POST https://mak3deals.com/internal/refresh-offers -H "X-Mak3Deals-Refresh-Token: $MAK3DEALS_REFRESH_TOKEN"
+```json
+{
+  "upper": {"store": "UPPER Brand", "provider": "awin", "format": "csv", "compression": "gzip", "url": "https://authorized-feed.example/upper.csv.gz"},
+  "walmart": {"store": "Walmart", "provider": "awin", "format": "csv", "url": "https://authorized-feed.example/walmart.csv.gz"},
+  "best-buy": {"store": "Best Buy", "provider": "awin", "format": "csv", "url": "https://authorized-feed.example/best-buy.csv.gz"},
+  "amazon": {"store": "Amazon", "provider": "cj", "format": "json", "url": "https://authorized-feed.example/amazon.json"},
+  "target": {"store": "Target", "provider": "impact", "format": "csv", "url": "https://authorized-feed.example/target.csv"},
+  "home-depot": {"store": "Home Depot", "provider": "awin", "format": "csv", "url": "https://authorized-feed.example/home-depot.csv"}
+}
 ```
 
-## Real affiliate ingestion
+The example URLs are placeholders and must not be used as data. A merchant
+counts as connected only after its real feed URL is supplied and an ingestion
+run reports imported product records.
 
-Walmart and Best Buy are currently source-health checked and the page only
-publishes the verified rows already in the catalog. Amazon, Target, and Home
-Depot are listed as pending until their affiliate approvals or authorized feeds
-are connected. A connector may publish a new offer only when it receives an
-official/authorized feed row with a source URL, observed price, image source,
-terms, and expiry.
+The per-source fallback names include `MAK3DEALS_FEED_URL_UPPER`,
+`MAK3DEALS_FEED_URL_WALMART`,
+`MAK3DEALS_FEED_URL_BEST_BUY`, `MAK3DEALS_FEED_URL_AMAZON`,
+`MAK3DEALS_FEED_URL_TARGET`, and `MAK3DEALS_FEED_URL_HOME_DEPOT`. Additional
+authorized merchants may be supplied through `MAK3DEALS_FEED_CONFIG`; their
+source keys are registered dynamically after a real feed is configured. No
+merchant is counted as connected until its feed produces validated records.
+
+## Scheduler and storage
+
+## Isolated staging fixtures
+
+The review branch includes one clearly labeled UPPER fixture product so the page
+can be tested before an advertiser feed is approved. It uses `example.invalid`
+product links and are never real offers. Load them into a separate database:
+
+```powershell
+$env:MAK3DEALS_DATABASE = "staging-deals.db"
+$env:MAK3DEALS_STAGING_ORIGIN = "http://127.0.0.1:5001"
+python scripts/load_staging_fixture.py
+flask --app app:app run --port 5001
+```
+
+Every fixture card is labeled `TEST FIXTURE · NOT A REAL DEAL`. Do not point
+`MAK3DEALS_DATABASE` at the production file when running this loader.
+
+`POST /internal/refresh-offers` runs the importer and requires
+`MAK3DEALS_REFRESH_TOKEN`. GitHub Actions calls it every 30 minutes from
+`.github/workflows/refresh-offers.yml` after that secret is configured.
+
+Local staging continues to use SQLite. The Render blueprint now wires the web
+service to a persistent Postgres database and applies the additive migrations
+on first request. The app selects Postgres whenever `DATABASE_URL` is present;
+it never falls back to a local SQLite file in that deployment mode.
+
+The blueprint does not contain feed credentials. The owner must supply
+`MAK3DEALS_FEED_CONFIG` and `MAK3DEALS_REFRESH_TOKEN` in Render, then place the
+same refresh token in the GitHub Actions secret of the repository. The
+database is not created until the owner applies the blueprint.
+
+## Status and acceptance checks
+
+- `/api/feed-status` exposes source status, imported/retired counts, timestamps,
+  and errors without exposing feed URLs that contain credentials.
+- `/feed-status` is the human-readable operations page.
+- `/api/offers` and the homepage return only active individual product cards;
+  the homepage keeps discounted rows in Verified Deals and non-discounted rows
+  in Shop Products.
+- `python scripts/refresh_offers.py --dry-run` validates configured feeds
+  without writing records.
+- `python scripts/check_phase1.py` exits non-zero until the live milestone is
+  genuinely met; it is currently expected to fail because no feeds are
+  connected.
+- The first merchant acceptance test is a configured authorized feed with real
+  catalog rows. The UPPER staging feed currently contains 135 rows, 107
+  reported in stock, and imports 107 active Shop Products. A second run must
+  update existing rows and retire a removed or unavailable row without
+  fabricating discount fields.

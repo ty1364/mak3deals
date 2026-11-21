@@ -1,76 +1,47 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import hmac
+import hashlib
 import os
 import re
+import secrets
 import sqlite3
-from flask import Flask, abort, g, jsonify, redirect, render_template, request
-from daily_game import daily_session, daily_hint, evaluate_guess, puzzle_date
-from guides import GUIDE_BY_SLUG, GUIDES
+from flask import Flask, abort, g, jsonify, redirect, render_template, request, session, url_for
+from database import DB_INTEGRITY_ERRORS, connect_database, ensure_postgres_schema
+from werkzeug.security import check_password_hash, generate_password_hash
+from daily_game import ensure_daily_puzzle_schema, daily_session, daily_hint, editorial_puzzle_cards, evaluate_guess, puzzle_date
+from guides import GUIDE_BY_SLUG, GUIDE_REDIRECTS, GUIDES
 from offer_pipeline import ensure_feed_schema, refresh_sources
+from retailer_deals import (
+    ensure_retailer_deal_schema,
+    discover_retailer_deals,
+    expire_candidates,
+    SourceHoldError,
+    publication_issues,
+    published_picks,
+    status_snapshot,
+    upsert_candidate,
+)
 
 app = Flask(__name__)
-DATABASE = "deals.db"
-
-# These are live retailer deal hubs, not invented coupon claims. They give the
-# catalog useful, honest inventory while approved affiliate feeds are still
-# being connected. A future feed row can replace a hub without changing the UI.
-SOURCE_HUBS = [
-    {
-        "store": "Walmart",
-        "title": "Walmart deal hub",
-        "description": "Open Walmart's current advertised deals, rollbacks, and category savings. We show the retailer's live page so price, stock, pickup, and delivery details stay current.",
-        "category": "Everyday savings",
-        "link": "https://www.walmart.com/shop/deals/shop-advertised-deals",
-        "product_key": "source-hub-walmart",
-    },
-    {
-        "store": "Best Buy",
-        "title": "Best Buy top deals",
-        "description": "Browse Best Buy's current flash deals and category offers across electronics, appliances, gaming, and more.",
-        "category": "Electronics",
-        "link": "https://www.bestbuy.com/top-deals",
-        "product_key": "source-hub-best-buy",
-    },
-    {
-        "store": "Target",
-        "title": "Target deal hub",
-        "description": "See Target's live deals across home, grocery, clothing, beauty, toys, and electronics. Target controls the final terms and availability.",
-        "category": "Everyday savings",
-        "link": "https://www.target.com/c/deals/-/N-4xw74",
-        "product_key": "source-hub-target",
-    },
-    {
-        "store": "Amazon",
-        "title": "Amazon Today's Deals",
-        "description": "Open Amazon's current limited-time deal page and confirm the final price, seller, shipping, and membership terms before checkout.",
-        "category": "Online shopping",
-        "link": "https://www.amazon.com/gp/goldbox",
-        "product_key": "source-hub-amazon",
-    },
-    {
-        "store": "Home Depot",
-        "title": "Home Depot Daily Deals",
-        "description": "Explore Home Depot's current daily deals for tools, appliances, outdoor, hardware, and home improvement.",
-        "category": "Home improvement",
-        "link": "https://www.homedepot.com/daily-deals",
-        "product_key": "source-hub-home-depot",
-    },
-    {
-        "store": "Costco",
-        "title": "Costco warehouse savings",
-        "description": "Check Costco's current warehouse savings and member offers. Membership, warehouse, shipping, and item limits may apply.",
-        "category": "Groceries & household",
-        "link": "https://www.costco.com/warehouse-savings.html",
-        "product_key": "source-hub-costco",
-    },
-]
+app.secret_key = os.environ.get("MAK3DEALS_SECRET_KEY", "local-development-secret-change-me")
+if os.environ.get("RENDER") == "true" and not os.environ.get("MAK3DEALS_SECRET_KEY"):
+    raise RuntimeError("MAK3DEALS_SECRET_KEY must be configured for a Render deployment.")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("MAK3DEALS_COOKIE_SECURE", "0") == "1",
+)
+# Staging can point at an isolated SQLite file. Render production selects the
+# persistent database supplied through DATABASE_URL.
+DATABASE = os.environ.get("MAK3DEALS_DATABASE", "deals.db")
 
 SITE_AD_TV = """
 <style>
 .site-ad-slot{max-width:1180px;margin:0 auto;padding:24px 8% 10px}.site-ad-tv{display:flex;flex-direction:column;width:100%;min-height:150px;padding:12px;border:1px solid rgba(255,211,111,.78);border-radius:16px;background:linear-gradient(135deg,#0d1730,#102a3d 62%,#133f4b);color:#f7f7ff;box-shadow:0 14px 30px rgba(6,25,44,.18);font:800 10px/1.3 system-ui,sans-serif;letter-spacing:.12em}.site-ad-tv-top,.site-ad-tv-foot{display:flex;justify-content:space-between;color:#bde0dd}.site-ad-live{color:#ffd36f}.site-ad-tv-screen{display:flex;align-items:center;min-height:98px;margin:8px 0;padding:16px 20px;border:1px solid rgba(92,238,255,.55);border-radius:9px;background:radial-gradient(circle at 65% 45%,#1d5571,#0b1b31 70%)}.site-ad-tv-screen strong{font-size:clamp(20px,2.5vw,32px);line-height:.9;color:#fff}.site-ad-tv-screen em{color:#ffd36f;font-style:normal}.ad-player-screen{gap:16px}.ad-player-copy{display:grid;gap:7px;min-width:0;letter-spacing:.02em}.ad-player-copy strong{font-size:clamp(18px,2.4vw,30px);line-height:1.02;letter-spacing:-.04em}.ad-player-copy.pink strong{color:#ffd36f}.ad-player-copy.blue strong{color:#8cecff}.ad-player-copy.gold strong{color:#ffd36f}.ad-player-copy.cyan strong{color:#a7f7ff}.ad-player-provider,.ad-player-detail{font-size:10px;line-height:1.35;letter-spacing:.04em;color:#bdefff}.ad-player-provider{color:#ffd36f;text-transform:uppercase}.ad-player-detail{color:#e1e6ff}.ad-player-image{width:82px;height:82px;flex:0 0 82px;object-fit:contain;border-radius:10px;border:1px solid rgba(115,244,255,.5);background:#fff}.ad-player-cta,.ad-player-disclosure{color:#8cecff;text-decoration:none;letter-spacing:.04em}.ad-player-cta{justify-self:start;padding:7px 10px;border:1px solid rgba(115,244,255,.55);border-radius:999px;font-size:10px}.ad-player-cta:hover,.ad-player-disclosure:hover{color:#fff;background:rgba(115,244,255,.12)}.ad-player-disclosure{font-size:9px}@media(max-width:700px){.site-ad-slot{padding:18px 6% 4px}.site-ad-tv-screen{min-height:112px;padding:14px}.ad-player-image{width:62px;height:62px;flex-basis:62px}}
 </style>
-<div class="site-ad-slot"><aside class="site-ad-tv" data-ad-player aria-label="Mak3Deals advertising channel"><div class="site-ad-tv-top"><span>AD CHANNEL</span><span class="site-ad-live">● LIVE</span></div><div class="site-ad-tv-screen ad-player-screen"><div class="ad-player-copy"><strong>MAK3<br><em>DEALS</em></strong><span class="ad-player-detail">Loading verified placements…</span></div></div><div class="site-ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div></aside></div>
-<script src="/static/ad-player.js?v=b028b3b" defer></script>
+<style>.ad-provider-slot{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:4px 0 2px;padding:7px 9px;border:1px dashed rgba(189,224,221,.45);border-radius:7px;color:#bde0dd;font:700 9px/1.3 system-ui,sans-serif;letter-spacing:.04em}.ad-provider-slot small{color:#e1e6ff;font-weight:500;letter-spacing:0;text-align:right}@media(max-width:700px){.ad-provider-slot{align-items:flex-start;flex-direction:column}.ad-provider-slot small{text-align:left}}</style>
+<div class="site-ad-slot"><aside class="site-ad-tv" data-ad-player data-ad-channel="01" aria-label="Mak3Deals advertising channel 01"><div class="site-ad-tv-top"><span>AD CHANNEL 01</span><span class="site-ad-live">● PLACEMENT</span></div><div class="site-ad-tv-screen ad-player-screen"><div class="ad-player-copy"><strong>MAK3<br><em>DEALS</em></strong><span class="ad-player-detail">Loading verified placements…</span></div></div><div class="ad-provider-slot" data-ad-provider="media.net" aria-label="Reserved Media.net advertising placement"><span>Media.net slot reserved</span><small>Activates only after publisher approval and approved ad code.</small></div><div class="site-ad-tv-foot"><span class="ad-player-provider">Mak3Deals</span><a class="ad-player-disclosure" href="/affiliate-disclosure">Disclosure</a></div></aside></div>
+<script src="/static/ad-player.js?v=b0283b4" defer></script>
 """
 
 # The homepage uses the same player inside the hero's dedicated right column.
@@ -80,8 +51,7 @@ SITE_AD_HERO = SITE_AD_TV.replace('<div class="site-ad-slot">', '<div class="sit
 
 def db():
     if "db" not in g:
-        g.db = sqlite3.connect(DATABASE)
-        g.db.row_factory = sqlite3.Row
+        g.db = connect_database(DATABASE)
     return g.db
 
 def price_number(value):
@@ -101,12 +71,13 @@ def add_site_ad_tv(response):
     # Submit is a utility form and should stay distraction-free. Game routes
     # have their own dedicated placements. Normal savings pages get one
     # clearly labeled channel, and the homepage puts it in the hero column.
-    excluded_paths = {"/submit", "/daily", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status"}
+    excluded_paths = {"/submit", "/daily", "/daily-hints", "/games", "/game", "/game/deal-dash", "/game/tile-shift", "/game/bubble-crush", "/game/cart-quest", "/game/vault-runner", "/game/dealway-drift", "/game/deal-dash-royale", "/game/deal-siege", "/about", "/privacy", "/terms", "/affiliate-disclosure", "/contact", "/sources", "/feed-status", "/retailer-deal-admin", "/login", "/signup", "/account"}
     if request.path not in excluded_paths and response.content_type.startswith("text/html"):
         html = response.get_data(as_text=True)
         if "class=\"site-ad-tv\"" not in html:
-            if request.path == "/" and '<section class="hero">' in html:
-                hero_start = html.find('<section class="hero">')
+            hero_match = re.search(r'<section class="hero(?:\s[^\"]*)?">', html)
+            if request.path == "/" and hero_match:
+                hero_start = hero_match.start()
                 hero_end = html.find("</section>", hero_start)
                 note = re.search(r'<div class="hero-note">.*?</div>', html[hero_start:hero_end], flags=re.S)
                 if note:
@@ -116,8 +87,8 @@ def add_site_ad_tv(response):
                     html = html[:note_start] + hero_right + html[note_end:]
                 else:
                     html = html[:hero_end + len("</section>")] + SITE_AD_TV + html[hero_end + len("</section>"):]
-            elif '<section class="hero">' in html:
-                hero_start = html.find('<section class="hero">')
+            elif hero_match:
+                hero_start = hero_match.start()
                 hero_end = html.find("</section>", hero_start)
                 html = html[:hero_end + len("</section>")] + SITE_AD_TV + html[hero_end + len("</section>"):]
             elif re.search(r'<section class="simple-hero[^\"]*">', html):
@@ -135,10 +106,38 @@ def add_site_ad_tv(response):
             response.set_data(html)
     return response
 
+def _admin_request_allowed():
+    """Allow feed diagnostics only to local operators or a server-side token."""
+    configured = os.environ.get("MAK3DEALS_ADMIN_TOKEN", "").strip()
+    supplied = request.headers.get("X-Mak3Deals-Admin", "").strip()
+    authorization = request.headers.get("Authorization", "")
+    if authorization.lower().startswith("bearer "):
+        supplied = authorization[7:].strip()
+    if configured:
+        return bool(supplied) and hmac.compare_digest(configured, supplied)
+    host = (request.host or "").split(":", 1)[0].lower()
+    return request.remote_addr in {"127.0.0.1", "::1"} and host in {"127.0.0.1", "localhost"}
+
+@app.before_request
+def protect_feed_diagnostics():
+    admin_paths = {"/feed-status", "/sources", "/api/feed-status", "/retailer-deal-admin", "/api/retailer-deal-status", "/api/retailer-deals/candidates"}
+    if (request.path in admin_paths or request.path.startswith("/api/retailer-deals/")) and not _admin_request_allowed():
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Not found"}), 404
+        return "Not found", 404
+
 @app.before_request
 def setup():
     database = db()
-    database.executescript("""CREATE TABLE IF NOT EXISTS deals (
+    if getattr(database, "is_postgres", False):
+        if not app.config.get("_POSTGRES_SCHEMA_READY"):
+            ensure_postgres_schema(database)
+            ensure_feed_schema(database)
+            ensure_retailer_deal_schema(database)
+            ensure_daily_puzzle_schema(database)
+            app.config["_POSTGRES_SCHEMA_READY"] = True
+    else:
+        database.executescript("""CREATE TABLE IF NOT EXISTS deals (
         id INTEGER PRIMARY KEY AUTOINCREMENT, store TEXT, title TEXT,
         description TEXT, city TEXT, category TEXT, link TEXT,
         expires_on TEXT, verified INTEGER DEFAULT 0, created_at TEXT);
@@ -153,140 +152,384 @@ def setup():
         wave INTEGER NOT NULL, duration_seconds INTEGER NOT NULL,
         submitted_at TEXT NOT NULL, review_status TEXT DEFAULT 'pending');
         CREATE INDEX IF NOT EXISTS idx_game_scores_month_score
-        ON game_scores (game, month, score DESC);""")
-    ensure_feed_schema(database)
-    # Never serve an offer past its stated end date, even if the scheduled
-    # source-health refresh has not run yet.
+        ON game_scores (game, month, score DESC);
+        CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        display_name TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        email_verified INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TEXT NOT NULL,
+        last_login_at TEXT);
+        CREATE TABLE IF NOT EXISTS auth_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        token_hash TEXT NOT NULL UNIQUE,
+        user_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        last_seen_at TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id));
+        CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions (user_id);
+        CREATE TABLE IF NOT EXISTS auth_email_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        token_hash TEXT NOT NULL UNIQUE,
+        user_id INTEGER NOT NULL,
+        purpose TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        used_at TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id));
+        CREATE INDEX IF NOT EXISTS idx_auth_email_tokens_user ON auth_email_tokens (user_id, purpose);""")
+        ensure_feed_schema(database)
+        ensure_retailer_deal_schema(database)
+        ensure_daily_puzzle_schema(database)
+    # Feed expiry is enforced on every request even if the scheduled importer
+    # has not run yet.
     database.execute(
         "UPDATE deals SET verified=0 WHERE verified=1 AND expires_on < ?",
         (date.today().isoformat(),),
     )
     database.commit()
-    existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
-    for column, definition in {
+    if not getattr(database, "is_postgres", False):
+        existing_columns = {row[1] for row in database.execute("PRAGMA table_info(deals)").fetchall()}
+        for column, definition in {
         "deal_kind": "TEXT DEFAULT 'deal'", "sale_price": "TEXT", "regular_price": "TEXT",
         "coupon_code": "TEXT", "offer_terms": "TEXT", "checked_on": "TEXT", "affiliate_url": "TEXT",
-        "product_key": "TEXT", "image_url": "TEXT", "image_source": "TEXT"
-    }.items():
-        if column not in existing_columns:
-            database.execute(f"ALTER TABLE deals ADD COLUMN {column} {definition}")
-    submission_columns = {row[1] for row in database.execute("PRAGMA table_info(submissions)").fetchall()}
-    for column, definition in {
+        "product_key": "TEXT", "image_url": "TEXT", "image_source": "TEXT",
+        "merchant_product_id": "TEXT", "currency": "TEXT DEFAULT 'USD'",
+        "discount_percent": "REAL", "availability_status": "TEXT", "last_checked_at": "TEXT",
+        "source_key": "TEXT", "source_provider": "TEXT", "feed_updated_at": "TEXT",
+        "status": "TEXT DEFAULT 'active'", "raw_payload_hash": "TEXT"
+        }.items():
+            if column not in existing_columns:
+                database.execute(f"ALTER TABLE deals ADD COLUMN {column} {definition}")
+        submission_columns = {row[1] for row in database.execute("PRAGMA table_info(submissions)").fetchall()}
+        for column, definition in {
         "coupon_code": "TEXT", "offer_terms": "TEXT", "expires_on": "TEXT",
         "source_type": "TEXT DEFAULT 'user-submitted'"
-    }.items():
-        if column not in submission_columns:
-            database.execute(f"ALTER TABLE submissions ADD COLUMN {column} {definition}")
-    # Never leave an old verified placeholder visible after the catalog schema upgrade.
-    database.execute("DELETE FROM deals WHERE verified=1 AND COALESCE(deal_kind, 'deal')='deal'")
-    # Mak3Deals does not promote Target; remove any legacy Target rows from older local catalogs.
-    # Target is now included as a clearly labeled source hub. Old rows are
-    # removed below and replaced with the current source-backed entry.
-    # Remove earlier placeholder claims before adding only sourced offers.
-    retired_titles = [
-        "Western Washington member savings", "Weekly household essentials deals", "Local electronics deals",
-        "Current Rollbacks and online savings", "Special Buy savings", "Today's Deals", "Member warehouse savings",
-        "Target Circle member savings", "Weekly savings on home projects", "Pet essentials and autoship savings",
-        "Sale shoes and apparel", "Hotel and travel deals", "Seasonal savings and coupons", "Department store sale hub",
-        "Get your deal in front of shoppers",
-        "Get your offer featured", "Blackstone 28-in griddle rollback — $197", "Starbucks Fall coffee pods — $16",
-        "DEWALT drill kit — $199"]
-    database.executemany("DELETE FROM deals WHERE title=?", [(title,) for title in retired_titles])
-
-    # Keep one current source-backed card per retailer. These cards are useful
-    # discovery links, not fake coupon codes or invented prices.
-    today = date.today()
-    for hub in SOURCE_HUBS:
-        existing = database.execute(
-            "SELECT id FROM deals WHERE product_key=? AND deal_kind='source-hub'",
-            (hub["product_key"],),
-        ).fetchone()
-        values = (
-            hub["store"], hub["title"], hub["description"], "Online", hub["category"],
-            hub["link"], (today + timedelta(days=7)).isoformat(), datetime.now().isoformat(),
-            "source-hub", "", "", "", "Retailer controls price, stock, terms, and expiration.",
-            today.isoformat(), hub["product_key"], "", "Official retailer deal page",
-        )
-        if existing:
-            database.execute(
-                """UPDATE deals SET store=?, title=?, description=?, city=?, category=?, link=?,
-                    expires_on=?, verified=1, created_at=?, sale_price=?, regular_price=?,
-                    coupon_code=?, offer_terms=?, checked_on=?, image_url=?, image_source=?
-                    WHERE id=?""",
-                (
-                    hub["store"], hub["title"], hub["description"], "Online", hub["category"],
-                    hub["link"], (today + timedelta(days=7)).isoformat(), datetime.now().isoformat(),
-                    "", "", "", "Retailer controls price, stock, terms, and expiration.",
-                    today.isoformat(), "", "Official retailer deal page", existing["id"],
-                ),
-            )
-        else:
-            database.execute(
-                """INSERT INTO deals
-                    (store,title,description,city,category,link,expires_on,verified,created_at,
-                     deal_kind,sale_price,regular_price,coupon_code,offer_terms,checked_on,
-                     product_key,image_url,image_source)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (hub["store"], hub["title"], hub["description"], "Online", hub["category"],
-                 hub["link"], (today + timedelta(days=7)).isoformat(), 1, datetime.now().isoformat(),
-                 "source-hub", "", "", "", "Retailer controls price, stock, terms, and expiration.",
-                 today.isoformat(), hub["product_key"], "", "Official retailer deal page"),
-            )
-
-    # These entries come from official retailer pages and include the terms/date shown there.
-    curated = [
-        ("Walmart", "Lodge Chef Collection 10-in skillet — $29.90", "Live price check for the pre-seasoned Lodge Chef Collection 10-inch cast-iron skillet. This is a retailer price match, not an invented coupon.", "Online", "Kitchen", "https://www.walmart.com/ip/Lodge-Cast-Iron-Inoxidable-10-Inch/204048002?classType=REGULAR", "2026-09-24", "price-check", "$29.90", "", "", "Observed online Sep 23; product price, seller, stock, and shipping can change.", "2026-09-23", "lodge-chef-collection-10-skillet", "https://i5.walmartimages.com/seo/Lodge-Cast-Iron-Inoxidable-10-Inch_50d4e335-fdac-4c9a-82f8-dc5ca0031494.e737235b951799bcbbf771c805e0d677.jpeg?odnBg=FFFFFF&odnHeight=576&odnWidth=576", "Walmart product listing"),
-        ("Best Buy", "Lodge Chef Collection 10-in skillet — $29.90", "Live price check for the Lodge Chef Collection 10-inch pre-seasoned cast-iron skillet, model LC10SK. This is a retailer price match, not an invented coupon.", "Online", "Kitchen", "https://www.bestbuy.com/product/lodge-chef-collection-10-pre-seasoned-cast-iron-skillet-kitchen-essential-for-frying-searing-black/J79YYFX38C", "2026-09-24", "price-check", "$29.90", "", "", "Observed online Sep 23; product price, seller, stock, and shipping can change.", "2026-09-23", "lodge-chef-collection-10-skillet", "https://i5.walmartimages.com/seo/Lodge-Cast-Iron-Inoxidable-10-Inch_50d4e335-fdac-4c9a-82f8-dc5ca0031494.e737235b951799bcbbf771c805e0d677.jpeg?odnBg=FFFFFF&odnHeight=576&odnWidth=576", "Walmart product listing"),
-        ("Local business", "Submit a verified local offer", "Business owners can submit a real offer for review. We publish it only after checking the details and source link.", "All", "Local", "/submit", "2026-11-01", "submission", "", "", "", "Requires review before publication.", "2026-09-22", "", "", "")]
-    for store, title, description, city, category, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source in curated:
-        exists = database.execute("SELECT 1 FROM deals WHERE store=? AND title=?", (store, title)).fetchone()
-        if not exists:
-            database.execute("INSERT INTO deals (store,title,description,city,category,link,expires_on,verified,created_at,deal_kind,sale_price,regular_price,coupon_code,offer_terms,checked_on,product_key,image_url,image_source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (store, title, description, city, category, link, expires_on, 1 if store != "Local business" else 0, datetime.now().isoformat(), deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source))
-        else:
-            database.execute("UPDATE deals SET description=?, link=?, expires_on=?, deal_kind=?, sale_price=?, regular_price=?, coupon_code=?, offer_terms=?, checked_on=?, product_key=?, image_url=?, image_source=? WHERE store=? AND title=?", (description, link, expires_on, deal_kind, sale_price, regular_price, coupon_code, offer_terms, checked_on, product_key, image_url, image_source, store, title))
+        }.items():
+            if column not in submission_columns:
+                database.execute(f"ALTER TABLE submissions ADD COLUMN {column} {definition}")
+    # Cleanup is explicit and operator-controlled. App startup must never
+    # delete production records as a side effect of a web request.
+    if os.environ.get("MAK3DEALS_PRUNE_LEGACY_DATA") == "1":
+        database.execute("DELETE FROM deals WHERE COALESCE(deal_kind, 'deal') IN ('deal', 'source-hub', 'price-check', 'submission')")
     database.commit()
 
-@app.route("/")
-def home():
+
+AUTH_SESSION_COOKIE = "mak3deals_session"
+AUTH_SESSION_DAYS = 30
+
+
+def accounts_enabled():
+    """Keep unfinished account flows off production until email verification is ready."""
+    configured = os.environ.get("MAK3DEALS_ACCOUNTS_ENABLED")
+    if configured is not None:
+        return configured.strip() == "1"
+    return os.environ.get("RENDER") != "true"
+
+
+@app.before_request
+def gate_account_routes_until_enabled():
+    if not accounts_enabled() and (
+        request.path in {"/login", "/signup", "/account", "/logout"}
+        or request.path.startswith("/verify-email/")
+    ):
+        abort(404)
+
+
+def _now_utc():
+    return datetime.now(timezone.utc)
+
+
+def _token_hash(token):
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def csrf_token():
+    token = session.get("_csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["_csrf_token"] = token
+    return token
+
+
+def _csrf_valid():
+    supplied = request.form.get("_csrf", "")
+    expected = session.get("_csrf_token", "")
+    return bool(supplied and expected and hmac.compare_digest(supplied, expected))
+
+
+def _safe_next(value):
+    value = (value or "").strip()
+    return value if value.startswith("/") and not value.startswith("//") else "/account"
+
+
+def _start_auth_session(user_id, response):
+    token = secrets.token_urlsafe(48)
+    now = _now_utc()
+    expires = now.timestamp() + AUTH_SESSION_DAYS * 24 * 60 * 60
+    expires_at = datetime.fromtimestamp(expires, tz=timezone.utc).isoformat()
+    database = db()
+    database.execute(
+        "INSERT INTO auth_sessions (token_hash, user_id, created_at, expires_at, last_seen_at) VALUES (?, ?, ?, ?, ?)",
+        (_token_hash(token), user_id, now.isoformat(), expires_at, now.isoformat()),
+    )
+    database.commit()
+    response.set_cookie(
+        AUTH_SESSION_COOKIE,
+        token,
+        max_age=AUTH_SESSION_DAYS * 24 * 60 * 60,
+        httponly=True,
+        secure=app.config["SESSION_COOKIE_SECURE"] or request.is_secure,
+        samesite="Lax",
+    )
+    return response
+
+
+def _clear_auth_session(response):
+    token = request.cookies.get(AUTH_SESSION_COOKIE)
+    if token:
+        db().execute("DELETE FROM auth_sessions WHERE token_hash=?", (_token_hash(token),))
+        db().commit()
+    response.delete_cookie(AUTH_SESSION_COOKIE)
+    return response
+
+
+def _auth_user():
+    token = request.cookies.get(AUTH_SESSION_COOKIE)
+    if not token:
+        g.current_user = None
+        return None
+    now = _now_utc().isoformat()
+    user = db().execute(
+        "SELECT u.* FROM auth_sessions s JOIN users u ON u.id=s.user_id "
+        "WHERE s.token_hash=? AND s.expires_at >= ? AND u.status='active'",
+        (_token_hash(token), now),
+    ).fetchone()
+    g.current_user = user
+    if user:
+        db().execute("UPDATE auth_sessions SET last_seen_at=? WHERE token_hash=?", (now, _token_hash(token)))
+        db().commit()
+    return user
+
+
+def _require_login():
+    if getattr(g, "current_user", None) is None:
+        return redirect(url_for("login", next=request.full_path))
+    return None
+
+
+@app.before_request
+def load_current_user():
+    _auth_user()
+
+
+@app.before_request
+def protect_auth_forms():
+    if request.method == "POST" and request.path in {"/login", "/signup", "/logout"} and not _csrf_valid():
+        mode = "signup" if request.path == "/signup" else "login"
+        return render_template("auth.html", mode=mode, error="Your form expired. Please try again.", next_path=_safe_next(request.form.get("next"))), 400
+
+
+@app.context_processor
+def inject_auth_context():
+    return {
+        "current_user": getattr(g, "current_user", None),
+        "accounts_enabled": accounts_enabled(),
+        "csrf_token": csrf_token,
+    }
+
+SORT_OPTIONS = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
+SORT_ORDER = {
+    "featured": "verified DESC, expires_on ASC, id DESC",
+    "price_asc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) ASC, verified DESC",
+    "price_desc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) DESC, verified DESC",
+    "name_asc": "LOWER(title) ASC, verified DESC",
+    "name_desc": "LOWER(title) DESC, verified DESC",
+    "newest": "created_at DESC, verified DESC",
+    "oldest": "created_at ASC, verified DESC",
+}
+
+def _product_listing_filters():
     city = request.args.get("city", "All")
     category = request.args.get("category", "All")
     search = request.args.get("q", "").strip()
     sort = request.args.get("sort", "featured")
-    sort_order = {
-        "featured": "verified DESC, expires_on ASC, id DESC",
-        "price_asc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) ASC, verified DESC",
-        "price_desc": "CASE WHEN sale_price IS NULL OR sale_price = '' THEN 1 ELSE 0 END, CAST(REPLACE(REPLACE(sale_price, '$', ''), ',', '') AS REAL) DESC, verified DESC",
-        "name_asc": "LOWER(title) ASC, verified DESC",
-        "name_desc": "LOWER(title) DESC, verified DESC",
-        "newest": "created_at DESC, verified DESC",
-        "oldest": "created_at ASC, verified DESC",
-    }
-    if sort not in sort_order:
+    if sort not in SORT_ORDER:
         sort = "featured"
-    query, values = "SELECT * FROM deals WHERE verified=1 AND expires_on >= ?", [date.today().isoformat()]
+    query, values = "SELECT * FROM deals WHERE verified=1 AND deal_kind='product' AND status='active' AND (expires_on IS NULL OR expires_on >= ?)", [date.today().isoformat()]
     if city != "All": query += " AND city = ?"; values.append(city)
     if category != "All": query += " AND category = ?"; values.append(category)
     if search:
         query += " AND (store LIKE ? OR title LIKE ? OR description LIKE ? OR city LIKE ?)"
         values.extend([f"%{search}%"] * 4)
-    raw_deals = db().execute(query + " ORDER BY " + sort_order[sort], values).fetchall()
+    raw_products = db().execute(query + " ORDER BY " + SORT_ORDER[sort], values).fetchall()
+    cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals WHERE deal_kind='product' ORDER BY city") if r[0] not in {"All", "Online"}]
+    categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals WHERE deal_kind='product' ORDER BY category")]
+    return raw_products, cities, categories, city, category, search, sort
+
+
+def _auth_autoconfirm_enabled():
+    return os.environ.get("MAK3DEALS_AUTH_AUTOCONFIRM", "0") == "1"
+
+
+def _email_verification_required():
+    return os.environ.get("MAK3DEALS_AUTH_REQUIRE_EMAIL_VERIFICATION", "1") != "0"
+
+
+def _auth_form(mode, error=None, success=None, next_path="/account"):
+    return render_template(
+        "auth.html",
+        mode=mode,
+        error=error,
+        success=success,
+        next_path=_safe_next(next_path),
+    )
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    next_path = _safe_next(request.args.get("next") or request.form.get("next"))
+    if getattr(g, "current_user", None) is not None:
+        return redirect(next_path)
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        user = db().execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        if not user or user["status"] != "active" or not check_password_hash(user["password_hash"], password):
+            return _auth_form("login", error="The email or password is not correct.", next_path=next_path), 401
+        if not user["email_verified"]:
+            return _auth_form("login", error="Please verify your email before signing in. The account is created, but email delivery must be configured before a verification message can be sent.", next_path=next_path), 403
+        now = _now_utc().isoformat()
+        db().execute("UPDATE users SET last_login_at=? WHERE id=?", (now, user["id"]))
+        db().commit()
+        response = redirect(next_path)
+        return _start_auth_session(user["id"], response)
+    return _auth_form("login", next_path=next_path)
+
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    next_path = _safe_next(request.args.get("next") or request.form.get("next"))
+    if getattr(g, "current_user", None) is not None:
+        return redirect(next_path)
+    if request.method == "POST":
+        display_name = " ".join(request.form.get("display_name", "").split())[:80]
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirmation = request.form.get("password_confirm", "")
+        if not display_name:
+            display_name = email.split("@", 1)[0][:80]
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+            return _auth_form("signup", error="Enter a valid email address.", next_path=next_path), 400
+        if len(password) < 8:
+            return _auth_form("signup", error="Use a password with at least 8 characters.", next_path=next_path), 400
+        if password != confirmation:
+            return _auth_form("signup", error="The passwords do not match.", next_path=next_path), 400
+        verified = 1 if _auth_autoconfirm_enabled() or not _email_verification_required() else 0
+        now = _now_utc()
+        try:
+            insert_sql = (
+                "INSERT INTO users (email, display_name, password_hash, email_verified, created_at) VALUES (?, ?, ?, ?, ?)"
+                + (" RETURNING id" if getattr(db(), "is_postgres", False) else "")
+            )
+            cursor = db().execute(
+                insert_sql,
+                (email, display_name, generate_password_hash(password), verified, now.isoformat()),
+            )
+            user_id = cursor.lastrowid if not getattr(db(), "is_postgres", False) else cursor.fetchone()["id"]
+            verification_token = None
+            if not verified:
+                verification_token = secrets.token_urlsafe(48)
+                expires_at = (now.timestamp() + 48 * 60 * 60)
+                db().execute(
+                    "INSERT INTO auth_email_tokens (token_hash, user_id, purpose, created_at, expires_at) VALUES (?, ?, ?, ?, ?)",
+                    (_token_hash(verification_token), user_id, "verify-email", now.isoformat(), datetime.fromtimestamp(expires_at, tz=timezone.utc).isoformat()),
+                )
+            db().commit()
+        except DB_INTEGRITY_ERRORS:
+            db().rollback()
+            return _auth_form("signup", error="An account with that email already exists. Try signing in instead.", next_path=next_path), 409
+        if verified:
+            response = redirect(next_path)
+            return _start_auth_session(user_id, response)
+        return _auth_form("signup", success="Account created. Verify your email before signing in. Email delivery is the remaining production configuration step.", next_path=next_path)
+    return _auth_form("signup", next_path=next_path)
+
+
+@app.route("/verify-email/<token>")
+def verify_email(token):
+    row = db().execute(
+        "SELECT * FROM auth_email_tokens WHERE token_hash=? AND purpose='verify-email' AND used_at IS NULL AND expires_at >= ?",
+        (_token_hash(token), _now_utc().isoformat()),
+    ).fetchone()
+    if not row:
+        return _auth_form("login", error="That verification link is invalid or expired."), 400
+    now = _now_utc().isoformat()
+    db().execute("UPDATE users SET email_verified=1 WHERE id=?", (row["user_id"],))
+    db().execute("UPDATE auth_email_tokens SET used_at=? WHERE id=?", (now, row["id"]))
+    db().commit()
+    response = redirect(url_for("account"))
+    return _start_auth_session(row["user_id"], response)
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    return _clear_auth_session(redirect(url_for("home")))
+
+
+@app.route("/account")
+def account():
+    required = _require_login()
+    if required:
+        return required
+    return render_template("account.html")
+
+@app.route("/")
+def home():
+    raw_products, cities, categories, city, category, search, sort = _product_listing_filters()
+    discounted_products = [row for row in raw_products if (row["discount_percent"] or 0) > 0]
+    regular_products = [row for row in raw_products if (row["discount_percent"] or 0) <= 0][:8]
     comparison_counts = {}
-    for deal in raw_deals:
+    for deal in raw_products:
         if deal["product_key"]:
             comparison_counts[deal["product_key"]] = comparison_counts.get(deal["product_key"], 0) + 1
     # Matched retailer listings are one shopping opportunity, not duplicate cards.
     deals, shown_product_keys = [], set()
-    for deal in raw_deals:
+    for deal in discounted_products:
         product_key = deal["product_key"]
         if product_key and comparison_counts.get(product_key, 0) > 1:
             if product_key in shown_product_keys:
                 continue
             shown_product_keys.add(product_key)
         deals.append(deal)
-    cities = [r[0] for r in db().execute("SELECT DISTINCT city FROM deals ORDER BY city") if r[0] not in {"All", "Online"}]
-    categories = [r[0] for r in db().execute("SELECT DISTINCT category FROM deals ORDER BY category")]
-    sort_options = [("featured", "Featured"), ("price_asc", "Cheapest first"), ("price_desc", "Most expensive first"), ("name_asc", "A–Z"), ("name_desc", "Z–A"), ("newest", "Newest first"), ("oldest", "Oldest first")]
-    return render_template("index.html", deals=deals, cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=sort_options, search=search, comparison_counts=comparison_counts, featured_guides=GUIDES[:3])
+    homepage_coupons = db().execute(
+        "SELECT * FROM deals WHERE verified=1 AND deal_kind='coupon' AND status='active' "
+        "AND (expires_on IS NULL OR expires_on >= ?) ORDER BY expires_on ASC LIMIT 4",
+        (date.today().isoformat(),),
+    ).fetchall()
+    return render_template("index.html", deals=deals, regular_products=regular_products, homepage_coupons=homepage_coupons, retailer_picks=published_picks(db(), limit=4), cities=cities, categories=categories, selected_city=city, selected_category=category, selected_sort=sort, sort_options=SORT_OPTIONS, search=search, comparison_counts=comparison_counts)
+
+@app.route("/products")
+def products():
+    raw_products, cities, categories, city, category, search, sort = _product_listing_filters()
+    per_page = 24
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    total_count = len(raw_products)
+    page_count = max(1, (total_count + per_page - 1) // per_page)
+    page = min(page, page_count)
+    start = (page - 1) * per_page
+    return render_template(
+        "products.html", products=raw_products[start:start + per_page], total_count=total_count,
+        page=page, page_count=page_count, cities=cities, categories=categories,
+        selected_city=city, selected_category=category, selected_sort=sort,
+        sort_options=SORT_OPTIONS, search=search,
+    )
 
 @app.route("/guides")
 def guides():
@@ -296,12 +539,27 @@ def guides():
 def guide_detail(slug):
     guide = GUIDE_BY_SLUG.get(slug)
     if not guide:
+        destination = GUIDE_REDIRECTS.get(slug)
+        if destination:
+            return redirect(url_for("guide_detail", slug=destination), code=301)
         abort(404)
     return render_template("guide.html", guide=guide)
 
 @app.route("/daily")
 def daily_game():
-    return render_template("daily.html", puzzle_date=puzzle_date(), daily_session=daily_session(), practice=request.args.get("practice") == "1")
+    return render_template("daily.html", puzzle_date=puzzle_date(), daily_session=daily_session(database=db()), practice=request.args.get("practice") == "1")
+
+@app.route("/daily-hints")
+def daily_hints_page():
+    # Keep the contest session private from the SEO answer page. This page is
+    # intentionally for the completed prior day, so it cannot reveal today's
+    # answers before a player has had a chance to enter the session.
+    completed_day = date.today() - timedelta(days=1)
+    return render_template(
+        "daily-hints.html",
+        completed_day=completed_day.isoformat(),
+        puzzle_cards=editorial_puzzle_cards(completed_day, database=db()),
+    )
 
 @app.route("/api/daily/guess", methods=["POST"])
 def daily_guess():
@@ -311,6 +569,7 @@ def daily_guess():
         payload.get("attempts", 0),
         payload.get("puzzle_index", 0),
         payload.get("hints_used", 0),
+        database=db(),
     ))
 
 
@@ -321,7 +580,7 @@ def daily_hint_api():
         hint_index = int(payload.get("hint_index", 0))
     except (TypeError, ValueError):
         hint_index = 0
-    return jsonify(daily_hint(hint_index, payload.get("puzzle_index", 0)))
+    return jsonify(daily_hint(hint_index, payload.get("puzzle_index", 0), database=db()))
 
 @app.route("/robots.txt")
 def robots():
@@ -329,7 +588,24 @@ def robots():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    urls = ["https://mak3deals.com/", "https://mak3deals.com/coupons", "https://mak3deals.com/sources"]
+    today = date.today().isoformat()
+    urls = ["https://mak3deals.com/"]
+    active_products = db().execute(
+        "SELECT COUNT(*) FROM deals WHERE verified=1 AND deal_kind='product' "
+        "AND status='active' AND (expires_on IS NULL OR expires_on >= ?)",
+        (today,),
+    ).fetchone()[0]
+    active_coupons = db().execute(
+        "SELECT COUNT(*) FROM deals WHERE verified=1 AND deal_kind='coupon' "
+        "AND status='active' AND (expires_on IS NULL OR expires_on >= ?)",
+        (today,),
+    ).fetchone()[0]
+    if active_products:
+        urls.append("https://mak3deals.com/products")
+    if active_coupons:
+        urls.append("https://mak3deals.com/coupons")
+    if published_picks(db()):
+        urls.append("https://mak3deals.com/retailer-picks")
     urls.extend(f"https://mak3deals.com/guides/{guide['slug']}" for guide in GUIDES)
     body = "".join(f"<url><loc>{url}</loc></url>" for url in urls)
     return f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>', 200, {"Content-Type": "application/xml; charset=utf-8"}
@@ -337,7 +613,7 @@ def sitemap():
 @app.route("/compare/<product_key>")
 def compare_product(product_key):
     offers = db().execute(
-        "SELECT * FROM deals WHERE product_key=? AND verified=1 AND expires_on >= ? ORDER BY sale_price ASC, checked_on DESC",
+        "SELECT * FROM deals WHERE product_key=? AND deal_kind='product' AND verified=1 AND status='active' AND (expires_on IS NULL OR expires_on >= ?) ORDER BY sale_price ASC, checked_on DESC",
         (product_key, date.today().isoformat()),
     ).fetchall()
     if not offers:
@@ -350,16 +626,25 @@ def compare_product(product_key):
 
 @app.route("/coupons")
 def coupons():
-    deals = db().execute("SELECT * FROM deals WHERE verified=1 AND expires_on >= ? ORDER BY expires_on ASC", (date.today().isoformat(),)).fetchall()
+    deals = db().execute("SELECT * FROM deals WHERE verified=1 AND deal_kind='coupon' AND status='active' AND (expires_on IS NULL OR expires_on >= ?) ORDER BY expires_on ASC", (date.today().isoformat(),)).fetchall()
     return render_template("coupons.html", deals=deals)
+
+@app.route("/retailer-picks")
+def retailer_picks_page():
+    picks = published_picks(db())
+    response = app.make_response(render_template("retailer-picks.html", picks=picks))
+    if not picks:
+        response.headers["X-Robots-Tag"] = "noindex, follow"
+    return response
 
 @app.route("/api/coupons")
 def coupon_api():
     """Return only current, verified coupon codes for the browser extension."""
     store = request.args.get("store", "").strip()
     query = ("SELECT id, store, title, coupon_code, offer_terms, expires_on, checked_on, "
-             "link, affiliate_url FROM deals WHERE verified=1 AND coupon_code IS NOT NULL "
-             "AND TRIM(coupon_code) <> '' AND expires_on >= ?")
+             "last_checked_at, link, affiliate_url FROM deals WHERE verified=1 "
+             "AND deal_kind='coupon' AND status='active' AND coupon_code IS NOT NULL "
+             "AND TRIM(coupon_code) <> '' AND (expires_on IS NULL OR expires_on >= ?)")
     values = [date.today().isoformat()]
     if store:
         query += " AND lower(store)=lower(?)"
@@ -372,9 +657,10 @@ def offer_api():
     """Return current verified offers that match a product title or store."""
     store = request.args.get("store", "").strip()
     search = " ".join(request.args.get("q", "").lower().split())
-    query = ("SELECT id, store, title, description, sale_price, regular_price, offer_terms, "
-             "expires_on, checked_on, link, affiliate_url, product_key, image_url, deal_kind FROM deals "
-             "WHERE verified=1 AND expires_on >= ?")
+    query = ("SELECT id, store, title, description, sale_price, regular_price, discount_percent, "
+             "offer_terms, expires_on, checked_on, last_checked_at, availability_status, source_provider, "
+             "link, affiliate_url, product_key, image_url, deal_kind FROM deals "
+             "WHERE verified=1 AND deal_kind='product' AND status='active' AND (expires_on IS NULL OR expires_on >= ?)")
     values = [date.today().isoformat()]
     if store:
         query += " AND lower(store)=lower(?)"
@@ -392,7 +678,7 @@ def offer_api():
             item = dict(row)
             item["match_score"] = score
             matches.append(item)
-    matches.sort(key=lambda item: (-item["match_score"], item["expires_on"]))
+    matches.sort(key=lambda item: (-item["match_score"], item["expires_on"] is None, item["expires_on"] or ""))
     return jsonify({"offers": matches[:10]})
 
 @app.route("/api/feed-status")
@@ -404,7 +690,8 @@ def feed_status_api():
         "FROM feed_runs ORDER BY id DESC LIMIT 1"
     ).fetchone()
     sources = db().execute(
-        "SELECT source_key, store, url, mode, enabled, http_status, status, checked_at, offer_count, message "
+        "SELECT source_key, store, url, mode, enabled, http_status, status, checked_at, offer_count, "
+        "imported_count, retired_count, last_imported_at, last_error, message "
         "FROM feed_sources ORDER BY store"
     ).fetchall()
     return jsonify({
@@ -422,6 +709,104 @@ def internal_refresh_offers():
         return jsonify({"error": "Not authorized."}), 403
     return jsonify(refresh_sources(db()))
 
+@app.route("/internal/discover-retailer-deals", methods=["POST"])
+def internal_discover_retailer_deals():
+    """Protected daily pass for official source checks and permitted feeds."""
+    expected = os.environ.get("MAK3DEALS_REFRESH_TOKEN", "").strip()
+    provided = request.headers.get("X-Mak3Deals-Refresh-Token", "").strip()
+    if not expected or not provided or not hmac.compare_digest(expected, provided):
+        return jsonify({"error": "Not authorized."}), 403
+    return jsonify(discover_retailer_deals(db(), check_urls=True))
+
+@app.route("/api/retailer-deal-status")
+def retailer_deal_status_api():
+    return jsonify(status_snapshot(db()))
+
+@app.route("/api/retailer-deals/candidates", methods=["POST"])
+def retailer_deal_candidate_api():
+    payload = request.get_json(silent=True) or {}
+    try:
+        candidate_id, created = upsert_candidate(db(), payload)
+        db().commit()
+    except SourceHoldError as exc:
+        return jsonify({"error": str(exc)}), 409
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"id": candidate_id, "created": created, "status": "candidate", "affiliate_claimed": False}), 201 if created else 200
+
+@app.route("/api/retailer-deals/<int:candidate_id>/review", methods=["POST"])
+def retailer_deal_review_api(candidate_id):
+    payload = request.get_json(silent=True) or {}
+    action = str(payload.get("action") or "").strip().lower()
+    if action not in {"approve", "reject", "publish"}:
+        return jsonify({"error": "action must be approve, reject, or publish"}), 400
+    candidate = db().execute("SELECT * FROM retailer_deal_candidates WHERE id=?", (candidate_id,)).fetchone()
+    if not candidate:
+        return jsonify({"error": "Candidate not found"}), 404
+    source_row = db().execute("SELECT enabled FROM retailer_sources WHERE source_key=?", (candidate["source_key"],)).fetchone()
+    if action in {"approve", "publish"} and (not source_row or not source_row["enabled"]):
+        return jsonify({"error": "This merchant source is currently on hold."}), 409
+    if action == "approve":
+        issues = publication_issues(candidate)
+        if issues:
+            return jsonify({"error": "Candidate is not ready for approval.", "issues": issues}), 409
+        status = "approved"
+    elif action == "publish":
+        if candidate["status"] != "approved":
+            return jsonify({"error": "Only an approved candidate can be explicitly published."}), 409
+        issues = publication_issues(candidate)
+        if issues:
+            return jsonify({"error": "Candidate is not ready for publication.", "issues": issues}), 409
+        status = "published"
+    else:
+        status = "rejected"
+    reviewed_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    db().execute(
+        "UPDATE retailer_deal_candidates SET status=?, reviewed_at=?, review_note=?, published_at=?, affiliate_claimed=0 WHERE id=?",
+        (status, reviewed_at, str(payload.get("note") or "").strip()[:500] or None, reviewed_at if status == "published" else None, candidate_id),
+    )
+    db().commit()
+    return jsonify({"id": candidate_id, "status": status, "affiliate_claimed": False})
+
+
+@app.route("/api/retailer-deals/export")
+def retailer_deal_export_api():
+    """Read-only sanitized operator export; never includes credentials or feed URLs."""
+    rows = db().execute(
+        """SELECT c.id, c.merchant, c.title, c.summary, c.source_url, c.retailer_url,
+                  c.checked_on, c.expires_on, c.recheck_on, c.evidence_reference,
+                  c.evidence_scope, c.promotion_type,
+                  c.promotion_terms, c.location_restrictions, c.membership_restrictions,
+                  c.link_scope, c.status, c.affiliate_claimed,
+                  s.status AS source_status, s.http_status AS source_http_status,
+                  s.source_check_state, s.feed_state, s.last_error AS source_error,
+                  s.feed_last_error, s.last_checked_at AS source_checked_at
+           FROM retailer_deal_candidates c
+           LEFT JOIN retailer_sources s ON s.source_key=c.source_key
+           ORDER BY c.id"""
+    ).fetchall()
+    def safe_error_category(value):
+        if not value:
+            return None
+        text = str(value).lower()
+        if "hold" in text:
+            return "source_held"
+        if "http error" in text or "status" in text:
+            return "http_error"
+        if "timeout" in text or "urlopen" in text or "network" in text:
+            return "network_error"
+        if "json" in text or "payload" in text:
+            return "feed_payload_error"
+        return "source_or_feed_error"
+
+    candidates = []
+    for row in rows:
+        item = dict(row)
+        item["source_error"] = safe_error_category(item["source_error"])
+        item["feed_last_error"] = safe_error_category(item["feed_last_error"])
+        candidates.append(item)
+    return jsonify({"candidates": candidates})
+
 @app.route("/feed-status")
 @app.route("/sources")
 def feed_status_page():
@@ -432,6 +817,14 @@ def feed_status_page():
     ).fetchone()
     sources = db().execute("SELECT * FROM feed_sources ORDER BY store").fetchall()
     return render_template("feed-status.html", latest=latest, sources=sources)
+
+@app.route("/retailer-deal-admin")
+def retailer_deal_admin_page():
+    snapshot = status_snapshot(db())
+    candidates = db().execute(
+        "SELECT * FROM retailer_deal_candidates ORDER BY CASE status WHEN 'candidate' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, expires_on IS NULL, expires_on ASC, id DESC"
+    ).fetchall()
+    return render_template("retailer-deal-admin.html", snapshot=snapshot, candidates=candidates)
 
 @app.route("/watchlist")
 def watchlist():
@@ -514,6 +907,13 @@ def submit_score():
 @app.route("/ads.txt")
 def ads_txt():
     return "google.com, pub-3943554631291586, DIRECT, f08c47fec0942fa0\n", 200, {"Content-Type": "text/plain"}
+
+@app.route("/healthz")
+def healthz():
+    """Render health check: the process is up and the configured DB answers."""
+    database = db()
+    database.execute("SELECT 1").fetchone()
+    return jsonify({"ok": True, "database": "postgres" if getattr(database, "is_postgres", False) else "sqlite"})
 
 @app.route("/about")
 def about():
