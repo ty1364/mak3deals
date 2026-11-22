@@ -1,5 +1,5 @@
 -- Additive-only preparation for the daily retailer editorial workflow.
--- This stores source checks and manually reviewed link-outs; it does not
+-- This stores source checks and manually reviewed link-outs, and does not
 -- copy retailer catalogs or claim affiliate attribution.
 
 CREATE TABLE IF NOT EXISTS retailer_sources (
