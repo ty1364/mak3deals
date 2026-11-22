@@ -16,7 +16,7 @@ The account flow is implemented in the existing Flask application; React is not 
 Set these as Render environment variables; do not commit values to GitHub:
 
 ```text
-MAK3DEALS_DATABASE=<Render Postgres connection string after the database is provisioned>
+DATABASE_URL=<Render Postgres connection string after the database is provisioned>
 MAK3DEALS_SECRET_KEY=<long random secret, 32+ bytes>
 MAK3DEALS_COOKIE_SECURE=1
 MAK3DEALS_AUTH_REQUIRE_EMAIL_VERIFICATION=1
@@ -24,4 +24,4 @@ MAK3DEALS_AUTH_REQUIRE_EMAIL_VERIFICATION=1
 
 `MAK3DEALS_AUTH_AUTOCONFIRM=1` is for isolated local tests only and must not be set in production. A mail provider and server-side delivery adapter are still required before production verification emails can be sent.
 
-The Postgres schema is prepared in `migrations/003_accounts.sql`. The current staging app continues to use the repository's SQLite-compatible path until the database adapter migration is explicitly approved.
+`MAK3DEALS_DATABASE` selects a local SQLite file path; it is not the Postgres connection variable. On Render, `DATABASE_URL` is required and the app applies the Postgres schema migrations when it first connects. The production Blueprint keeps the existing web service on Render's Free plan and provisions the persistent `0.1c-256mb` Postgres plan.
