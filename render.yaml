@@ -28,6 +28,7 @@ services:
 
 databases:
   - name: mak3deals-db
-    databaseName: mak3deals
+    databaseName: mak3deals_db
+    postgresMajorVersion: "18"
     plan: 0.1c-256mb
     diskSizeGB: 1
