@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Mak3Deals · Shop smarter{% endblock %}</title>
+  {% block meta %}<meta name="description" content="Mak3Deals helps shoppers find individual products, verified savings, and practical shopping guidance.">{% endblock %}
+  <meta name="google-adsense-account" content="ca-pub-3943554631291586">
+  <meta name="impact-site-verification" content="b2f54a01-2fd5-4e42-a72c-2b130d5c7469">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3943554631291586" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='deals.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='site-shell.css', v='site-wide-v2') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+  {% block page_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}site-page{% endblock %}">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="site-brand" href="/" aria-label="Mak3Deals home"><img src="{{ url_for('static', filename='logo-deals.png') }}" alt="Mak3Deals"></a>
+      <button class="site-menu-toggle" type="button" aria-expanded="false" aria-controls="site-primary-nav"><span class="site-menu-icon" aria-hidden="true">☰</span><span class="site-menu-label">Menu</span></button>
+      <nav id="site-primary-nav" class="site-nav" aria-label="Primary navigation">
+        <a class="{% if request.path == '/' %}is-active{% endif %}" href="/">Deals</a>
+        <a class="{% if request.path == '/products' %}is-active{% endif %}" href="/products">Shop Products</a>
+        <a class="{% if request.path == '/retailer-picks' %}is-active{% endif %}" href="/retailer-picks">Retailer Picks</a>
+        <a class="{% if request.path == '/coupons' %}is-active{% endif %}" href="/coupons">Coupons</a>
+        <a class="{% if request.path.startswith('/guides') %}is-active{% endif %}" href="/guides">Guides</a>
+        <a class="{% if request.path == '/daily' %}is-active{% endif %}" href="/daily">Daily challenge</a>
+        <a class="{% if request.path == '/watchlist' %}is-active{% endif %}" href="/watchlist">Watchlist</a>
+        <a class="{% if request.path == '/submit' %}is-active{% endif %}" href="/submit">Submit a Deal</a>
+        {% if accounts_enabled %}{% if current_user %}<a class="{% if request.path == '/account' %}is-active{% endif %}" href="/account">Account</a>{% else %}<a class="{% if request.path in ['/login', '/signup'] %}is-active{% endif %}" href="/login">Log in</a>{% endif %}{% endif %}
+      </nav>
+    </div>
+  </header>
+  {% block page_content %}<main class="site-main">{% block content %}{% endblock %}</main>{% endblock %}
+  <footer class="site-footer">
+    <div><strong>Mak3Deals</strong><span>Shopping research with direct links and clear disclosures.</span></div>
+    <nav aria-label="Footer navigation"><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/affiliate-disclosure">Affiliate disclosure</a></nav>
+  </footer>
+  <script src="{{ url_for('static', filename='site-shell.js', v='site-wide-v2') }}" defer></script>
+  <script src="{{ url_for('static', filename='home-polish.js', v='visual-system-v1') }}" defer></script>
+  {% block page_scripts %}{% endblock %}
+</body>
+</html>

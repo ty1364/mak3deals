@@ -4,7 +4,7 @@ const results = document.querySelector("#results");
 function render(coupons) {
   results.hidden = false;
   if (!coupons.length) {
-    results.innerHTML = '<p class="muted">No verified coupon codes are available for this store yet. We will not show unverified codes.</p>';
+    results.innerHTML = '<div class="no-match"><strong>No verified coupon codes yet.</strong><span class="muted">We will not show unverified codes. Mak3Deals will keep the offer search honest.</span></div>';
     return;
   }
   results.innerHTML = coupons.map((coupon, index) => `
@@ -22,7 +22,7 @@ function render(coupons) {
 
 function renderOffers(offers) {
   if (!offers.length) return '<p class="muted">No matching verified Mak3Deals offer yet. We will not recommend an unrelated product.</p>';
-  return '<h3>Verified Mak3Deals savings</h3>' + offers.map(offer => `
+  return '<h3 class="result-heading">Verified savings for this page</h3>' + offers.map(offer => `
     <article class="offer">${offer.image_url && /^https:\/\//i.test(offer.image_url) ? `<img class="offer-image" src="${escapeHtml(offer.image_url)}" alt="${escapeHtml(offer.title)}" loading="lazy">` : ''}<strong>${escapeHtml(offer.title)}</strong>
       <span class="offer-price">${escapeHtml(offer.sale_price || "See offer")}</span>
       ${offer.regular_price ? `<span class="muted"> regularly ${escapeHtml(offer.regular_price)}</span>` : ''}
@@ -39,14 +39,20 @@ chrome.tabs.query({active: true, currentWindow: true}, tabs => {
     status.textContent = "Open a supported shopping page first.";
     return;
   }
-  chrome.scripting.executeScript({target: {tabId: tab.id}, func: () => {
-    const stores = [["amazon.", "Amazon"], ["walmart.", "Walmart"], ["bestbuy.", "Best Buy"], ["homedepot.", "Home Depot"], ["costco.", "Costco"], ["nike.", "Nike"], ["macys.", "Macy's"], ["kohls.", "Kohl's"], ["chewy.", "Chewy"]];
-    const host = location.hostname.toLowerCase();
-    const match = stores.find(([fragment]) => host.includes(fragment));
+  const match = mak3dealsRetailerForHost(new URL(tab.url).hostname);
+  const reenable = document.querySelector("#enable-assistant");
+  if (reenable && match) {
+    reenable.addEventListener("click", () => {
+      chrome.tabs.sendMessage(tab.id, {type: "clear-dismissal"}, () => {
+        reenable.textContent = chrome.runtime.lastError ? "Reload the store page to re-enable" : "Re-enabled for this site";
+      });
+    });
+  }
+  chrome.scripting.executeScript({target: {tabId: tab.id}, func: (retailer) => {
     const fields = [...document.querySelectorAll("input")].filter(input => /coupon|promo|discount|voucher|offer code/i.test(`${input.name} ${input.id} ${input.placeholder} ${input.getAttribute("aria-label") || ""}`));
     const title = document.querySelector("h1")?.innerText?.trim() || document.title || "";
-    return {store: match ? match[1] : "", title: title.slice(0, 180), supported: Boolean(match), checkoutLike: fields.length > 0};
-  }})
+    return {store: retailer ? retailer.name : "", title: title.slice(0, 180), supported: Boolean(retailer), checkoutLike: fields.length > 0};
+  }, args: [match]})
     .then(injectionResults => {
       const details = injectionResults[0]?.result || {};
       if (!details.supported) {
