@@ -95,9 +95,22 @@ DAILY_WORDS = [
     "ACUTE", "ANGLE", "CURVE", "ARCED", "CHORD", "TANGS", "CONES", "OVALS", "TORUS", "PRIME", "RATIO", "DIGIT",
     "CRABS", "CLAMS", "HYENA", "STORK", "SKUNK", "SHREW", "VOLES", "MIDGE", "MOTHS", "GNATS", "TROUT", "PERCH",
     "KITES", "SHELL", "PONDS", "BROOK", "BIRDS", "NESTS", "LEAPS", "BARKS", "PAWSY", "FANGS", "SNAIL", "SWANS",
+    "FABLE", "LYRIC", "TEMPO", "CELLO", "BANJO", "FLUTE", "HARPY", "SONIC", "VOCAL", "CHIME", "TUNES", "DRUMS",
 ]
 
 DAILY_HINTS = {
+    "FABLE": "A short story that teaches a lesson.",
+    "LYRIC": "Words sung in a song.",
+    "TEMPO": "The speed of a musical piece.",
+    "CELLO": "A large bowed string instrument.",
+    "BANJO": "A stringed instrument with a round body.",
+    "FLUTE": "A wind instrument played by blowing across an opening.",
+    "HARPY": "A mythical creature with a woman's face and bird's body.",
+    "SONIC": "Relating to sound.",
+    "VOCAL": "Relating to the voice.",
+    "CHIME": "A ringing musical sound.",
+    "TUNES": "Melodies or songs.",
+    "DRUMS": "Percussion instruments struck to make rhythms.",
     "KITES": "Tethered objects flown in the wind.",
     "SHELL": "A hard outer covering on some animals.",
     "PONDS": "Small bodies of still freshwater.",
@@ -608,6 +621,18 @@ DAILY_HINTS = {
 }
 
 DAILY_CLUES = {
+    "FABLE": "A fictional tale, often with talking animals.",
+    "LYRIC": "A line of words in a song.",
+    "TEMPO": "How fast or slowly music moves.",
+    "CELLO": "A string instrument played while seated.",
+    "BANJO": "A twangy instrument common in bluegrass.",
+    "FLUTE": "A high-pitched woodwind held sideways.",
+    "HARPY": "A creature from Greek mythology.",
+    "SONIC": "An adjective meaning connected to sound.",
+    "VOCAL": "Singing uses these cords.",
+    "CHIME": "A bell-like sound from a clock or door.",
+    "TUNES": "Plural for catchy melodies.",
+    "DRUMS": "A kit played with sticks and pedals.",
     "CRABS": "Crustaceans with pincers.",
     "CLAMS": "Bivalves with hinged shells.",
     "HYENA": "Carnivore with powerful jaws.",
