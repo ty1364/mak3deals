@@ -96,9 +96,23 @@ DAILY_WORDS = [
     "CRABS", "CLAMS", "HYENA", "STORK", "SKUNK", "SHREW", "VOLES", "MIDGE", "MOTHS", "GNATS", "TROUT", "PERCH",
     "KITES", "SHELL", "PONDS", "BROOK", "BIRDS", "NESTS", "LEAPS", "BARKS", "PAWSY", "FANGS", "SNAIL", "SWANS",
     "FABLE", "LYRIC", "TEMPO", "CELLO", "BANJO", "FLUTE", "HARPY", "SONIC", "VOCAL", "CHIME", "TUNES", "DRUMS",
+    "ALLOY", "EPOXY", "SWAGE", "DROSS", "INGOT", "HONED", "REAMS", "BRAZE", "TACKS", "CASTS", "BURRS", "SHIMS",
 ]
 
 DAILY_HINTS = {
+    "ALLOY": "Metal combined with other elements to improve properties.",
+    "EPOXY": "Resin adhesive that cures after its components are mixed.",
+    "SWAGE": "Shape metal by forcing it through a die.",
+    "DROSS": "Impurities that collect on molten metal.",
+    "INGOT": "Solid block of metal cast for further processing.",
+    "HONED": "Finished a surface with fine abrasive stones.",
+    "REAMS": "Finishes holes to an accurate diameter.",
+    "BRAZE": "Join metals with a filler that melts below the base metals.",
+    "TACKS": "Makes temporary small welds to hold parts in place.",
+    "CASTS": "Forms parts by pouring molten material into molds.",
+    "BURRS": "Small rough edges left after machining.",
+    "SHIMS": "Thin pieces used to adjust alignment or spacing.",
+
     "FABLE": "A short story that teaches a lesson.",
     "LYRIC": "Words sung in a song.",
     "TEMPO": "The speed of a musical piece.",
@@ -621,6 +635,19 @@ DAILY_HINTS = {
 }
 
 DAILY_CLUES = {
+    "ALLOY": "Steel and bronze are examples of this material type.",
+    "EPOXY": "A two-part bonding material used in repairs.",
+    "SWAGE": "A forming process that reduces or changes a section.",
+    "DROSS": "Waste skimmed from the surface during metal melting.",
+    "INGOT": "A cast metal block used as raw stock.",
+    "HONED": "Describes a bore refined by precision abrasion.",
+    "REAMS": "What a reamer does to drilled holes.",
+    "BRAZE": "A joining method using a heated filler metal.",
+    "TACKS": "Small welds keep an assembly aligned before final welding.",
+    "CASTS": "Creates shapes using a mold and liquid metal.",
+    "BURRS": "Sharp raised edges that require deburring.",
+    "SHIMS": "Small spacers placed under a component for fit.",
+
     "FABLE": "A fictional tale, often with talking animals.",
     "LYRIC": "A line of words in a song.",
     "TEMPO": "How fast or slowly music moves.",
