@@ -97,6 +97,18 @@ DAILY_WORDS = [
     "KITES", "SHELL", "PONDS", "BROOK", "BIRDS", "NESTS", "LEAPS", "BARKS", "PAWSY", "FANGS", "SNAIL", "SWANS",
     "FABLE", "LYRIC", "TEMPO", "CELLO", "BANJO", "FLUTE", "HARPY", "SONIC", "VOCAL", "CHIME", "TUNES", "DRUMS",
     "ALLOY", "EPOXY", "SWAGE", "DROSS", "INGOT", "HONED", "REAMS", "BRAZE", "TACKS", "CASTS", "BURRS", "SHIMS",
+    "SATIN",
+    "TULLE",
+    "SUEDE",
+    "PLEAT",
+    "WEAVE",
+    "BRAID",
+    "LAPEL",
+    "CUFFS",
+    "TWEED",
+    "PLAID",
+    "SMOCK",
+    "DARTS",
 ]
 
 DAILY_HINTS = {
@@ -632,6 +644,18 @@ DAILY_HINTS = {
     "PLUMB": "Exactly vertical, as checked with a level.",
     "JOIST": "A horizontal framing member supporting a floor or ceiling.",
     "SPANS": "Distances bridged between supports.",
+    "SATIN": "Think of shiny evening gowns.",
+    "TULLE": "Think of a ballerina's skirt.",
+    "SUEDE": "Think of soft brushed leather shoes.",
+    "PLEAT": "Think of a folded school skirt.",
+    "WEAVE": "Think of crossing warp and weft.",
+    "BRAID": "Think of a three-strand hairstyle.",
+    "LAPEL": "Think of where a suit pin goes.",
+    "CUFFS": "Think of where shirt sleeves meet wrists.",
+    "TWEED": "Think of traditional textured country jackets.",
+    "PLAID": "Think of a tartan-like pattern.",
+    "SMOCK": "Think of a painter's protective garment.",
+    "DARTS": "Think of tailoring a fitted waist.",
 }
 
 DAILY_CLUES = {
@@ -1122,6 +1146,18 @@ DAILY_CLUES = {
     "DRAGS": "Resists motion through air or water.",
     "LIFTS": "Raises an object upward.",
     "STALL": "A loss of lift from excessive wing angle of attack.",
+    "SATIN": "A smooth fabric with a glossy face.",
+    "TULLE": "A fine netting used in veils.",
+    "SUEDE": "Leather with a soft napped finish.",
+    "PLEAT": "A fold pressed or sewn into fabric.",
+    "WEAVE": "Interlace threads to make cloth.",
+    "BRAID": "Intertwine three or more strands.",
+    "LAPEL": "A folded flap on the front of a jacket.",
+    "CUFFS": "Bands at the ends of sleeves.",
+    "TWEED": "A rough woolen fabric often used for jackets.",
+    "PLAID": "A pattern of crossing colored stripes.",
+    "SMOCK": "A loose garment worn to protect clothing.",
+    "DARTS": "Tapered stitched folds that shape a garment.",
 }
 
 HINT_COSTS = (150, 300)
