@@ -109,6 +109,17 @@ DAILY_WORDS = [
     "PLAID",
     "SMOCK",
     "DARTS",
+    "FILES",
+    "VICES",
+    "SLOTS",
+    "DADOS",
+    "KERFS",
+    "MITER",
+    "BURIN",
+    "TONGS",
+    "WEDGE",
+    "SIEVE",
+    "GOUGE",
 ]
 
 DAILY_HINTS = {
@@ -656,6 +667,17 @@ DAILY_HINTS = {
     "PLAID": "Think of a tartan-like pattern.",
     "SMOCK": "Think of a painter's protective garment.",
     "DARTS": "Think of tailoring a fitted waist.",
+    "FILES": "Think of smoothing a rough metal edge by hand.",
+    "VICES": "Think of a workbench with two jaws.",
+    "SLOTS": "Think of elongated openings in a bracket.",
+    "DADOS": "Think of joining shelves to cabinet sides.",
+    "KERFS": "Think of material removed by a saw blade.",
+    "MITER": "Think of the corner of a picture frame.",
+    "BURIN": "Think of engraving a copper printing plate.",
+    "TONGS": "Think of lifting a hot crucible.",
+    "WEDGE": "Think of splitting a log with a tapered tool.",
+    "SIEVE": "Think of separating coarse particles from fine ones.",
+    "GOUGE": "Think of carving a curved channel in wood.",
 }
 
 DAILY_CLUES = {
@@ -1158,6 +1180,17 @@ DAILY_CLUES = {
     "PLAID": "A pattern of crossing colored stripes.",
     "SMOCK": "A loose garment worn to protect clothing.",
     "DARTS": "Tapered stitched folds that shape a garment.",
+    "FILES": "Abrasive hand tools with rows of small teeth.",
+    "VICES": "British spelling for devices that grip workpieces.",
+    "SLOTS": "Narrow openings that may allow adjustment.",
+    "DADOS": "Rectangular grooves cut across wooden boards.",
+    "KERFS": "Widths of cuts made by saws.",
+    "MITER": "An angled joint between two pieces.",
+    "BURIN": "A pointed engraving tool.",
+    "TONGS": "A tool with two arms for gripping objects.",
+    "WEDGE": "A piece that narrows toward one edge.",
+    "SIEVE": "A mesh tool used to sort particles by size.",
+    "GOUGE": "A chisel with a curved cutting edge.",
 }
 
 HINT_COSTS = (150, 300)
