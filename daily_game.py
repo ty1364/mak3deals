@@ -120,6 +120,18 @@ DAILY_WORDS = [
     "WEDGE",
     "SIEVE",
     "GOUGE",
+    "ADORE",
+    "CHEER",
+    "MERRY",
+    "JOLLY",
+    "GREET",
+    "HOSTS",
+    "GUEST",
+    "PARTY",
+    "BELLS",
+    "ELFIN",
+    "GIVER",
+    "THANK",
 ]
 
 DAILY_HINTS = {
@@ -678,6 +690,18 @@ DAILY_HINTS = {
     "WEDGE": "Think of splitting a log with a tapered tool.",
     "SIEVE": "Think of separating coarse particles from fine ones.",
     "GOUGE": "Think of carving a curved channel in wood.",
+    "ADORE": "Think of a gift recipient who absolutely loves it.",
+    "CHEER": "Think of fans celebrating a winning team.",
+    "MERRY": "Think of a traditional Christmas greeting.",
+    "JOLLY": "Think of a laughing Santa character.",
+    "GREET": "Think of saying hello at the front door.",
+    "HOSTS": "Think of those organizing a dinner party.",
+    "GUEST": "Think of someone staying in a spare bedroom.",
+    "PARTY": "Think of balloons at a birthday event.",
+    "BELLS": "Think of ringing ornaments on a sleigh.",
+    "ELFIN": "Think of the appearance of a tiny fantasy creature.",
+    "GIVER": "Think of the person handing over a wrapped present.",
+    "THANK": "Think of what you say after receiving help.",
 }
 
 DAILY_CLUES = {
@@ -1191,6 +1215,18 @@ DAILY_CLUES = {
     "WEDGE": "A piece that narrows toward one edge.",
     "SIEVE": "A mesh tool used to sort particles by size.",
     "GOUGE": "A chisel with a curved cutting edge.",
+    "ADORE": "Feel deep affection for something.",
+    "CHEER": "A shout of encouragement or joy.",
+    "MERRY": "Joyful and festive.",
+    "JOLLY": "Cheerful and good-humored.",
+    "GREET": "Welcome someone upon arrival.",
+    "HOSTS": "People who welcome guests.",
+    "GUEST": "A person invited to visit.",
+    "PARTY": "A social gathering for celebration.",
+    "BELLS": "Hollow instruments that ring when struck.",
+    "ELFIN": "Resembling a small mythical helper.",
+    "GIVER": "Someone who presents something to another.",
+    "THANK": "Express gratitude to someone.",
 }
 
 HINT_COSTS = (150, 300)
