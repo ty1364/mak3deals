@@ -132,6 +132,18 @@ DAILY_WORDS = [
     "ELFIN",
     "GIVER",
     "THANK",
+    "BERTH",
+    "DEPTH",
+    "FLANK",
+    "GAUZE",
+    "HATCH",
+    "INLET",
+    "JOUST",
+    "KIOSK",
+    "LUMEN",
+    "MARSH",
+    "NOTCH",
+    "OXIDE",
 ]
 
 DAILY_HINTS = {
@@ -702,6 +714,18 @@ DAILY_HINTS = {
     "ELFIN": "Think of the appearance of a tiny fantasy creature.",
     "GIVER": "Think of the person handing over a wrapped present.",
     "THANK": "Think of what you say after receiving help.",
+    "BERTH": "Think of a bunk on an overnight railway journey.",
+    "DEPTH": "Think of a measurement taken below water.",
+    "FLANK": "Think of the area beside a horse's ribs.",
+    "GAUZE": "Think of a breathable dressing for a wound.",
+    "HATCH": "Think of entering a submarine through its top.",
+    "INLET": "Think of a small bay reaching inland.",
+    "JOUST": "Think of medieval riders carrying lances.",
+    "KIOSK": "Think of a freestanding airport check-in terminal.",
+    "LUMEN": "Think of the brightness rating on a light bulb.",
+    "MARSH": "Think of reeds growing in shallow standing water.",
+    "NOTCH": "Think of a V-shaped mark in a wooden board.",
+    "OXIDE": "Think of the chemical family that includes rust.",
 }
 
 DAILY_CLUES = {
@@ -1227,6 +1251,18 @@ DAILY_CLUES = {
     "ELFIN": "Resembling a small mythical helper.",
     "GIVER": "Someone who presents something to another.",
     "THANK": "Express gratitude to someone.",
+    "BERTH": "A sleeping place on a ship or train.",
+    "DEPTH": "Distance from the surface to the bottom.",
+    "FLANK": "The side of an animal or formation.",
+    "GAUZE": "A thin loosely woven fabric.",
+    "HATCH": "An opening with a movable cover.",
+    "INLET": "A narrow arm of a larger body of water.",
+    "JOUST": "A contest between mounted knights.",
+    "KIOSK": "A small booth for sales or information.",
+    "LUMEN": "A unit of luminous flux.",
+    "MARSH": "Wet ground dominated by grasses.",
+    "NOTCH": "A small cut or indentation in an edge.",
+    "OXIDE": "A compound of oxygen and another element.",
 }
 
 HINT_COSTS = (150, 300)
